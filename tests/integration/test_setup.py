@@ -72,10 +72,12 @@ async def test_setup_registers_sensors_and_calendars(hass: HomeAssistant) -> Non
         f"{DOMAIN}_{CHILD_ID}_age_months",
         f"{DOMAIN}_{CHILD_ID}_height_percentile",
         f"{DOMAIN}_{CHILD_ID}_weight_percentile",
-        f"{DOMAIN}_{CHILD_ID}_head_percentile",
-        f"{DOMAIN}_{CHILD_ID}_bmi_percentile",
         f"{DOMAIN}_{CHILD_ID}_bmi_raw",
-        f"{DOMAIN}_{CHILD_ID}_weight_for_length_percentile",
+        # v0.8.0: bi-directional metrics moved off percentile sensors and
+        # onto binary "양극단 주의" alerts.
+        f"{DOMAIN}_{CHILD_ID}_head_concern",
+        f"{DOMAIN}_{CHILD_ID}_bmi_concern",
+        f"{DOMAIN}_{CHILD_ID}_weight_for_length_concern",
         f"{DOMAIN}_{CHILD_ID}_upcoming_vaccines_due_this_month",
         f"{DOMAIN}_{CHILD_ID}_upcoming_checkups_due_this_month",
         f"{DOMAIN}_{CHILD_ID}_immunization_calendar",
@@ -161,10 +163,15 @@ async def test_number_set_value_records_measurement(hass: HomeAssistant) -> None
     assert state.state not in ("unknown", "unavailable", None)
 
 
-async def test_bmi_percentile_emitted_when_height_and_weight_recorded(
+async def test_bmi_concern_emitted_when_height_and_weight_recorded(
     hass: HomeAssistant,
 ) -> None:
-    """BMI is derived from height+weight once the child is ≥24 months."""
+    """v0.8.0: BMI is exposed as a binary "양극단 주의" alert + a raw-value sensor.
+
+    A median-aged child measured at the population median should land in the
+    normal band, so the concern alert stays off and the raw-value sensor
+    carries the BMI.
+    """
     entry = _mock_entry()
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
@@ -183,16 +190,19 @@ async def test_bmi_percentile_emitted_when_height_and_weight_recorded(
     )
     await hass.async_block_till_done()
 
-    bmi_entity = _entity_id(hass, f"{DOMAIN}_{CHILD_ID}_bmi_percentile")
-    state = hass.states.get(bmi_entity)
+    bmi_concern = _entity_id(hass, f"{DOMAIN}_{CHILD_ID}_bmi_concern")
+    state = hass.states.get(bmi_concern)
     assert state is not None
-    assert state.state not in ("unknown", "unavailable", None)
-    pct = float(state.state)
+    # Median-ish BMI shouldn't trip the concern alert.
+    assert state.state == "off"
+    pct = state.attributes.get("statistical_percentile")
+    assert pct is not None
     assert 0.0 <= pct <= 100.0
-    # Surfaced BMI value comes back via the `value` attribute.
-    assert state.attributes.get("value") == pytest.approx(
-        18.0 / (1.10 ** 2), rel=1e-3
-    )
+
+    bmi_raw = _entity_id(hass, f"{DOMAIN}_{CHILD_ID}_bmi_raw")
+    raw_state = hass.states.get(bmi_raw)
+    assert raw_state is not None
+    assert float(raw_state.state) == pytest.approx(18.0 / (1.10 ** 2), rel=1e-3)
 
 
 async def test_care_tuition_sensor_surfaces_2026_figures(

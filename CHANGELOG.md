@@ -4,6 +4,62 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.0] - 2026-05-13
+
+### Removed (BREAKING)
+
+- `sensor.<child>_head_percentile`, `sensor.<child>_bmi_percentile`, and `sensor.<child>_weight_for_length_percentile` are gone. Bi-directional metrics never fit a `%`-unit single-direction sensor — a "50%" reading reads like "half-full" to most users, and the v0.7.x parenthesized hints ("50%=정상") couldn't undo that.
+
+### Added — `binary_sensor.<child>_*_concern`
+
+Three new `device_class: problem` binary sensors take their place:
+
+- `binary_sensor.<child>_head_concern` ("머리둘레 양극단 주의")
+- `binary_sensor.<child>_bmi_concern` ("BMI 양극단 주의")
+- `binary_sensor.<child>_weight_for_length_concern` ("신장별 몸무게 양극단 주의")
+
+Each is `on` when the KDCA statistical percentile is below 5 or above 95. Attributes carry the raw data so dashboards / automations can drill in:
+
+| Attribute | Value |
+|---|---|
+| `statistical_percentile` | KDCA percentile (0–100) |
+| `level` | `low` / `high` / `null` |
+| `summary_ko` | one-line Korean readout |
+| `value` | the underlying measurement (BMI float for `_bmi_concern`, `{length_cm,weight_kg,band}` dict for `_weight_for_length_concern`, etc.) |
+| `measured_at` | ISO date of the measurement |
+
+`sensor.<child>_bmi_raw` (정보 · BMI 수치) is kept — it still surfaces the raw BMI value and exposes percentile + summary on its own attributes for templates that liked that shape.
+
+### Automation example impact
+
+- Example #4 (BMI 양극단 알림) rewritten as a `state` trigger on `binary_sensor.<child>_bmi_concern` going `on` — much simpler than the previous dual `numeric_state` form.
+
+### Why
+
+User feedback: "50이라는 값이 정상이면 센서의 값을 %로 표시하면 안된다." Correct — for bi-directional metrics the value the dashboard should expose is "안 좋아? 좋아?", not a number whose meaning depends on which side of the median you're on. The percentile is still useful for clinicians, but it lives on an attribute, not on the entity state.
+
+### Height / weight percentiles unchanged
+
+`sensor.<child>_height_percentile`, `sensor.<child>_weight_percentile` keep the v0.6.0 rank scheme ("1%=가장 큼"). Those metrics are single-direction-favorable and the `%` unit reads naturally.
+
+## [0.7.1] - 2026-05-13
+
+### Changed (friendly-name only — no behavior change)
+
+- Number-input entities renamed from `측정 · <항목>` to `<항목> 입력` so the action is obvious on first read:
+  - `측정 · 키` → `키 입력`
+  - `측정 · 몸무게` → `몸무게 입력`
+  - `측정 · 머리둘레` → `머리둘레 입력`
+- Percentile-sensor parenthesized hints rephrased as school-ranking metaphors (more legible than the previous "작을수록 큼" which read as self-contradictory):
+  - `백분위 · 키 (작을수록 큼)` → `백분위 · 키 (1%=가장 큼)`
+  - `백분위 · 몸무게 (작을수록 무거움)` → `백분위 · 몸무게 (1%=가장 무거움)`
+  - `백분위 · 머리둘레 (50 부근=정상)` → `백분위 · 머리둘레 (50%=정상)`
+  - `백분위 · BMI (50 부근=정상)` → `백분위 · BMI (50%=정상)`
+  - `백분위 · 신장별 몸무게 (50 부근=정상)` → `백분위 · 신장별 몸무게 (50%=정상)`
+  - The hint values carry the `%` unit so they line up with the sensor's `unit_of_measurement` and avoid mixing "백분위" with "등" units.
+
+`unique_id` for every entity is unchanged. No sensor value, attribute, or automation behavior changes; only the friendly names update.
+
 ## [0.7.0] - 2026-05-13
 
 ### Changed

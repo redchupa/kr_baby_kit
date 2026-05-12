@@ -59,25 +59,26 @@
           - 시작일: {{ state_attr('sensor.kr_baby_kit_baby_a_next_checkup', 'window_start') }}
           참고용 정보입니다. 건강검진 기관과 일정 확인 바랍니다.
 
-# 4. BMI 양극단 (v0.7.0+: BMI sensor 값 = KDCA 통계 percentile, 50 부근=정상)
-#    - below: 5  → BMI 또래 하위 5% 미만 = 저체중 경향
-#    - above: 95 → BMI 또래 상위 5% 초과 = 비만 경향
-#    KDCA BMI 기준은 24개월부터 적용되므로, 만 2세 미만은 신장별 체중 백분위를 보세요.
-- alias: BMI 백분위 양극단 참고 알림
+# 4. BMI 양극단 참고 알림 (v0.8.0+: binary_sensor 기반)
+#    BMI / 머리둘레 / 신장별 체중은 양극단 모두 우려라 percentile sensor를
+#    제거하고 binary_sensor.<child>_bmi_concern 등으로 노출합니다. state가
+#    on이 되면 KDCA 통계 percentile이 < 5 (저체중·작은 머리·마름 경향) 또는
+#    > 95 (비만·큰 머리·통통 경향) 인 경우입니다. attribute로 raw percentile
+#    과 방향(level: low/high), summary_ko, raw 측정값 모두 확인 가능합니다.
+#    KDCA BMI 기준은 24개월부터 적용되므로, 만 2세 미만은 신장별 체중 binary_sensor
+#    (weight_for_length_concern) 을 같이 보세요.
+- alias: BMI 양극단 참고 알림
   trigger:
-    - platform: numeric_state
-      entity_id: sensor.kr_baby_kit_baby_a_bmi_percentile
-      below: 5
-    - platform: numeric_state
-      entity_id: sensor.kr_baby_kit_baby_a_bmi_percentile
-      above: 95
+    - platform: state
+      entity_id: binary_sensor.kr_baby_kit_baby_a_bmi_concern
+      to: "on"
   action:
     - service: notify.mobile_app
       data:
         title: "BMI 참고 알림"
         message: >-
-          현재 BMI 또래 백분위 {{ states('sensor.kr_baby_kit_baby_a_bmi_percentile') }}%
-          (BMI {{ state_attr('sensor.kr_baby_kit_baby_a_bmi_percentile', 'value') }}).
+          {{ state_attr('binary_sensor.kr_baby_kit_baby_a_bmi_concern', 'summary_ko') }}
+          (BMI {{ state_attr('binary_sensor.kr_baby_kit_baby_a_bmi_concern', 'value') }}).
           소아청소년과 진료를 통해 확인하세요.
 
 # 5. 다음 예방접종 D-day 카드 (Lovelace markdown 카드용 — 자동화 아님)

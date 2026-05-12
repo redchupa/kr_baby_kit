@@ -19,11 +19,13 @@ from .device import child_device
 
 
 _KIND_LABELS = {
-    "height": ("백분위 · 키 (작을수록 큼)", "Height percentile (small number = taller)"),
-    "weight": ("백분위 · 몸무게 (작을수록 무거움)", "Weight percentile (small number = heavier)"),
-    "head": ("백분위 · 머리둘레 (50 부근=정상)", "Head circumference percentile (≈50 normal)"),
-    "bmi": ("백분위 · BMI (50 부근=정상)", "BMI percentile (≈50 normal)"),
+    "height": ("백분위 · 키 (1%=가장 큼)", "Height percentile (1% = tallest)"),
+    "weight": ("백분위 · 몸무게 (1%=가장 무거움)", "Weight percentile (1% = heaviest)"),
 }
+# head / bmi / weight-for-length intentionally omitted — they are bi-directional
+# (양극단 우려) and exposing them as a percentile sensor invited users to read a
+# single-direction ranking. They live as `binary_sensor.<child>_<kind>_concern`
+# instead, with the raw percentile preserved on that entity's attributes.
 
 
 _CARE_TUITION_FIELDS: list[tuple[str, str, str]] = [
@@ -43,7 +45,6 @@ async def async_setup_entry(
         PercentileSensor(coordinator, entry, kind) for kind in _KIND_LABELS
     ]
     entities.append(AgeMonthsSensor(coordinator, entry))
-    entities.append(WeightForLengthSensor(coordinator, entry))
     entities.append(
         NextEventSensor(
             coordinator,
@@ -133,51 +134,6 @@ class AgeMonthsSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     def native_value(self) -> float | None:
         am = (self.coordinator.data or {}).get("age_months")
         return round(am, 2) if am is not None else None
-
-
-class WeightForLengthSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
-    """Weight-for-length / weight-for-height percentile.
-
-    Uses recumbent length under 2y, standing height 2y+ per KDCA convention.
-    """
-
-    _attr_has_entity_name = True
-    _attr_name = "백분위 · 신장별 몸무게 (50 부근=정상)"
-    _attr_native_unit_of_measurement = "%"
-    _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_attribution = ATTRIBUTION
-
-    def __init__(self, coordinator: BabyKitCoordinator, entry: ConfigEntry) -> None:
-        super().__init__(coordinator)
-        self._attr_unique_id = (
-            f"{DOMAIN}_{coordinator.child_id}_weight_for_length_percentile"
-        )
-
-    @property
-    def device_info(self):
-        return child_device(self.coordinator.entry)
-
-    @property
-    def native_value(self) -> float | None:
-        wfl = (self.coordinator.data or {}).get("weight_for_length")
-        if not wfl or wfl.get("percentile") is None:
-            return None
-        return round(wfl["percentile"], 1)
-
-    @property
-    def extra_state_attributes(self) -> dict:
-        wfl = (self.coordinator.data or {}).get("weight_for_length") or {}
-        return {
-            "length_cm": wfl.get("length_cm"),
-            "weight_kg": wfl.get("weight_kg"),
-            "band": wfl.get("band"),
-            "z_score": wfl.get("z_score"),
-            "statistical_percentile": wfl.get("statistical_percentile"),
-            "top_percent": wfl.get("top_percent"),
-            "summary_ko": wfl.get("summary_ko"),
-            "measured_at": wfl.get("measured_at"),
-            "disclaimer": MEDICAL_DISCLAIMER,
-        }
 
 
 class NextEventSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
