@@ -1,0 +1,30 @@
+# Synthetic 36-month-old child fixture.
+# NO REAL CHILD DATA. All values fabricated for unit tests.
+# Dates intentionally avoid 2024 (user's real child birth year per CLAUDE.md guard).
+child:
+  child_id: "synthetic_36m"
+  child_name: "Test Child A"
+  child_birthdate: "2020-03-15"
+  child_sex: "male"
+
+measurements:
+  - date: "2020-06-15"   # 3 months
+    height: 61.5
+    weight: 6.4
+    head: 40.5
+  - date: "2020-09-15"   # 6 months
+    height: 67.7
+    weight: 7.9
+    head: 43.5
+  - date: "2021-03-15"   # 12 months
+    height: 75.8
+    weight: 9.6
+    head: 45.9
+  - date: "2022-03-15"   # 24 months
+    height: 87.2
+    weight: 12.1
+    head: 48.3
+  - date: "2023-03-15"   # 36 months
+    height: 95.1
+    weight: 14.3
+    head: 49.5

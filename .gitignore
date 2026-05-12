@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual env
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Test
+.pytest_cache/
+.coverage
+.ruff_cache/
+
+# Real child data — NEVER commit
+child_records/
+measurements_real/
+*.real.json
+my_child_*
+
+# Upstream KDCA raw bundles (license: 출처 표시, but do not redistribute)
+성장도표*.xls*
+성장도표*.xlsx
+growth_chart_raw.xls*
+
+# HA test instance
+config/.storage/
+config/secrets.yaml

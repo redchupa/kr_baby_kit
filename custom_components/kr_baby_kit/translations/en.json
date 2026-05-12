@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Register a child",
+        "description": "Register one child. Add another integration entry for additional children.\n\n⚠️ This information is for reference only and does not replace medical consultation.",
+        "data": {
+          "child_name": "Child name or alias (e.g. First-born)",
+          "child_birthdate": "Birthdate",
+          "child_sex": "Sex"
+        }
+      }
+    },
+    "error": {
+      "required": "Required field.",
+      "invalid_date": "Invalid date format (YYYY-MM-DD).",
+      "future_date": "Future dates are not allowed."
+    },
+    "abort": {
+      "already_configured": "This child is already registered."
+    }
+  }
+}

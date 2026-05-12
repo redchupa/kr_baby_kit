@@ -1,0 +1,48 @@
+record_measurement:
+  name: 측정값 기록
+  description: 자녀의 키·몸무게·머리둘레를 저장하고 백분위를 갱신합니다.
+  fields:
+    child_id:
+      name: 자녀 ID
+      description: Config entry에서 발급된 child_id. 미지정 시 등록된 단일 자녀에 적용.
+      example: "ab12cd34ef56"
+      required: false
+      selector:
+        text:
+    date:
+      name: 측정일
+      description: ISO 형식 (YYYY-MM-DD)
+      example: "2026-05-12"
+      required: true
+      selector:
+        date:
+    height:
+      name: 키 (cm)
+      required: false
+      example: 75.4
+      selector:
+        number:
+          min: 30
+          max: 200
+          step: 0.1
+          unit_of_measurement: cm
+    weight:
+      name: 몸무게 (kg)
+      required: false
+      example: 9.2
+      selector:
+        number:
+          min: 1
+          max: 100
+          step: 0.05
+          unit_of_measurement: kg
+    head:
+      name: 머리둘레 (cm)
+      required: false
+      example: 46.0
+      selector:
+        number:
+          min: 25
+          max: 65
+          step: 0.1
+          unit_of_measurement: cm

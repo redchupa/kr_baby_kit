@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "source": "보건복지부 영유아 건강검진 표준 일정 (Korean infant health checkup)",
+    "source_url": "https://www.nhis.or.kr/nhis/healthin/wbhabb02100m01.do",
+    "license": "공공누리 제1유형 (KOGL Type 1) — attribution required",
+    "schema_version": 1,
+    "note": "보건복지부·국민건강보험공단 표준 7회 검진 시기."
+  },
+  "checkups": [
+    {
+      "order": 1,
+      "name_ko": "1차 영유아 검진",
+      "name_en": "1st infant checkup",
+      "window_min_month": 4,
+      "window_max_month": 6,
+      "includes": ["문진", "진찰", "신체계측", "발달평가"]
+    },
+    {
+      "order": 2,
+      "name_ko": "2차 영유아 검진",
+      "name_en": "2nd infant checkup",
+      "window_min_month": 9,
+      "window_max_month": 12,
+      "includes": ["문진", "진찰", "신체계측", "발달평가", "건강교육"]
+    },
+    {
+      "order": 3,
+      "name_ko": "3차 영유아 검진",
+      "name_en": "3rd infant checkup",
+      "window_min_month": 18,
+      "window_max_month": 24,
+      "includes": ["문진", "진찰", "신체계측", "발달평가", "구강검진"]
+    },
+    {
+      "order": 4,
+      "name_ko": "4차 영유아 검진",
+      "name_en": "4th infant checkup",
+      "window_min_month": 30,
+      "window_max_month": 36,
+      "includes": ["문진", "진찰", "신체계측", "발달평가", "구강검진"]
+    },
+    {
+      "order": 5,
+      "name_ko": "5차 영유아 검진",
+      "name_en": "5th infant checkup",
+      "window_min_month": 42,
+      "window_max_month": 48,
+      "includes": ["문진", "진찰", "신체계측", "발달평가", "구강검진"]
+    },
+    {
+      "order": 6,
+      "name_ko": "6차 영유아 검진",
+      "name_en": "6th infant checkup",
+      "window_min_month": 54,
+      "window_max_month": 60,
+      "includes": ["문진", "진찰", "신체계측", "발달평가", "구강검진"]
+    },
+    {
+      "order": 7,
+      "name_ko": "7차 영유아 검진",
+      "name_en": "7th infant checkup",
+      "window_min_month": 66,
+      "window_max_month": 71,
+      "includes": ["문진", "진찰", "신체계측", "발달평가", "구강검진"]
+    }
+  ]
+}

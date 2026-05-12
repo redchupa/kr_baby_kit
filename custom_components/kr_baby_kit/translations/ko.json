@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "자녀 등록",
+        "description": "자녀 한 명을 등록합니다. 여러 명은 통합을 추가하여 등록할 수 있습니다.\n\n⚠️ 본 정보는 참고용이며 의료기관 진료를 대체하지 않습니다.",
+        "data": {
+          "child_name": "자녀 이름 또는 별칭 (예: 첫째)",
+          "child_birthdate": "생년월일",
+          "child_sex": "성별"
+        }
+      }
+    },
+    "error": {
+      "required": "필수 입력값입니다.",
+      "invalid_date": "올바른 날짜 형식이 아닙니다 (YYYY-MM-DD).",
+      "future_date": "미래 날짜는 사용할 수 없습니다."
+    },
+    "abort": {
+      "already_configured": "이미 등록된 자녀입니다."
+    }
+  }
+}

@@ -1,0 +1,56 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install pytest + openpyxl (build-script smoke)
+        run: python -m pip install --upgrade pip pytest openpyxl
+      - name: Run pure-Python unit tests
+        run: python -m pytest tests/test_growth.py tests/test_schedule.py tests/test_build_growth_chart.py tests/test_storage.py tests/test_weight_for_length.py tests/test_care_tuition.py tests/test_check_care_tuition.py tests/test_percentile_summary.py -q
+      - name: Sanity-check care_tuition table (non-strict)
+        run: python scripts/check_care_tuition.py
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pytest-homeassistant-custom-component
+        run: python -m pip install --upgrade pip pytest-homeassistant-custom-component
+      - name: Run HA-stack integration tests
+        run: python -m pytest tests/integration -q
+
+  security-grep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block leaks of personal child data
+        run: |
+          set -e
+          PATTERNS='하린|우하린|WooRin|redchupa|jerry|예린|제리|192\.168\.|10\.0\.|ha\.redchupa'
+          if grep -rE "$PATTERNS" . \
+              --exclude-dir=.git \
+              --exclude-dir=.github \
+              --exclude-dir=__pycache__ \
+              --exclude-dir=.ruff_cache \
+              --exclude-dir=.pytest_cache \
+              --binary-files=without-match \
+              --exclude="*.md" ; then
+            echo "::error::Personal child/family identifier detected in source files."
+            exit 1
+          fi

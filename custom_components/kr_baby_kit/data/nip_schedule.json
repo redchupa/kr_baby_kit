@@ -1,0 +1,150 @@
+{
+  "_meta": {
+    "source": "질병관리청 표준 예방접종 일정 (KDCA NIP standard schedule)",
+    "source_url": "https://nip.kdca.go.kr/irhp/goMainInfo.do",
+    "license": "공공누리 제1유형 (KOGL Type 1) — attribution required",
+    "schema_version": 1,
+    "last_synced": "2025-01-20",
+    "age_unit": "months",
+    "note": "어린이 국가예방접종사업 (free NIP). 권장 월령 범위는 질병관리청 예방접종도우미 기준. 의학적 판단은 의료기관에 위임."
+  },
+  "vaccines": [
+    {
+      "code": "BCG",
+      "name_ko": "결핵 (BCG, 피내용)",
+      "name_en": "BCG (intradermal)",
+      "doses": [
+        {"dose": 1, "recommended_month": 1, "window_min": 0, "window_max": 1, "note": "생후 4주 이내"}
+      ]
+    },
+    {
+      "code": "HepB",
+      "name_ko": "B형간염",
+      "name_en": "Hepatitis B",
+      "doses": [
+        {"dose": 1, "recommended_month": 0, "window_min": 0, "window_max": 0, "note": "출생 직후"},
+        {"dose": 2, "recommended_month": 1, "window_min": 1, "window_max": 2},
+        {"dose": 3, "recommended_month": 6, "window_min": 6, "window_max": 12}
+      ]
+    },
+    {
+      "code": "DTaP",
+      "name_ko": "디프테리아·파상풍·백일해",
+      "name_en": "DTaP",
+      "doses": [
+        {"dose": 1, "recommended_month": 2,  "window_min": 2,  "window_max": 3},
+        {"dose": 2, "recommended_month": 4,  "window_min": 4,  "window_max": 5},
+        {"dose": 3, "recommended_month": 6,  "window_min": 6,  "window_max": 7},
+        {"dose": 4, "recommended_month": 18, "window_min": 15, "window_max": 18},
+        {"dose": 5, "recommended_month": 60, "window_min": 48, "window_max": 72, "note": "만 4~6세"}
+      ]
+    },
+    {
+      "code": "Tdap_Td",
+      "name_ko": "Tdap/Td 추가",
+      "name_en": "Tdap/Td booster",
+      "doses": [
+        {"dose": 1, "recommended_month": 132, "window_min": 132, "window_max": 144, "note": "만 11~12세"}
+      ]
+    },
+    {
+      "code": "IPV",
+      "name_ko": "폴리오 (소아마비)",
+      "name_en": "Polio (IPV)",
+      "doses": [
+        {"dose": 1, "recommended_month": 2,  "window_min": 2,  "window_max": 3},
+        {"dose": 2, "recommended_month": 4,  "window_min": 4,  "window_max": 5},
+        {"dose": 3, "recommended_month": 6,  "window_min": 6,  "window_max": 18},
+        {"dose": 4, "recommended_month": 60, "window_min": 48, "window_max": 72, "note": "만 4~6세"}
+      ]
+    },
+    {
+      "code": "Hib",
+      "name_ko": "b형 헤모필루스 인플루엔자",
+      "name_en": "Haemophilus influenzae type b",
+      "doses": [
+        {"dose": 1, "recommended_month": 2,  "window_min": 2,  "window_max": 3},
+        {"dose": 2, "recommended_month": 4,  "window_min": 4,  "window_max": 5},
+        {"dose": 3, "recommended_month": 6,  "window_min": 6,  "window_max": 7},
+        {"dose": 4, "recommended_month": 15, "window_min": 12, "window_max": 18}
+      ]
+    },
+    {
+      "code": "PCV",
+      "name_ko": "폐렴구균 (단백결합)",
+      "name_en": "Pneumococcal conjugate",
+      "doses": [
+        {"dose": 1, "recommended_month": 2,  "window_min": 2,  "window_max": 3},
+        {"dose": 2, "recommended_month": 4,  "window_min": 4,  "window_max": 5},
+        {"dose": 3, "recommended_month": 6,  "window_min": 6,  "window_max": 7},
+        {"dose": 4, "recommended_month": 15, "window_min": 12, "window_max": 18}
+      ]
+    },
+    {
+      "code": "RV",
+      "name_ko": "로타바이러스 (경구)",
+      "name_en": "Rotavirus (oral)",
+      "doses": [
+        {"dose": 1, "recommended_month": 2, "window_min": 2, "window_max": 3},
+        {"dose": 2, "recommended_month": 4, "window_min": 4, "window_max": 5},
+        {"dose": 3, "recommended_month": 6, "window_min": 6, "window_max": 7, "note": "RV5 일 때만"}
+      ]
+    },
+    {
+      "code": "MMR",
+      "name_ko": "홍역·유행성이하선염·풍진",
+      "name_en": "MMR",
+      "doses": [
+        {"dose": 1, "recommended_month": 12, "window_min": 12, "window_max": 15},
+        {"dose": 2, "recommended_month": 60, "window_min": 48, "window_max": 72, "note": "만 4~6세"}
+      ]
+    },
+    {
+      "code": "VAR",
+      "name_ko": "수두",
+      "name_en": "Varicella",
+      "doses": [
+        {"dose": 1, "recommended_month": 12, "window_min": 12, "window_max": 15}
+      ]
+    },
+    {
+      "code": "HepA",
+      "name_ko": "A형간염",
+      "name_en": "Hepatitis A",
+      "doses": [
+        {"dose": 1, "recommended_month": 12, "window_min": 12, "window_max": 24},
+        {"dose": 2, "recommended_month": 18, "window_min": 18, "window_max": 30, "note": "1차 후 6~12개월"}
+      ]
+    },
+    {
+      "code": "IJEV",
+      "name_ko": "일본뇌염 (불활성화)",
+      "name_en": "Japanese Encephalitis (inactivated)",
+      "doses": [
+        {"dose": 1, "recommended_month": 12, "window_min": 12, "window_max": 24},
+        {"dose": 2, "recommended_month": 13, "window_min": 13, "window_max": 25, "note": "1차 후 7~30일"},
+        {"dose": 3, "recommended_month": 24, "window_min": 24, "window_max": 36, "note": "2차 후 12개월"},
+        {"dose": 4, "recommended_month": 72, "window_min": 60, "window_max": 84, "note": "만 6세"},
+        {"dose": 5, "recommended_month": 144, "window_min": 132, "window_max": 156, "note": "만 12세"}
+      ],
+      "alt_choice": "LJEV (생백신) 가능"
+    },
+    {
+      "code": "HPV",
+      "name_ko": "사람유두종바이러스",
+      "name_en": "HPV",
+      "doses": [
+        {"dose": 1, "recommended_month": 132, "window_min": 132, "window_max": 144, "note": "만 11~12세 여아"},
+        {"dose": 2, "recommended_month": 138, "window_min": 138, "window_max": 150}
+      ]
+    },
+    {
+      "code": "IIV",
+      "name_ko": "인플루엔자",
+      "name_en": "Influenza",
+      "doses": [
+        {"dose": 1, "recommended_month": 6, "window_min": 6, "window_max": 156, "note": "생후 6개월 이상 매년 1회 (9세 이하 첫해 2회)"}
+      ]
+    }
+  ]
+}

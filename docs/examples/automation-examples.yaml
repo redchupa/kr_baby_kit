@@ -1,0 +1,132 @@
+# 예시 자동화 — kr_baby_kit
+# (모든 예시는 의료기관 진료를 대체하지 않으며 알림 목적입니다.)
+
+# 1. 이번 달 예방접종이 있는 경우 매주 월요일 아침 알림
+- alias: 이번 달 예방접종 알림
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition:
+    - condition: time
+      weekday: [mon]
+    - condition: state
+      entity_id: binary_sensor.kr_baby_kit_baby_a_upcoming_vaccines_due_this_month
+      state: "on"
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "예방접종 알림"
+        message: >-
+          {{ state_attr('binary_sensor.kr_baby_kit_baby_a_upcoming_vaccines_due_this_month', 'next').name_ko }}
+          ({{ state_attr('binary_sensor.kr_baby_kit_baby_a_upcoming_vaccines_due_this_month', 'next').dose }}차)
+          접종 시기입니다. 참고용 정보이며 의료기관과 일정 확인 바랍니다.
+
+# 2. 키 백분위가 3% 미만으로 떨어진 경우 (참고 — 의학적 판단은 의사에게)
+- alias: 성장 백분위 변동 알림
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.kr_baby_kit_baby_a_height_percentile
+      below: 3
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "성장곡선 참고 알림"
+        message: >-
+          현재 키 백분위가 {{ states('sensor.kr_baby_kit_baby_a_height_percentile') }}% 입니다.
+          참고용이며 의료기관 진료를 통해 확인하세요.
+
+# 3. 다음 영유아 검진이 14일 이내가 되면 알림
+#    next_checkup 은 TIMESTAMP 센서이므로 (next - now) 로 직접 비교할 수 있다.
+- alias: 영유아 검진 14일 전 알림
+  trigger:
+    - platform: time_pattern
+      hours: "/6"
+  condition:
+    - condition: template
+      value_template: >-
+        {% set t = states('sensor.kr_baby_kit_baby_a_next_checkup') %}
+        {{ t not in ('unknown','unavailable','') and
+           (as_datetime(t) - now()).total_seconds() < 14 * 86400 and
+           (as_datetime(t) - now()).total_seconds() > 0 }}
+  action:
+    - service: persistent_notification.create
+      data:
+        title: "영유아 검진 임박"
+        message: >-
+          {{ state_attr('sensor.kr_baby_kit_baby_a_next_checkup', 'name_ko') }}
+          - 시작일: {{ state_attr('sensor.kr_baby_kit_baby_a_next_checkup', 'window_start') }}
+          참고용 정보입니다. 건강검진 기관과 일정 확인 바랍니다.
+
+# 4. BMI 백분위가 5% 미만 또는 95% 초과인 경우 (참고용)
+#    KDCA BMI 기준은 24개월부터 적용되므로, 만 2세 미만은 신장별 체중 백분위를 보세요.
+- alias: BMI 백분위 양극단 참고 알림
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.kr_baby_kit_baby_a_bmi_percentile
+      below: 5
+    - platform: numeric_state
+      entity_id: sensor.kr_baby_kit_baby_a_bmi_percentile
+      above: 95
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "BMI 참고 알림"
+        message: >-
+          현재 BMI 백분위: {{ states('sensor.kr_baby_kit_baby_a_bmi_percentile') }}%
+          (BMI {{ state_attr('sensor.kr_baby_kit_baby_a_bmi_percentile', 'value') }}).
+          소아청소년과 진료를 통해 확인하세요.
+
+# 5. 다음 예방접종 D-day 카드 (Lovelace markdown 카드용 — 자동화 아님)
+#    type: markdown
+#    content: |
+#      ## {{ state_attr('sensor.kr_baby_kit_baby_a_next_vaccine', 'name_ko') }}
+#      {% set t = states('sensor.kr_baby_kit_baby_a_next_vaccine') %}
+#      {% if t not in ('unknown','unavailable','') %}
+#      {% set days = ((as_datetime(t) - now()).total_seconds() / 86400) | round(0) %}
+#      D-{{ days }} ({{ as_datetime(t).strftime('%Y-%m-%d') }})
+#      {% else %}
+#      예정된 일정 없음
+#      {% endif %}
+
+# 6. 매월 25일 아침: 다음 달 보육료 본인부담금 알림
+#    placeholder 상태(미갱신)일 때는 알림이 발송되지 않습니다 — sensor가
+#    Unknown(None)이므로 numeric_state 트리거가 작동하지 않음.
+- alias: 보육료 본인부담금 월말 알림
+  trigger:
+    - platform: time
+      at: "08:00:00"
+  condition:
+    - condition: template
+      value_template: "{{ now().day == 25 }}"
+    - condition: template
+      value_template: >-
+        {{ states('sensor.kr_baby_kit_baby_a_보육료_본인부담금') not in ('unknown','unavailable','') }}
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "다음 달 보육료 본인부담금"
+        message: >-
+          {% set parent = states('sensor.kr_baby_kit_baby_a_보육료_본인부담금') | int(0) %}
+          {% set tier = state_attr('sensor.kr_baby_kit_baby_a_보육료_본인부담금', 'age_class_label_ko') %}
+          {{ tier }} 본인부담금 약 {{ '{:,}'.format(parent) }}원. 정확한 금액은 어린이집에서 확인하세요.
+
+# 7. 보육료 데이터가 placeholder인 채로 두면 매주 월요일 알림
+#    (개발자/유지보수용 — 정식 사용 전 JSON 갱신을 잊지 않도록)
+- alias: 보육료 데이터 미갱신 경고
+  trigger:
+    - platform: time
+      at: "10:00:00"
+  condition:
+    - condition: time
+      weekday: [mon]
+    - condition: template
+      value_template: >-
+        {{ state_attr('sensor.kr_baby_kit_baby_a_표준보육료', 'is_placeholder') == true }}
+  action:
+    - service: persistent_notification.create
+      data:
+        title: "kr_baby_kit: 보육료 데이터 미갱신"
+        message: >-
+          custom_components/kr_baby_kit/data/care_tuition_kr.json 이
+          placeholder 상태입니다. 보건복지부 표준보육료 고시로 갱신 후
+          HA를 재시작하세요. 자세한 절차는 docs/release-checklist.md 참고.

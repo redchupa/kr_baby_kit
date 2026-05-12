@@ -1,0 +1,92 @@
+{
+  "_meta": {
+    "source": "교육부 「2026년도 보육사업안내 부록 2」 - 영유아보육료 지원금액 (부록 96쪽)",
+    "source_url": "https://www.daejeon.go.kr/data/drh/sub05/2026_data_02.pdf",
+    "publication_number": "11-1342000-100026-10",
+    "issuing_authority": "교육부 (Ministry of Education)",
+    "license": "공공누리 제1유형 (출처 표시)",
+    "currency": "KRW",
+    "data_year": 2026,
+    "effective_from": "2026-01-01",
+    "_note": [
+      "출처: 교육부 「2026년도 보육사업안내 부록 2」 - 영유아보육료 지원금액 (발간등록번호 11-1342000-100026-10).",
+      "기준: 영유아 종일반(기본보육) 정부지원단가 100% 적용. 0~5세반은 무상보육 대상이므로 표준보육료=정부지원금, 본인부담금=0원.",
+      "만 6세반은 보육사업안내에 별도 단가가 없으며, 초등 취학유예 시(2019년생, 1차에 한해) 만 5세반 누리공통과정 단가(280,000)를 동일 적용함 (부록 2 가) 3-5세반 보육료 - 취학유예 조항).",
+      "본 표는 종일반/기본보육 단가만 표시하며, 연장보육료(시간당 1,000~3,000원), 야간 24시간 보육, 다문화/장애아 가산, 누리과정 외 추가 활동비 등은 포함하지 않습니다.",
+      "유보통합으로 보육 업무가 보건복지부(2025년 이전) → 교육부(2026년~)로 이관되었습니다. 차년도 갱신 시 출처 URL을 교육부 누리집의 최신 부록 PDF로 교체하십시오.",
+      "Run `python scripts/check_care_tuition.py --strict` to confirm real values are populated before tagging a release."
+    ]
+  },
+  "tiers": [
+    {
+      "age_class": 0,
+      "label_ko": "만 0세반",
+      "label_en": "Age 0 class",
+      "age_months_min": 0,
+      "age_months_max": 11,
+      "standard_tuition": 584000,
+      "government_subsidy": 584000,
+      "parent_share": 0
+    },
+    {
+      "age_class": 1,
+      "label_ko": "만 1세반",
+      "label_en": "Age 1 class",
+      "age_months_min": 12,
+      "age_months_max": 23,
+      "standard_tuition": 515000,
+      "government_subsidy": 515000,
+      "parent_share": 0
+    },
+    {
+      "age_class": 2,
+      "label_ko": "만 2세반",
+      "label_en": "Age 2 class",
+      "age_months_min": 24,
+      "age_months_max": 35,
+      "standard_tuition": 426000,
+      "government_subsidy": 426000,
+      "parent_share": 0
+    },
+    {
+      "age_class": 3,
+      "label_ko": "만 3세반 (누리공통과정)",
+      "label_en": "Age 3 class (Nuri common curriculum)",
+      "age_months_min": 36,
+      "age_months_max": 47,
+      "standard_tuition": 280000,
+      "government_subsidy": 280000,
+      "parent_share": 0
+    },
+    {
+      "age_class": 4,
+      "label_ko": "만 4세반 (누리공통과정)",
+      "label_en": "Age 4 class (Nuri common curriculum)",
+      "age_months_min": 48,
+      "age_months_max": 59,
+      "standard_tuition": 280000,
+      "government_subsidy": 280000,
+      "parent_share": 0
+    },
+    {
+      "age_class": 5,
+      "label_ko": "만 5세반 (누리공통과정)",
+      "label_en": "Age 5 class (Nuri common curriculum)",
+      "age_months_min": 60,
+      "age_months_max": 71,
+      "standard_tuition": 280000,
+      "government_subsidy": 280000,
+      "parent_share": 0
+    },
+    {
+      "age_class": 6,
+      "label_ko": "만 6세반(취학유예 시)",
+      "label_en": "Age 6 class (deferred enrollment only)",
+      "age_months_min": 72,
+      "age_months_max": 83,
+      "standard_tuition": 280000,
+      "government_subsidy": 280000,
+      "parent_share": 0
+    }
+  ]
+}
