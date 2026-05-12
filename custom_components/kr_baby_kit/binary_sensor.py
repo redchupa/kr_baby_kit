@@ -136,14 +136,22 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
 
     @property
     def available(self) -> bool:
-        # If we have no measurement yet, the concern alert is simply unavailable
-        # rather than "off" — keeps dashboards honest.
-        return self._info().get("statistical_percentile") is not None
+        # Available if we have an explicit percentile OR something meaningful
+        # to surface via attributes (e.g. the <24mo BMI advisory). This keeps
+        # the entity from showing "unavailable" when the missing percentile
+        # itself is the information the parent needs to see.
+        info = self._info()
+        return (
+            info.get("statistical_percentile") is not None
+            or info.get("summary_ko") is not None
+        )
 
     @property
     def is_on(self) -> bool:
         pct = self._info().get("statistical_percentile")
         if pct is None:
+            # Either no measurement yet, or KDCA's percentile is intentionally
+            # undefined at this age. Don't flag a concern.
             return False
         return pct < _CLINICAL_LOW_PCT or pct > _CLINICAL_HIGH_PCT
 
@@ -180,7 +188,25 @@ class BMIConcernSensor(_ConcernSensor):
     _label = "BMI 양극단 주의"
 
     def _info(self) -> dict:
-        return (self.coordinator.data or {}).get("percentiles", {}).get("bmi") or {}
+        data = self.coordinator.data or {}
+        info = (data.get("percentiles") or {}).get("bmi") or {}
+        if info:
+            return info
+        # KDCA BMI percentile table starts at 24 months. Below that, surface a
+        # human-readable advisory + the raw BMI so the entity stays available
+        # and the parent sees *why* there's no percentile yet — rather than a
+        # bare "unavailable" badge.
+        age_m = data.get("age_months")
+        if age_m is not None and age_m < 24:
+            return {
+                "summary_ko": (
+                    "만 24개월 미만 — BMI 백분위는 KDCA 기준상 만 2세부터 "
+                    "적용됩니다. 같은 자녀의 '신장별 몸무게 양극단 주의' "
+                    "binary_sensor 를 함께 확인하세요."
+                ),
+                "value": data.get("bmi_raw"),
+            }
+        return {}
 
 
 class WeightForLengthConcernSensor(_ConcernSensor):

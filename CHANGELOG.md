@@ -4,6 +4,22 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.3] - 2026-05-13
+
+### Fixed
+
+- **`binary_sensor.<child>_bmi_concern` no longer shows "unavailable" for children under 24 months.** KDCA's BMI percentile table starts at 24 months, so for younger children there is no statistical percentile to compare — but previously the entity went "unavailable", leaving parents unsure whether something was misconfigured. Now the entity stays available with `state=off` and the `summary_ko` attribute explains the situation and points to `binary_sensor.<child>_weight_for_length_concern` (which *is* defined under 24 months).
+- `_ConcernSensor.available` widened: an entity is available when either a real percentile is present or there's a `summary_ko` advisory to surface. The head circumference and weight-for-length concern sensors are unaffected (they keep their original `percentile present` availability rule because no analogous advisory case exists for them).
+
+### Note
+
+For a child currently around 17 months old, the dashboard will now show:
+
+- `BMI 양극단 주의`: `off`, with `summary_ko` = "만 24개월 미만 — BMI 백분위는 KDCA 기준상 만 2세부터 적용됩니다. 같은 자녀의 '신장별 몸무게 양극단 주의' binary_sensor 를 함께 확인하세요."
+- `신장별 몸무게 양극단 주의`: `off` / `on` based on the actual weight-for-length percentile (this entity is the one that matters under 24 months).
+
+`unique_id`, sensor values, and on-disk records are unchanged.
+
 ## [0.8.2] - 2026-05-13
 
 ### Added — three-layer input validation
