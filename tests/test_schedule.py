@@ -23,11 +23,20 @@ def test_vaccines_project_one_event_per_dose() -> None:
     assert all(e.kind == "vaccine" for e in events)
 
 
-def test_checkups_have_seven_events() -> None:
+def test_checkups_have_eight_events() -> None:
     events = project_checkup_events(BD)
-    assert len(events) == 7
+    # v0.8.1: standard checkup count is 8 since the 2021-01-01 inclusion of the
+    # 생후 14~35일 (early) checkup at order 1.
+    assert len(events) == 8
     orders = [e.dose for e in events]
-    assert orders == [1, 2, 3, 4, 5, 6, 7]
+    assert orders == [1, 2, 3, 4, 5, 6, 7, 8]
+
+
+def test_checkup_first_window_covers_14_to_35_days() -> None:
+    events = project_checkup_events(BD)
+    first = [e for e in events if e.dose == 1][0]
+    assert (first.start - BD).days == pytest.approx(14, abs=2)
+    assert (first.end - BD).days == pytest.approx(35, abs=2)
 
 
 def test_bcg_first_dose_is_within_first_month() -> None:
@@ -59,11 +68,13 @@ def test_upcoming_filters_out_past_events() -> None:
         assert e.end >= ref
 
 
-def test_checkup_third_window_is_18_to_24_months() -> None:
+def test_checkup_fourth_window_is_18_to_24_months() -> None:
+    # The 18–24 month window was order=3 prior to v0.8.1 and shifted to
+    # order=4 when the 생후 14~35일 (early) checkup was added at order=1.
     events = project_checkup_events(BD)
-    third = [e for e in events if e.dose == 3][0]
-    assert (third.start - BD).days >= int(18 * 30) - 5
-    assert (third.end - BD).days <= int(24 * 30.5) + 5
+    fourth = [e for e in events if e.dose == 4][0]
+    assert (fourth.start - BD).days >= int(18 * 30) - 5
+    assert (fourth.end - BD).days <= int(24 * 30.5) + 5
 
 
 @pytest.mark.parametrize("month", [0, 6, 12, 24, 60])

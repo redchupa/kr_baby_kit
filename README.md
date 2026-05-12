@@ -45,8 +45,9 @@
 - **D-day timestamp sensor** — Lovelace 카드에서 "D-14" 표시
 - "이번 달 접종 있음" binary_sensor → 월요일 아침 알림 자동화 1줄
 
-### 🩺 영유아 건강검진 7회
-- 보건복지부 표준 검진 시기 (4·9·18·30·42·54·66개월) 자동 노출
+### 🩺 영유아 건강검진 8회
+- 보건복지부 표준 검진 시기 (**생후 14~35일** + 4·9·18·30·42·54·66개월) 자동 노출
+- 2021-01-01 시행 초기 검진(생후 14~35일) 포함 — 신생아 부모도 놓치지 않음
 - 임박 시 알림 자동화 — 날짜 까먹을 일 없음
 
 ### 🏷️ 보육료 자동 매칭 (2026년)
@@ -192,7 +193,7 @@ A HACS integration that turns three measurement inputs (height, weight, head) in
 - 📏 LMS-based percentile sensors (height, weight) + BMI raw value
 - 🚨 Bi-directional `*_concern` binary alerts for head circumference, BMI, and weight-for-length (fires when statistical percentile leaves the 5–95 normal band)
 - 💉 Auto-computed vaccine calendar from KDCA NIP schedule + D-day `timestamp` sensors
-- 🩺 7-stage infant health checkup schedule (보건복지부)
+- 🩺 8-stage infant health checkup schedule (보건복지부 — early 14–35 day visit included since 2021)
 - 🏷️ Real 2026 childcare-tuition figures from the Ministry of Education
 - 🎙️ Per-child LLM API (Assist) for natural-language queries
 - 🌐 Fully offline — no API keys, all reference tables bundled

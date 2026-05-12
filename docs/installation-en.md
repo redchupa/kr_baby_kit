@@ -60,7 +60,7 @@ Sensors like `sensor.kr_baby_kit_<name>_height_percentile` refresh automatically
 - `calendar.kr_baby_kit_<name>_checkup`
 
 Each window is computed from the child's birthdate using the published KDCA NIP
-schedule and the standard 7-stage infant checkup schedule.
+schedule and the standard 8-stage infant checkup schedule (early 14–35 day visit included since 2021).
 
 ## 5-1. Childcare tuition sensors (v0.4.0a alpha)
 

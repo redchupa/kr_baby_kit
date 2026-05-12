@@ -4,6 +4,34 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.1] - 2026-05-13
+
+### Fixed (data correctness)
+
+- **영유아 건강검진 표준 일정 7회 → 8회.** 보건복지부가 2021-01-01부터 생후 14~35일 초기 검진을 정식 도입했는데 그동안 본 통합은 그 검진을 빠뜨리고 있었습니다. v0.8.1부터는:
+  - 1차 (신규): 생후 14~35일 — `window_min_month: 0.46`, `window_max_month: 1.15`
+  - 2차: 4~6개월 (기존 1차)
+  - 3차: 9~12개월 (기존 2차)
+  - 4차: 18~24개월 (기존 3차)
+  - 5차: 30~36개월 (기존 4차)
+  - 6차: 42~48개월 (기존 5차)
+  - 7차: 54~60개월 (기존 6차)
+  - 8차: 66~71개월 (기존 7차)
+- `name_ko` 표기가 모두 한 번씩 밀려납니다 (1차→2차, 2차→3차, …). 자녀가 이미 영유아 검진을 받고 있던 사용자는 통합이 노출하는 차수 이름이 달라진 것을 보게 됩니다 (의료기관·국민건강보험공단 시스템과 동일한 차수가 됩니다).
+- `data/health_checkup_schedule.json` 스키마 버전 2.
+
+### Docs
+
+- `docs/data-sources.md` §3 — 8회 표만 표시 + 2021-01-01 시행 보건복지부 보도자료 URL 추가.
+- README · info.md · PLAN.md — 모두 7회 → 8회 정정.
+
+### Other data verified accurate (2026-05 spot-check)
+
+- KDCA 2017 소아청소년 성장도표: 현재 공식 표준 (2027년 갱신본 개발 중 — 발표 시 다시 갱신 예정).
+- KDCA NIP 표준 예방접종 일정: 2025-01-20 sync 시점 이후 코어 일정 변경 없음 (인플루엔자 절기 변경분은 자동 적용).
+- 비만/저체중 임계: 학회 기준 < 5 / 5–85 정상 / 85–95 과체중 / ≥ 95 비만 — 본 통합의 5/95 양극단 알림은 보수적으로 안전 (과체중 단계는 `*_concern` attribute의 `summary_ko` 부연으로 안내).
+- BMI 적용 연령: 만 24개월 이상에만 BMI 백분위, 미만은 신장별 체중 — KDCA 권고와 일치.
+
 ## [0.8.0] - 2026-05-13
 
 ### Removed (BREAKING)

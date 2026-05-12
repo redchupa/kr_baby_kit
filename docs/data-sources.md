@@ -40,13 +40,28 @@ Z = ln(X / M) / S
   BCG(피내), HepB, DTaP, IPV, Hib, PCV, RV, MMR, VAR, HepA, IJEV/LJEV, HPV, IIV
 - **갱신 주기**: 매년 1~2월 질병관리청 갱신 시 본 레포 JSON 동기화 (CI에 일정 점검 작업 추가 예정).
 
-## 3. 영유아 건강검진 일정 (보건복지부 표준 7회 검진)
+## 3. 영유아 건강검진 일정 (보건복지부 표준 8회 검진)
 
 - **출처**: 보건복지부·국민건강보험공단 영유아 건강검진
-- **URL**: <https://www.nhis.or.kr/nhis/healthin/wbhabb02100m01.do>
+- **URL**:
+  - 국민건강보험 영유아 건강검진 안내: <https://www.nhis.or.kr/nhis/healthin/wbhabb02100m01.do>
+  - 검진일자 조회 / 문진표: <https://www.nhis.or.kr/nhis/healthin/retrieveInfntExmdDtInq.do>
+  - **2021-01-01 시행 — 영유아 초기(생후 14~35일) 검진 추가** 보건복지부 보도자료: <https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027&act=view&list_no=362391>
 - **라이선스**: 공공 정보 (공공누리 제1유형)
-- **사용 방식**: `data/health_checkup_schedule.json` — 7회 표준 검진 시기 (4-6개월, 9-12개월, 18-24개월, 30-36개월, 42-48개월, 54-60개월, 66-71개월).
-- **참고**: 시기는 권장 범위이며, 의료기관 예약은 별도.
+- **사용 방식**: `data/health_checkup_schedule.json` — 8회 표준 검진 시기:
+
+  | 차수 | 시기 |
+  |---|---|
+  | 1차 (초기) | 생후 14~35일 (2021-01-01 시행 추가) |
+  | 2차 | 4~6개월 |
+  | 3차 | 9~12개월 |
+  | 4차 | 18~24개월 |
+  | 5차 | 30~36개월 |
+  | 6차 | 42~48개월 |
+  | 7차 | 54~60개월 |
+  | 8차 | 66~71개월 |
+
+- **참고**: 시기는 권장 범위이며, 의료기관 예약은 별도. 2021년 이전 자료의 7회 일정과 다를 수 있으니 본 통합의 8회를 우선합니다.
 
 ## 4. 표준보육료 (Standard Childcare Tuition)
 
