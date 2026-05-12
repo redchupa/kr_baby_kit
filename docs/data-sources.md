@@ -53,11 +53,12 @@ Z = ln(X / M) / S
 - **출처 (2026)**: 교육부 「2026년도 보육사업안내 부록 2」 — 영유아보육료 지원금액 (부록 96쪽)
   - 발간등록번호: 11-1342000-100026-10
   - 시행: 2026년 1월 1일
-- **URL**:
-  - 원본 PDF (대전광역시 자료실 미러): <https://www.daejeon.go.kr/data/drh/sub05/2026_data_02.pdf>
-  - 교육부 누리집: <https://www.moe.go.kr/> (정책 > 영유아 보육·교육 > 보육사업안내)
-  - 중앙육아종합지원센터 자료실: <https://central.childcare.go.kr/ccef/community/data/DataSlPL.jsp?BBSGB=385>
-  - 어린이집 정보공개포털: <https://info.childcare.go.kr/>
+- **URL** (안정성 순):
+  1. **KDI 경제정책정보센터** (영구 보관, SSL 안정): <https://eiec.kdi.re.kr/policy/materialView.do?num=275569> — 2026년도 개정사항 안내
+  2. **교육부 누리집** (1차 출처, 게시판 URL 변동 가능): <https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=312> (정책 > 영유아 보육·교육)
+  3. **중앙육아종합지원센터 자료실**: <https://central.childcare.go.kr/ccef/community/data/DataSlPL.jsp?BBSGB=385>
+  4. **어린이집 정보공개포털**: <https://info.childcare.go.kr/>
+  5. 대전광역시 자료실 미러 (현재 번들 source_url): <https://www.daejeon.go.kr/data/drh/sub05/2026_data_02.pdf>
 - **정책 변경 안내 (유보통합)**: 2026년부터 어린이집·유치원 보육·교육 업무가 보건복지부에서 교육부로 이관되었습니다. 2025년 이전 자료는 보건복지부 고시(`www.mohw.go.kr`)에서, 2026년 이후 자료는 교육부 누리집에서 확인하십시오.
 - **라이선스**: 공공누리 제1유형 (출처 표시)
 - **사용 방식**: `data/care_tuition_kr.json` — 만 0~6세반 7개 연령구간에 대해 표준보육료 / 정부지원금 / 본인부담금(KRW)을 보유.
@@ -71,13 +72,16 @@ Z = ln(X / M) / S
   | 만 6세반 (취학유예 시) | 280,000 | 280,000 | 0 |
 
   *모든 연령 종일반(기본보육) 기준. 무상보육 대상이므로 본인부담금 0원. 연장보육료·24시간·다문화·장애아 가산은 미포함.*
-- **갱신 주기**: 매년 1월 (교육부 차년도 보육사업안내 발표 직후).
+- **갱신 주기**: 매년 1월 (교육부 차년도 보육사업안내 발표 직후 — 통상 12월 말 게시).
+- **자동 알림**: `.github/workflows/care_tuition_stale_check.yml` 이 매월 1일 cron 으로 `_meta.data_year` 가 현재 연도 미만이면 GitHub Issue를 자동 생성합니다 (라벨 `data-stale`). 동일 라벨 issue가 이미 열려있으면 중복 생성하지 않습니다.
 - **갱신 절차**:
-  1. 교육부 누리집에서 차년도 「보육사업안내 부록」 PDF 다운로드
-  2. 부록 96쪽 "❙보육료 지원금액❙" 표 7행 확인
+  1. 위 URL 우선순위에 따라 차년도 「보육사업안내 부록」 PDF 또는 KDI 개정사항 안내 입수
+  2. "❙보육료 지원금액❙" 표 7행 (만 0~6세반) 확인
   3. `data/care_tuition_kr.json` 의 `_meta.data_year`, `_meta.source_url`, `_meta.publication_number`, `_meta.effective_from` 갱신 + 각 tier의 3개 숫자 필드 교체
-  4. `python scripts/check_care_tuition.py --strict` 통과 확인
-  5. `python -m pytest tests/test_care_tuition.py` 의 `data_year` assertion 도 차년도로 동기화
+  4. **단가가 전년과 동일하면** `_meta` 메타데이터만 갱신해도 OK (tier 숫자 그대로)
+  5. `python scripts/check_care_tuition.py --strict` 통과 확인
+  6. `python -m pytest tests/test_care_tuition.py` 의 `data_year` assertion 도 차년도로 동기화
+  7. release-checklist.md §1~§6 워크플로로 release/vX.Y.Z 브랜치 + tag publish
 
 ---
 
@@ -100,4 +104,4 @@ Z = ln(X / M) / S
 - 성장도표: `질병관리청 2017 소아청소년 성장도표`
 - 예방접종: `질병관리청 표준 예방접종 일정`
 - 영유아 검진: `보건복지부 영유아 건강검진`
-- 보육료: `보건복지부 표준보육료 / 정부지원 보육료 고시` (alpha — placeholder values)
+- 보육료: `교육부 「YYYY년도 보육사업안내」 부록 — 영유아보육료 지원금액` (2026년부터 유보통합으로 보건복지부 → 교육부)

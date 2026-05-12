@@ -50,18 +50,30 @@ git grep "your-github-username"   # → 결과 없어야 함
 > release 브랜치는 그 grep을 우회하거나, 본인 핸들을 grep 화이트리스트에
 > 추가해야 합니다.
 
-## 2. 보육료 데이터 (v0.4.0a → v0.4.0 정식)
+## 2. 보육료 데이터 (매년 1월 갱신)
 
-본 레포는 `_meta.data_year: 0` + 모든 amount `0`으로 출시됩니다. 정식 사용
-전 다음을 수행:
+v0.4.0부터 「2026년도 보육사업안내」 실측 단가가 번들됩니다. 매년
+1월 차년도 단가 발표 시 다음 절차:
 
-1. 보건복지부 공식 발표 또는
-   [어린이집 정보공개포털](https://info.childcare.go.kr/) 에서 해당 연도
-   표준보육료 / 정부지원 보육료 / 본인부담금 확인.
+### 출처 우선순위 (안정성 순)
+
+1. **KDI 경제정책정보센터** (영구 보관, SSL 안정) — <https://eiec.kdi.re.kr/policy/materialView.do?num=275569> 또는 차년도 동등 게시물
+2. **교육부 누리집** (1차 출처) — <https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=312>
+3. **중앙육아종합지원센터** — <https://central.childcare.go.kr/ccef/community/data/DataSlPL.jsp?BBSGB=385>
+4. 어린이집 정보공개포털: <https://info.childcare.go.kr/>
+5. 지자체 자료실 미러 (대전·인천 등 — 현재 번들 source_url이 여기 해당)
+
+### 갱신 절차
+
+1. 위 1~3 출처에서 차년도 「보육사업안내 부록」 PDF 또는 개정사항 안내 입수.
 2. `custom_components/kr_baby_kit/data/care_tuition_kr.json` 편집:
-   - `_meta.data_year` → 해당 연도 (예: `2025`)
-   - 각 `tiers[].standard_tuition` / `government_subsidy` / `parent_share` → 고시 금액 (단위 원)
-3. **검증**:
+   - `_meta.data_year` → 해당 연도 (예: `2027`)
+   - `_meta.source_url` → 위 출처 URL (KDI 영구보관 권장)
+   - `_meta.publication_number` → 발간등록번호
+   - `_meta.effective_from` → 해당 연도 1월 1일
+   - 각 `tiers[].standard_tuition` / `government_subsidy` / `parent_share` 갱신
+3. **단가가 전년 대비 동일하면** `_meta` 만 갱신해도 OK (tier 숫자 변경 없음).
+4. **검증**:
 
    ```bash
    python scripts/check_care_tuition.py --strict
@@ -70,14 +82,22 @@ git grep "your-github-username"   # → 결과 없어야 함
    기대 출력:
 
    ```
-   care_tuition sanity check OK - 7 tiers, data_year=2025 (REAL).
+   care_tuition sanity check OK - 7 tiers, data_year=2027 (REAL).
    ```
 
-   `--strict` 플래그는 placeholder 모드(`data_year == 0`)를 실패로
-   취급하므로, 실 수치 정확성을 보장합니다. 추가로:
+   `--strict` 플래그는 placeholder 모드(`data_year == 0`)와 zero amount를 실패로
+   취급합니다. 추가로:
    - 만 0~6세반 7개 tier 모두 존재
    - 월령 범위 `0..83` 빈틈 없이 커버
-   - `parent_share + government_subsidy == standard_tuition` (차액이 있다면 `_meta._note`에 사유 기재)
+   - `parent_share + government_subsidy == standard_tuition` (차액 있다면 `_meta._note` 에 사유 기재)
+5. `tests/test_care_tuition.py` 의 `data_year` assertion 을 차년도로 동기화.
+
+### 자동 알림
+
+`.github/workflows/care_tuition_stale_check.yml` 이 매월 1일 cron 으로
+`_meta.data_year` 가 현재 연도보다 작으면 GitHub Issue 를 자동 생성합니다
+(라벨 `data-stale`). 동일 라벨 이슈가 이미 열려있으면 중복 생성하지 않으니
+사용자는 issue 알림만 보고 위 갱신 절차를 따르면 됩니다.
 
 ## 3. 로컬 검증
 
