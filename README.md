@@ -105,8 +105,6 @@ Home Assistant 화면에서:
 >
 > 자녀가 둘 이상이라면? 통합 추가를 한 번 더 하시면 됩니다.
 
-📖 화면 캡처 포함 자세한 가이드 → [docs/installation-ko.md](docs/installation-ko.md)
-
 ---
 
 ## 📊 등록 후 대시보드에서 보이는 것들
