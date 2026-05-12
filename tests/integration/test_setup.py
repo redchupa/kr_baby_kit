@@ -129,9 +129,11 @@ async def test_record_measurement_updates_height_percentile(
     state = hass.states.get(height_entity)
     assert state is not None
     assert state.state not in ("unknown", "unavailable", None)
-    # KDCA 60-month male median ≈ 109.6 cm — 110 cm should be near 50th.
-    pct = float(state.state)
-    assert 30.0 <= pct <= 80.0, f"unexpected percentile {pct}"
+    # KDCA 60-month male median ≈ 109.6 cm. 110 cm sits a bit above median,
+    # so the rank-percent sensor value (v0.6.0: 100 - statistical_percentile)
+    # should fall in roughly 20–70.
+    rank = float(state.state)
+    assert 20.0 <= rank <= 70.0, f"unexpected rank {rank}"
 
 
 async def test_number_set_value_records_measurement(hass: HomeAssistant) -> None:

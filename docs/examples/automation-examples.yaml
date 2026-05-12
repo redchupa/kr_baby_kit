@@ -21,19 +21,21 @@
           ({{ state_attr('binary_sensor.kr_baby_kit_baby_a_upcoming_vaccines_due_this_month', 'next').dose }}차)
           접종 시기입니다. 참고용 정보이며 의료기관과 일정 확인 바랍니다.
 
-# 2. 키 백분위가 3% 미만으로 떨어진 경우 (참고 — 의학적 판단은 의사에게)
+# 2. 키가 또래 하위에 가까울 때 (rank > 97%, 즉 또래 위쪽 97%가 더 큼) 알림
+#    v0.6.0부터 sensor 값은 등수%(rank): 큰 키 = 작은 숫자, 작은 키 = 큰 숫자.
+#    의학 판단은 의사에게.
 - alias: 성장 백분위 변동 알림
   trigger:
     - platform: numeric_state
       entity_id: sensor.kr_baby_kit_baby_a_height_percentile
-      below: 3
+      above: 97
   action:
     - service: notify.mobile_app
       data:
         title: "성장곡선 참고 알림"
         message: >-
-          현재 키 백분위가 {{ states('sensor.kr_baby_kit_baby_a_height_percentile') }}% 입니다.
-          참고용이며 의료기관 진료를 통해 확인하세요.
+          현재 키가 또래 상위 {{ states('sensor.kr_baby_kit_baby_a_height_percentile') }}%
+          (또래보다 작은 편)입니다. 참고용이며 의료기관 진료를 통해 확인하세요.
 
 # 3. 다음 영유아 검진이 14일 이내가 되면 알림
 #    next_checkup 은 TIMESTAMP 센서이므로 (next - now) 로 직접 비교할 수 있다.
@@ -57,7 +59,7 @@
           - 시작일: {{ state_attr('sensor.kr_baby_kit_baby_a_next_checkup', 'window_start') }}
           참고용 정보입니다. 건강검진 기관과 일정 확인 바랍니다.
 
-# 4. BMI 백분위가 5% 미만 또는 95% 초과인 경우 (참고용)
+# 4. BMI 양극단 (rank 5 미만 = BMI 큼·비만 경향 · rank 95 초과 = BMI 작음·저체중 경향)
 #    KDCA BMI 기준은 24개월부터 적용되므로, 만 2세 미만은 신장별 체중 백분위를 보세요.
 - alias: BMI 백분위 양극단 참고 알림
   trigger:
@@ -72,7 +74,7 @@
       data:
         title: "BMI 참고 알림"
         message: >-
-          현재 BMI 백분위: {{ states('sensor.kr_baby_kit_baby_a_bmi_percentile') }}%
+          현재 BMI 또래 상위 {{ states('sensor.kr_baby_kit_baby_a_bmi_percentile') }}%
           (BMI {{ state_attr('sensor.kr_baby_kit_baby_a_bmi_percentile', 'value') }}).
           소아청소년과 진료를 통해 확인하세요.
 

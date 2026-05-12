@@ -56,12 +56,18 @@ class BabyKitCoordinator(DataUpdateCoordinator):
             z, pct = self.chart.percentile(
                 self.child_sex, kind, age_m, float(last[kind])
             )
+            rank = top_percent(pct)  # 100 - statistical pct, "where in the top N% the child sits"
             percentiles[kind] = {
                 "value": float(last[kind]),
                 "measured_at": last["date"],
                 "z_score": z,
-                "percentile": pct,
-                "top_percent": top_percent(pct),
+                # "percentile" is the user-facing rank (big raw value → small number).
+                # The KDCA statistical percentile (big raw value → big number) is
+                # preserved as "statistical_percentile" for templates that still
+                # want the textbook form.
+                "percentile": rank,
+                "statistical_percentile": pct,
+                "top_percent": rank,
                 "summary_ko": format_summary_ko(kind, pct),
             }
 
@@ -82,12 +88,14 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                         self.child_sex, "bmi", age_m, bmi_raw
                     )
                     if pct is not None:
+                        rank = top_percent(pct)
                         percentiles["bmi"] = {
                             "value": bmi_raw,
                             "measured_at": bmi_measured_at,
                             "z_score": z,
-                            "percentile": pct,
-                            "top_percent": top_percent(pct),
+                            "percentile": rank,
+                            "statistical_percentile": pct,
+                            "top_percent": rank,
                             "summary_ko": format_summary_ko("bmi", pct),
                         }
 
@@ -99,13 +107,15 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                 self.child_sex, age_m, h, w
             )
             if pct is not None:
+                rank = top_percent(pct)
                 weight_for_length = {
                     "length_cm": h,
                     "weight_kg": w,
                     "band": band,
                     "z_score": z,
-                    "percentile": pct,
-                    "top_percent": top_percent(pct),
+                    "percentile": rank,
+                    "statistical_percentile": pct,
+                    "top_percent": rank,
                     "summary_ko": format_summary_ko("weight_for_length", pct),
                     "measured_at": max(
                         h_record["date"], w_record["date"]

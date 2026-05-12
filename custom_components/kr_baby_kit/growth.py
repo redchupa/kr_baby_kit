@@ -220,25 +220,28 @@ def top_percent(percentile: float | None) -> float | None:
 
 
 def format_summary_ko(kind: str, percentile: float | None) -> str | None:
-    """One-line Korean summary aligned with the sensor's raw percentile.
+    """One-line Korean summary expressed as a rank ("좋은 등수일수록 작은 숫자").
 
-    The number shown to the user is always the statistical percentile itself
-    (so a sensor reading of 95 shows "백분위 95" in the summary, never "5"),
-    and the direction is conveyed by a label-specific adjective.
+    The number in the summary is the rank percent (``100 - percentile``), the
+    same value the sensor's native_value now reports — so a tall child reads
+    "또래 상위 5%" (rank 5), a small child reads "또래 상위 90%" (rank 90),
+    and the dashboard number always matches the sensor reading.
+
+    Direction is reinforced by a metric-specific adjective so users don't
+    have to mentally invert numbers (e.g. 90% rank for height = 작은 편).
 
     Examples:
-        format_summary_ko("height", 94.7) == "키: 또래보다 큰 편 (백분위 94.7)"
-        format_summary_ko("weight", 12.5) == "몸무게: 또래보다 적게 나가는 편 (백분위 12.5)"
-        format_summary_ko("bmi", 50.0)    == "BMI: 또래 평균 수준 (백분위 50.0)"
+        format_summary_ko("height", 94.7) == "키: 또래 상위 5.3% (큰 편)"
+        format_summary_ko("weight", 12.5) == "몸무게: 또래 상위 87.5% (적게 나가는 편)"
+        format_summary_ko("bmi", 50.0)    == "BMI: 또래 평균 수준"
         format_summary_ko("height", None) == None
     """
     if percentile is None:
         return None
     label = _KIND_LABEL_KO.get(kind, kind)
-    pct = round(float(percentile), 1)
     if 45.0 <= percentile <= 55.0:
-        return f"{label}: 또래 평균 수준 (백분위 {pct})"
+        return f"{label}: 또래 평균 수준"
+    rank = round(max(0.0, 100.0 - float(percentile)), 1)
     high, low = _KIND_ADJECTIVES_KO.get(kind, ("높은", "낮은"))
-    if percentile > 55.0:
-        return f"{label}: 또래보다 {high} 편 (백분위 {pct})"
-    return f"{label}: 또래보다 {low} 편 (백분위 {pct})"
+    direction = high if percentile > 55.0 else low
+    return f"{label}: 또래 상위 {rank}% ({direction} 편)"

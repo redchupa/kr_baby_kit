@@ -4,6 +4,28 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.6.0] - 2026-05-13
+
+### Changed (BREAKING — sensor numeric value meaning is inverted)
+
+- **All percentile sensors now report a rank percent (`100 - statistical_percentile`) instead of the KDCA statistical percentile.** A tall child now shows a *small* number ("키 위치 = 5") and a small child shows a *large* number ("키 위치 = 90"), matching the school-ranking intuition the user expects.
+- Affected sensors: `<child>_height_percentile`, `_weight_percentile`, `_head_percentile`, `_bmi_percentile`, `_weight_for_length_percentile`.
+- `summary_ko` is rewritten to reuse the same rank number ("키: 또래 상위 5.3% (큰 편)" / "키: 또래 상위 95.0% (작은 편)" / "키: 또래 평균 수준"), so the on-card text and the sensor value never disagree.
+- The original KDCA statistical percentile is preserved as a new attribute `statistical_percentile` for users who want the textbook form in their own templates.
+- `top_percent` attribute is kept (same numeric value as the new `native_value`); existing templates that read `top_percent` continue to work unchanged.
+
+### Automation example impact
+
+- `docs/examples/automation-examples.yaml` updated:
+  - Example #2 (small-stature alert): `below: 3` → `above: 97` to preserve the original "kid is short" intent under the inverted scale.
+  - Example #4 (BMI extremes): threshold values unchanged (5 / 95) but the *meaning* flipped — `below: 5` now flags an unusually **high** BMI (비만 경향), `above: 95` flags an unusually **low** BMI (저체중 경향). The dual-threshold alert keeps catching both ends as before.
+- Any automation users wrote against v0.4.0 / v0.5.0 percentile sensors needs the same flip. There are no on-disk migrations because `unique_id` is unchanged.
+
+### Notes
+
+- KDCA reference tables are not changed; the inversion is purely a display-layer decision so dashboard numbers behave like rankings (smaller = better-ranked for height, etc.).
+- No bundled-data changes; care_tuition `data_year` still 2026; stale-check cron untouched.
+
 ## [0.5.0] - 2026-05-12
 
 ### Changed
