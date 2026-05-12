@@ -1,9 +1,9 @@
 # 한국 영유아 키트 (Korean Baby Kit)
 
-[![Validate](https://github.com/your-github-username/kr_baby_kit/actions/workflows/hassfest.yml/badge.svg)](https://github.com/your-github-username/kr_baby_kit/actions/workflows/hassfest.yml)
-[![Tests](https://github.com/your-github-username/kr_baby_kit/actions/workflows/test.yml/badge.svg)](https://github.com/your-github-username/kr_baby_kit/actions/workflows/test.yml)
+[![Validate](https://github.com/redchupa/kr_baby_kit/actions/workflows/hassfest.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/hassfest.yml)
+[![Tests](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Release](https://img.shields.io/github/v/release/your-github-username/kr_baby_kit?include_prereleases&label=release)](https://github.com/your-github-username/kr_baby_kit/releases)
+[![Release](https://img.shields.io/github/v/release/redchupa/kr_baby_kit?include_prereleases&label=release)](https://github.com/redchupa/kr_baby_kit/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > Home Assistant 통합 — 한국 영유아 데이터를 HA로. 성장곡선·예방접종·검진 일정.
@@ -32,7 +32,7 @@
 
 ```yaml
 HACS → Integrations → ⋮ → Custom repositories
-URL: https://github.com/your-github-username/kr_baby_kit
+URL: https://github.com/redchupa/kr_baby_kit
 Category: Integration
 ```
 
