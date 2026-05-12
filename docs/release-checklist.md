@@ -18,16 +18,17 @@ git checkout -b release/v<version>
 
 ## 1. GitHub username placeholder 치환 (모든 fork 공통)
 
-다음 4개 파일에서 `your-github-username`을 본인 GitHub 핸들로 일괄 치환:
+다음 3개 파일에서 `your-github-username`을 본인 GitHub 핸들로 일괄 치환:
 
 ```bash
 git grep -l "your-github-username"
-# Expected matches (정확히 4개):
+# Expected matches (정확히 3개):
 #   custom_components/kr_baby_kit/manifest.json   (codeowners + documentation + issue_tracker)
-#   README.md                                     (배지 3개 + 설치 URL 1개)
-#   docs/installation-ko.md
-#   docs/installation-en.md
+#   docs/installation-ko.md                       (Custom Repositories URL)
+#   docs/installation-en.md                       (Custom Repositories URL)
 ```
+
+> 📝 **README는 placeholder 정책 제외 (v0.8.2+).** GitHub repo 페이지의 첫 인상이라 badge 이미지가 깨지면 사용자 신뢰도가 떨어집니다. main의 README는 `redchupa` 핸들로 박혀 출시되며, fork 사용자는 본인 fork에서 README를 한 번 grep-replace 하면 됩니다.
 
 PowerShell 일괄 치환 예시:
 
@@ -158,9 +159,13 @@ Repository 사용자에게 자동으로 노출됩니다.
 
 ## 부록: placeholder 모드를 main에 유지하는 이유
 
-- **GitHub username**: 본인의 보안 가드(`CLAUDE.md` §보안가드)가 본인
-  실명·핸들 노출을 금지. main이 placeholder이면 fork 사용자나 다른
-  부모도 본인 fork에 자기 username만 채워 사용 가능.
+- **GitHub username (manifest + 설치 docs)**: 본인의 보안 가드(`CLAUDE.md`
+  §보안가드)가 본인 실명·핸들 노출을 금지. main이 placeholder이면
+  fork 사용자나 다른 부모도 본인 fork에 자기 username만 채워 사용 가능.
+- **예외 — README는 redchupa로 박혀 출시** (v0.8.2+): GitHub repo 페이지의
+  첫 인상이라 badge URL이 placeholder면 이미지가 깨져 사용자 신뢰도가
+  떨어집니다. fork 사용자는 본인 fork에서 README를 grep-replace 한 번
+  하면 됩니다.
 - **보육료 zero**: 매년 보건복지부 고시가 갱신되므로 영구 유효한 값이
   존재하지 않음. zero placeholder를 두면 잘못된 옛 수치를 노출할 위험이
   사라지고, 사용자가 갱신을 잊으면 sensor가 명시적으로 `Unknown`을
