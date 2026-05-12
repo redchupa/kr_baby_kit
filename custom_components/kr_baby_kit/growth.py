@@ -206,42 +206,93 @@ _KIND_ADJECTIVES_KO: dict[str, tuple[str, str]] = {
 }
 
 
-def top_percent(percentile: float | None) -> float | None:
-    """Convert a statistical percentile to a user-facing "top N%" figure.
+# Metrics where "bigger raw value" maps to "better rank" — i.e. the school-rank
+# intuition (큰 키 = 작은 sensor 값) applies cleanly. The remaining metrics
+# (head circumference, BMI, weight-for-length) are bi-directionally concerning:
+# both ends warrant clinical follow-up, so the sensor value stays as the KDCA
+# statistical percentile, with "around 50" meaning "normal".
+_KIND_FAVORS_HIGH: frozenset[str] = frozenset({"height", "weight"})
 
-    A statistical 95th percentile means the child is at or above 95% of the
-    reference population - i.e. top 5%. Kept as an attribute for users who
-    prefer the inverted form; the human-readable summary uses the raw
-    percentile so dashboard numbers match the sensor value.
+# Beyond these statistical thresholds, the user-facing summary appends a
+# 진료 참고 nudge for bi-directional metrics.
+_CLINICAL_LOW_PCT: float = 5.0
+_CLINICAL_HIGH_PCT: float = 95.0
+
+
+def top_percent(percentile: float | None) -> float | None:
+    """Convert a statistical percentile to its complement (100 - pct).
+
+    Retained for backward compatibility with templates that read the
+    `top_percent` attribute. Note: for bi-directionally concerning metrics
+    (head/BMI/weight_for_length) the sensor's native_value is the KDCA
+    statistical percentile, so `top_percent` won't equal that sensor value
+    for those metrics — use the `statistical_percentile` attribute (or
+    the sensor's native value directly) to read the raw position.
     """
     if percentile is None:
         return None
     return round(max(0.0, 100.0 - float(percentile)), 1)
 
 
+def rank_percent(kind: str, percentile: float | None) -> float | None:
+    """User-facing sensor value for percentile-style sensors.
+
+    For metrics where the user expects "bigger raw = better rank"
+    (height, weight): returns 100 - statistical_percentile so a tall
+    child reads ~5 (좋은 등수). For bi-directionally concerning metrics
+    (head/BMI/weight_for_length): returns the KDCA statistical percentile
+    unchanged, so "around 50" means "normal" and both ends signal
+    clinical follow-up.
+    """
+    if percentile is None:
+        return None
+    if kind in _KIND_FAVORS_HIGH:
+        return round(max(0.0, 100.0 - float(percentile)), 1)
+    return round(float(percentile), 1)
+
+
 def format_summary_ko(kind: str, percentile: float | None) -> str | None:
-    """One-line Korean summary expressed as a rank ("좋은 등수일수록 작은 숫자").
+    """One-line Korean summary aligned with the sensor's native value.
 
-    The number in the summary is the rank percent (``100 - percentile``), the
-    same value the sensor's native_value now reports — so a tall child reads
-    "또래 상위 5%" (rank 5), a small child reads "또래 상위 90%" (rank 90),
-    and the dashboard number always matches the sensor reading.
+    Two summary shapes depending on the metric's favorable direction:
 
-    Direction is reinforced by a metric-specific adjective so users don't
-    have to mentally invert numbers (e.g. 90% rank for height = 작은 편).
+    * Height / weight (favors-high): "{label}: 또래 상위 {rank}% ({direction} 편)".
+      rank = 100 - statistical_percentile, so a tall/heavy child reads
+      a small number ("키: 또래 상위 5% (큰 편)") and matches the sensor.
+
+    * Head / BMI / weight-for-length (bi-directional): the summary reports
+      the statistical percentile itself ("머리둘레: 또래 평균 50% — 정상 범위"
+      or "BMI: 또래 상위 4% (큰 편, 진료 참고)") because both ends are
+      clinically meaningful; the sensor stays on the KDCA value so 50 ≈ normal.
 
     Examples:
         format_summary_ko("height", 94.7) == "키: 또래 상위 5.3% (큰 편)"
         format_summary_ko("weight", 12.5) == "몸무게: 또래 상위 87.5% (적게 나가는 편)"
-        format_summary_ko("bmi", 50.0)    == "BMI: 또래 평균 수준"
+        format_summary_ko("head", 50.0)   == "머리둘레: 또래 평균 수준 (정상 범위)"
+        format_summary_ko("head", 97.0)   == "머리둘레: 또래 상위 3.0% (큰 편, 진료 참고)"
+        format_summary_ko("bmi", 3.0)     == "BMI: 또래 하위 3.0% (작은 편, 진료 참고)"
         format_summary_ko("height", None) == None
     """
     if percentile is None:
         return None
     label = _KIND_LABEL_KO.get(kind, kind)
-    if 45.0 <= percentile <= 55.0:
-        return f"{label}: 또래 평균 수준"
-    rank = round(max(0.0, 100.0 - float(percentile)), 1)
+    pct = float(percentile)
     high, low = _KIND_ADJECTIVES_KO.get(kind, ("높은", "낮은"))
-    direction = high if percentile > 55.0 else low
-    return f"{label}: 또래 상위 {rank}% ({direction} 편)"
+
+    if kind in _KIND_FAVORS_HIGH:
+        if 45.0 <= pct <= 55.0:
+            return f"{label}: 또래 평균 수준"
+        rank = round(max(0.0, 100.0 - pct), 1)
+        direction = high if pct > 55.0 else low
+        return f"{label}: 또래 상위 {rank}% ({direction} 편)"
+
+    # bi-directional metric — sensor value is the KDCA statistical percentile.
+    if 45.0 <= pct <= 55.0:
+        return f"{label}: 또래 평균 수준 (정상 범위)"
+    clinical = pct < _CLINICAL_LOW_PCT or pct > _CLINICAL_HIGH_PCT
+    suffix = ", 진료 참고" if clinical else ""
+    if pct > 55.0:
+        rank = round(max(0.0, 100.0 - pct), 1)
+        return f"{label}: 또래 상위 {rank}% ({high} 편{suffix})"
+    rank = round(pct, 1)
+    return f"{label}: 또래 하위 {rank}% ({low} 편{suffix})"

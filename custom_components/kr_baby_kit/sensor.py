@@ -19,10 +19,10 @@ from .device import child_device
 
 
 _KIND_LABELS = {
-    "height": ("백분위 · 키", "Height percentile"),
-    "weight": ("백분위 · 몸무게", "Weight percentile"),
-    "head": ("백분위 · 머리둘레", "Head circumference percentile"),
-    "bmi": ("백분위 · BMI", "BMI percentile"),
+    "height": ("백분위 · 키 (작을수록 큼)", "Height percentile (small number = taller)"),
+    "weight": ("백분위 · 몸무게 (작을수록 무거움)", "Weight percentile (small number = heavier)"),
+    "head": ("백분위 · 머리둘레 (50 부근=정상)", "Head circumference percentile (≈50 normal)"),
+    "bmi": ("백분위 · BMI (50 부근=정상)", "BMI percentile (≈50 normal)"),
 }
 
 
@@ -142,7 +142,7 @@ class WeightForLengthSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity)
     """
 
     _attr_has_entity_name = True
-    _attr_name = "백분위 · 신장별 몸무게"
+    _attr_name = "백분위 · 신장별 몸무게 (50 부근=정상)"
     _attr_native_unit_of_measurement = "%"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_attribution = ATTRIBUTION

@@ -59,7 +59,9 @@
           - 시작일: {{ state_attr('sensor.kr_baby_kit_baby_a_next_checkup', 'window_start') }}
           참고용 정보입니다. 건강검진 기관과 일정 확인 바랍니다.
 
-# 4. BMI 양극단 (rank 5 미만 = BMI 큼·비만 경향 · rank 95 초과 = BMI 작음·저체중 경향)
+# 4. BMI 양극단 (v0.7.0+: BMI sensor 값 = KDCA 통계 percentile, 50 부근=정상)
+#    - below: 5  → BMI 또래 하위 5% 미만 = 저체중 경향
+#    - above: 95 → BMI 또래 상위 5% 초과 = 비만 경향
 #    KDCA BMI 기준은 24개월부터 적용되므로, 만 2세 미만은 신장별 체중 백분위를 보세요.
 - alias: BMI 백분위 양극단 참고 알림
   trigger:
@@ -74,7 +76,7 @@
       data:
         title: "BMI 참고 알림"
         message: >-
-          현재 BMI 또래 상위 {{ states('sensor.kr_baby_kit_baby_a_bmi_percentile') }}%
+          현재 BMI 또래 백분위 {{ states('sensor.kr_baby_kit_baby_a_bmi_percentile') }}%
           (BMI {{ state_attr('sensor.kr_baby_kit_baby_a_bmi_percentile', 'value') }}).
           소아청소년과 진료를 통해 확인하세요.
 

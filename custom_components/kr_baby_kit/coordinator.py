@@ -17,7 +17,7 @@ from .const import (
     TZ_ASIA_SEOUL,
 )
 from .care_tuition import TuitionTier, tuition_for_age_months
-from .growth import GrowthChart, age_months, format_summary_ko, top_percent
+from .growth import GrowthChart, age_months, format_summary_ko, rank_percent
 from .schedule import (
     project_checkup_events,
     project_vaccine_events,
@@ -56,18 +56,19 @@ class BabyKitCoordinator(DataUpdateCoordinator):
             z, pct = self.chart.percentile(
                 self.child_sex, kind, age_m, float(last[kind])
             )
-            rank = top_percent(pct)  # 100 - statistical pct, "where in the top N% the child sits"
+            rank = rank_percent(kind, pct)
             percentiles[kind] = {
                 "value": float(last[kind]),
                 "measured_at": last["date"],
                 "z_score": z,
-                # "percentile" is the user-facing rank (big raw value → small number).
-                # The KDCA statistical percentile (big raw value → big number) is
-                # preserved as "statistical_percentile" for templates that still
-                # want the textbook form.
+                # "percentile" is the user-facing sensor value. For metrics
+                # that favor a single direction (height, weight) this is the
+                # rank percent (big raw → small number). For bi-directional
+                # metrics (head, bmi, weight_for_length) this stays as the
+                # KDCA statistical percentile so 50 means "normal".
                 "percentile": rank,
                 "statistical_percentile": pct,
-                "top_percent": rank,
+                "top_percent": round(max(0.0, 100.0 - pct), 1) if pct is not None else None,
                 "summary_ko": format_summary_ko(kind, pct),
             }
 
@@ -88,14 +89,14 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                         self.child_sex, "bmi", age_m, bmi_raw
                     )
                     if pct is not None:
-                        rank = top_percent(pct)
+                        rank = rank_percent("bmi", pct)
                         percentiles["bmi"] = {
                             "value": bmi_raw,
                             "measured_at": bmi_measured_at,
                             "z_score": z,
                             "percentile": rank,
                             "statistical_percentile": pct,
-                            "top_percent": rank,
+                            "top_percent": round(max(0.0, 100.0 - pct), 1),
                             "summary_ko": format_summary_ko("bmi", pct),
                         }
 
@@ -107,7 +108,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                 self.child_sex, age_m, h, w
             )
             if pct is not None:
-                rank = top_percent(pct)
+                rank = rank_percent("weight_for_length", pct)
                 weight_for_length = {
                     "length_cm": h,
                     "weight_kg": w,
@@ -115,7 +116,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                     "z_score": z,
                     "percentile": rank,
                     "statistical_percentile": pct,
-                    "top_percent": rank,
+                    "top_percent": round(max(0.0, 100.0 - pct), 1),
                     "summary_ko": format_summary_ko("weight_for_length", pct),
                     "measured_at": max(
                         h_record["date"], w_record["date"]

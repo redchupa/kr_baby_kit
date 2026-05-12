@@ -4,6 +4,40 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.7.0] - 2026-05-13
+
+### Changed
+
+- **Percentile sensors split into two display conventions** per the metric's clinical favorable direction:
+  - `<child>_height_percentile`, `<child>_weight_percentile` — still **rank**: `100 - statistical_percentile`. A tall / heavy child shows a small number (~5), matching the school-rank intuition. ✅ unchanged from v0.6.0.
+  - `<child>_head_percentile`, `<child>_bmi_percentile`, `<child>_weight_for_length_percentile` — sensor value now reports the **KDCA statistical percentile directly** (50 ≈ 정상, < 5 / > 95 = 양극단 진료 신호). These are bi-directionally concerning metrics; the single-direction rank scheme from v0.6.0 hid that.
+- `statistical_percentile` attribute remains everywhere for templates that want the textbook value regardless of which display convention the sensor uses.
+- `top_percent` attribute is preserved as `100 - statistical_percentile` everywhere (its historical meaning) — note that it now diverges from the sensor's native_value for head / BMI / weight-for-length.
+
+### Friendly names now self-document the direction
+
+Parenthesized hints added so dashboard users can read the sensor without re-checking docs:
+
+- `백분위 · 키 (작을수록 큼)`
+- `백분위 · 몸무게 (작을수록 무거움)`
+- `백분위 · 머리둘레 (50 부근=정상)`
+- `백분위 · BMI (50 부근=정상)`
+- `백분위 · 신장별 몸무게 (50 부근=정상)`
+
+### Summary phrasing
+
+- Height / weight: unchanged from v0.6.0 — `"키: 또래 상위 5.3% (큰 편)"`.
+- Head / BMI / weight-for-length: `"머리둘레: 또래 평균 수준 (정상 범위)"`, `"머리둘레: 또래 상위 3.0% (큰 편, 진료 참고)"`, `"BMI: 또래 하위 4.0% (작은 편, 진료 참고)"`. The `진료 참고` nudge appears once the statistical percentile leaves the 5–95 normal band.
+
+### Automation example impact
+
+- Example #4 (BMI 양극단) — thresholds (`below: 5`, `above: 95`) are unchanged but **regain their pre-v0.6.0 meaning**: `below: 5` flags **저체중**, `above: 95` flags **비만**. Comments updated.
+- Example #2 (small-stature alert) stays at `above: 97` from v0.6.0 — height still uses the rank scheme.
+
+### Why
+
+User clarified that the original "smaller head = better" intuition was an adult-aesthetic call, not a clinical one. Head circumference is bi-directionally concerning (microcephaly < 5 percentile, macrocephaly > 95 percentile), and the same holds for BMI and weight-for-length. v0.7.0 keeps the school-rank UX for the two metrics where it's medically safe (height / weight) and restores the clinical convention everywhere else.
+
 ## [0.6.0] - 2026-05-13
 
 ### Changed (BREAKING — sensor numeric value meaning is inverted)
