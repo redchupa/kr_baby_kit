@@ -4,6 +4,23 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.8] - 2026-05-13
+
+### Removed
+
+- **License badge removed from the README** for good. Two prior attempts didn't stick in the HACS UI:
+  - v0.8.5 dropped the shields.io URL (broken by adblock-style filters)
+  - v0.8.6 self-hosted as SVG (broken by `raw.githubusercontent.com`'s `CSP: sandbox` header)
+  - v0.8.7 self-hosted as PNG (still broken for the reporting user — likely a stale HACS-side cache that re-fetch / redownload didn't clear)
+
+  HACS's own README rendering has well-documented image-handling quirks ([hacs/integration#4787 — "Relative image paths in README are stripped out"](https://github.com/hacs/integration/issues/4787), [hacs/integration#3362 — "Validation images failed"](https://github.com/hacs/integration/issues/3362), [catppuccin/home-assistant#52 — README images don't display in HACS](https://github.com/catppuccin/home-assistant/issues/52)) that the HACS team has marked as "not planned". After three rounds of trying to make the License badge render reliably in HACS UI, removing it is the pragmatic outcome.
+
+- The license information stays in [the LICENSE file](LICENSE) and in the **📜 라이선스** section near the bottom of the README — both with stable text links, no images.
+
+- `images/license-badge.png` and `images/license-badge.svg` artefacts are also no longer needed; they're left in the repo for now as cheap historical evidence rather than re-rewriting git history.
+
+No code, schema, or behavior changes.
+
 ## [0.8.7] - 2026-05-13
 
 ### Docs only
