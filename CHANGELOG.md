@@ -4,6 +4,24 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.7] - 2026-05-13
+
+### Docs only
+
+**Real root cause of the broken License badge found.** GitHub's `raw.githubusercontent.com` adds a `Content-Security-Policy: default-src 'none'; ... sandbox` response header for any `*.svg` it serves. Some HACS frontend environments respect that sandboxing and refuse to render the inline image; PNG responses don't carry the header so they always render.
+
+The Toss/PayPal donation PNGs were working fine for that reason all along. v0.8.6's self-hosted License *SVG* hit the same sandbox the original shields.io SVG did.
+
+v0.8.7 switches the badge file to PNG, and self-hosts the HACS-Custom badge the same way as belt-and-braces (both are static — they don't need to be dynamic):
+
+- **Replaced**: `images/license-badge.svg` → `images/license-badge.png` (1434 bytes, 82×20 RGBA)
+- **New**: `images/hacs-custom-badge.png` (2087 bytes) so the HACS badge stops depending on shields.io at all
+- README badge URLs updated accordingly
+
+Validate / Tests / Release badges keep their original sources — they're dynamic (auto-refresh on each push / release) and Validate / Tests are served from `github.com` which doesn't apply the SVG sandbox.
+
+No code, schema, or behavior changes.
+
 ## [0.8.6] - 2026-05-13
 
 ### Docs only
