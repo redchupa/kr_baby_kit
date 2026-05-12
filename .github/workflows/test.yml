@@ -17,7 +17,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install pytest + openpyxl (build-script smoke)
-        run: python -m pip install --upgrade pip pytest openpyxl
+        run: python -m pip install --upgrade pip pytest pytest-asyncio openpyxl
       - name: Run pure-Python unit tests
         run: python -m pytest tests/test_growth.py tests/test_schedule.py tests/test_build_growth_chart.py tests/test_storage.py tests/test_weight_for_length.py tests/test_care_tuition.py tests/test_check_care_tuition.py tests/test_percentile_summary.py -q
       - name: Sanity-check care_tuition table (non-strict)
