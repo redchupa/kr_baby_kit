@@ -1,12 +1,12 @@
 {
   "domain": "kr_baby_kit",
   "name": "한국 영유아 키트 (Korean Baby Kit)",
-  "codeowners": ["@your-github-username"],
+  "codeowners": ["@redchupa"],
   "config_flow": true,
   "dependencies": ["conversation"],
-  "documentation": "https://github.com/your-github-username/kr_baby_kit",
+  "documentation": "https://github.com/redchupa/kr_baby_kit",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/your-github-username/kr_baby_kit/issues",
+  "issue_tracker": "https://github.com/redchupa/kr_baby_kit/issues",
   "requirements": [],
   "version": "0.8.0"
 }
