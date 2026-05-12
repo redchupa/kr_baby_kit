@@ -61,11 +61,24 @@ Category: Integration
 
 본 정보는 **참고용**이며 의료기관 진료를 대체하지 않습니다. 자녀의 성장·건강 평가는 소아청소년과 전문의에게 의뢰하십시오.
 
-## 후원
+## ☕ 후원
 
-본 통합이 도움이 되셨다면:
-- 카카오뱅크/토스 **1000-1261-7813** (우*만)
-- 커피 한잔은 사랑입니다 ☕
+본 통합이 도움이 되셨다면 커피 한 잔으로 응원해주세요! 🙏
+
+<table>
+  <tr>
+    <td align="center">
+      <b>토스</b><br/>
+      <img src="https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/toss-donation.png" alt="Toss 후원 QR" width="200"/>
+    </td>
+    <td align="center">
+      <b>PayPal</b><br/>
+      <img src="https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/paypal-donation.png" alt="PayPal 후원 QR" width="200"/>
+    </td>
+  </tr>
+</table>
+
+- 토스/카카오뱅크: **1000-1261-7813** (우*만) · 커피 한잔은 사랑입니다
 
 ---
 
