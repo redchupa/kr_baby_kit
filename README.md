@@ -3,10 +3,10 @@
 > **우리 아이 키·몸무게·예방접종·검진·보육료 — Home Assistant 하나로.**
 > 질병관리청·교육부·보건복지부 공공 데이터 기반, 100% 무료·오프라인.
 
-[![Validate](https://github.com/your-github-username/kr_baby_kit/actions/workflows/hassfest.yml/badge.svg)](https://github.com/your-github-username/kr_baby_kit/actions/workflows/hassfest.yml)
-[![Tests](https://github.com/your-github-username/kr_baby_kit/actions/workflows/test.yml/badge.svg)](https://github.com/your-github-username/kr_baby_kit/actions/workflows/test.yml)
+[![Validate](https://github.com/redchupa/kr_baby_kit/actions/workflows/hassfest.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/hassfest.yml)
+[![Tests](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![Release](https://img.shields.io/github/v/release/your-github-username/kr_baby_kit?include_prereleases&label=release)](https://github.com/your-github-username/kr_baby_kit/releases)
+[![Release](https://img.shields.io/github/v/release/redchupa/kr_baby_kit?include_prereleases&label=release)](https://github.com/redchupa/kr_baby_kit/releases)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
@@ -72,7 +72,7 @@
 
 ```yaml
 HACS → Integrations → ⋮ → Custom repositories
-URL:      https://github.com/your-github-username/kr_baby_kit
+URL:      https://github.com/redchupa/kr_baby_kit
 Category: Integration
 ```
 
