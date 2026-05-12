@@ -4,6 +4,17 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.6] - 2026-05-13
+
+### Docs only
+
+License badge restored, self-hosted this time. The shields.io URL was being blocked by adblock-style content filters in some HACS environments (any URL matching `*license*` is a common ad-list pattern). Downloading the SVG once and serving it from `images/license-badge.svg` sidesteps the filter — the badge is now plain `raw.githubusercontent.com` content like the donation QR images, which work fine in the same environments.
+
+- New: `images/license-badge.svg` (1087 bytes, MIT, blue) — exact byte-for-byte copy of the shields.io output, served from this repo
+- README badge URL updated to the self-hosted path
+
+No code, schema, or behavior changes. The other four badges (Validate, Tests, HACS-Custom, Release) keep using their original sources; they were never reported broken and stay dynamic so they update themselves.
+
 ## [0.8.5] - 2026-05-13
 
 ### Docs only
