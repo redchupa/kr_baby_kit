@@ -84,9 +84,9 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
 
 class VaccineDueSensor(_DueSensor):
     _data_key = "upcoming_vaccines"
-    _label = "이번 달 예방접종"
+    _label = "일정 · 이번 달 예방접종"
 
 
 class CheckupDueSensor(_DueSensor):
     _data_key = "upcoming_checkups"
-    _label = "이번 달 영유아 검진"
+    _label = "일정 · 이번 달 검진"

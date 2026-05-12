@@ -195,19 +195,24 @@ _KIND_LABEL_KO: dict[str, str] = {
     "weight_for_length": "신장별 몸무게",
 }
 
+# Direction adjectives per metric. ("high-side", "low-side"). Chosen so the
+# phrase reads naturally regardless of which way the percentile leans.
+_KIND_ADJECTIVES_KO: dict[str, tuple[str, str]] = {
+    "height": ("큰", "작은"),
+    "weight": ("많이 나가는", "적게 나가는"),
+    "head": ("큰", "작은"),
+    "bmi": ("큰", "작은"),
+    "weight_for_length": ("많이 나가는", "적게 나가는"),
+}
+
 
 def top_percent(percentile: float | None) -> float | None:
     """Convert a statistical percentile to a user-facing "top N%" figure.
 
     A statistical 95th percentile means the child is at or above 95% of the
-    reference population - i.e. top 5%. We round to one decimal so dashboards
-    can format it as a stable string.
-
-    Edge cases that are easy to misread:
-      - percentile == 50 (median) → top 50% (the dashboard label still reads
-        meaningfully as "around average")
-      - percentile == 100 → top 0% (cap on the small side; the original 100
-        only ever appears for synthetic test inputs)
+    reference population - i.e. top 5%. Kept as an attribute for users who
+    prefer the inverted form; the human-readable summary uses the raw
+    percentile so dashboard numbers match the sensor value.
     """
     if percentile is None:
         return None
@@ -215,21 +220,25 @@ def top_percent(percentile: float | None) -> float | None:
 
 
 def format_summary_ko(kind: str, percentile: float | None) -> str | None:
-    """One-line Korean summary suitable for a Lovelace card's secondary_info.
+    """One-line Korean summary aligned with the sensor's raw percentile.
+
+    The number shown to the user is always the statistical percentile itself
+    (so a sensor reading of 95 shows "백분위 95" in the summary, never "5"),
+    and the direction is conveyed by a label-specific adjective.
 
     Examples:
-        format_summary_ko("height", 94.7) == "또래 평균 상위 5.3%"
-        format_summary_ko("weight", 50.0) == "또래 평균 (상위 50.0%)"
-        format_summary_ko("bmi", None) == None
+        format_summary_ko("height", 94.7) == "키: 또래보다 큰 편 (백분위 94.7)"
+        format_summary_ko("weight", 12.5) == "몸무게: 또래보다 적게 나가는 편 (백분위 12.5)"
+        format_summary_ko("bmi", 50.0)    == "BMI: 또래 평균 수준 (백분위 50.0)"
+        format_summary_ko("height", None) == None
     """
     if percentile is None:
         return None
     label = _KIND_LABEL_KO.get(kind, kind)
-    top = top_percent(percentile) or 0.0
+    pct = round(float(percentile), 1)
     if 45.0 <= percentile <= 55.0:
-        return f"{label}: 또래 평균 (상위 {top}%)"
+        return f"{label}: 또래 평균 수준 (백분위 {pct})"
+    high, low = _KIND_ADJECTIVES_KO.get(kind, ("높은", "낮은"))
     if percentile > 55.0:
-        return f"{label}: 또래 평균 상위 {top}%"
-    # percentile < 45 → 하위에 위치
-    bottom = round(float(percentile), 1)
-    return f"{label}: 또래 평균 하위 {bottom}%"
+        return f"{label}: 또래보다 {high} 편 (백분위 {pct})"
+    return f"{label}: 또래보다 {low} 편 (백분위 {pct})"

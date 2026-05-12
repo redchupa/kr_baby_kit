@@ -4,6 +4,26 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.5.0] - 2026-05-12
+
+### Changed
+
+- **Entity friendly names regrouped by category** so HA's sort-by-name view keeps related entities together. New form is `<카테고리> · <항목>`:
+  - 측정 · 키 / 몸무게 / 머리둘레 (number inputs)
+  - 백분위 · 키 / 몸무게 / 머리둘레 / BMI / 신장별 몸무게
+  - 일정 · 다음 예방접종 / 다음 검진 / 이번 달 예방접종 / 이번 달 검진
+  - 보육료 · 표준 / 정부지원금 / 본인부담금
+  - 캘린더 · 예방접종 / 검진
+  - 정보 · BMI 수치 / 월령 (개월 수)  ← `월령` was unfamiliar to non-medical users; the parenthesized hint stays.
+- **`summary_ko` now mirrors the sensor's raw percentile**, so the on-card number always matches the sensor's native value. Previous form `"키: 또래 평균 상위 5.3%"` (when the percentile was 94.7) made two numbers visible at once and was easy to misread. New form: `"키: 또래보다 큰 편 (백분위 94.7)"` / `"몸무게: 또래보다 적게 나가는 편 (백분위 12.5)"` / `"BMI: 또래 평균 수준 (백분위 50.0)"`. Direction adjectives are picked per metric (키/머리둘레/BMI = "큰/작은", 몸무게/신장별 체중 = "많이/적게 나가는").
+- `top_percent` attribute is preserved unchanged for users who prefer the inverted view in their own templates / cards.
+
+### Notes
+
+- `unique_id` for every entity is unchanged, so existing v0.4.0 installs keep their `entity_id` after upgrade — only the friendly name shifts. Brand-new installs (HACS first-install) pick up category-prefixed `entity_id` slugs.
+- No bundled-data changes; `data_year` still 2026, `care_tuition_stale_check.yml` cron untouched.
+- Donation QR table added to README (Toss + PayPal) — same pattern already in `ha-app-dhlottery` and `kr_component_kit`.
+
 ## [0.4.0] - 2026-05-12
 
 ### Added

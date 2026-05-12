@@ -19,17 +19,17 @@ from .device import child_device
 
 
 _KIND_LABELS = {
-    "height": ("키 백분위", "Height percentile"),
-    "weight": ("몸무게 백분위", "Weight percentile"),
-    "head": ("머리둘레 백분위", "Head circumference percentile"),
-    "bmi": ("BMI 백분위", "BMI percentile"),
+    "height": ("백분위 · 키", "Height percentile"),
+    "weight": ("백분위 · 몸무게", "Weight percentile"),
+    "head": ("백분위 · 머리둘레", "Head circumference percentile"),
+    "bmi": ("백분위 · BMI", "BMI percentile"),
 }
 
 
 _CARE_TUITION_FIELDS: list[tuple[str, str, str]] = [
-    ("standard_tuition", "standard_tuition", "표준보육료"),
-    ("government_subsidy", "government_subsidy", "보육료 정부지원금"),
-    ("parent_share", "parent_share", "보육료 본인부담금"),
+    ("standard_tuition", "standard_tuition", "보육료 · 표준"),
+    ("government_subsidy", "government_subsidy", "보육료 · 정부지원금"),
+    ("parent_share", "parent_share", "보육료 · 본인부담금"),
 ]
 
 
@@ -50,7 +50,7 @@ async def async_setup_entry(
             entry,
             data_key="upcoming_vaccines",
             slug="next_vaccine",
-            label="다음 예방접종",
+            label="일정 · 다음 예방접종",
         )
     )
     entities.append(
@@ -59,7 +59,7 @@ async def async_setup_entry(
             entry,
             data_key="upcoming_checkups",
             slug="next_checkup",
-            label="다음 영유아 검진",
+            label="일정 · 다음 검진",
         )
     )
     for tuition_field, slug, label in _CARE_TUITION_FIELDS:
@@ -115,7 +115,7 @@ class PercentileSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
 
 class AgeMonthsSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     _attr_has_entity_name = True
-    _attr_name = "월령"
+    _attr_name = "정보 · 월령 (개월 수)"
     _attr_native_unit_of_measurement = "mo"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_attribution = ATTRIBUTION
@@ -141,7 +141,7 @@ class WeightForLengthSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity)
     """
 
     _attr_has_entity_name = True
-    _attr_name = "신장별 몸무게 백분위"
+    _attr_name = "백분위 · 신장별 몸무게"
     _attr_native_unit_of_measurement = "%"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_attribution = ATTRIBUTION
@@ -308,7 +308,7 @@ class BMIRawSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     """
 
     _attr_has_entity_name = True
-    _attr_name = "BMI"
+    _attr_name = "정보 · BMI 수치"
     _attr_native_unit_of_measurement = "kg/m²"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_attribution = ATTRIBUTION
