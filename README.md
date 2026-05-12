@@ -14,7 +14,7 @@
 ## 👶 이런 부모님께 추천드려요
 
 - 0~7세 자녀를 키우는 분
-- Home Assistant를 이미 쓰고 계신 분 (없으면 ▶ [Home Assistant 시작하기](https://www.home-assistant.io/installation/))
+- Home Assistant를 이미 쓰고 계신 분 (없으면 ▶ [Home Assistant 시작하기](https://redchupa.com/entry/%ed%99%88%ec%96%b4%ec%8b%9c%ec%8a%a4%ed%84%b4%ed%8a%b8ha-%ec%9e%85%eb%ac%b8-%ea%b0%80%ec%9d%b4%eb%93%9c/))
 - 아이 성장 기록, 어린이집 알림장, 정부 검진 일정, 보육료 정산… **한 화면에서 보고 싶으신 분**
 - 의학 정보는 정확하게, 일상은 단순하게 만들고 싶으신 분
 
