@@ -7,7 +7,6 @@
 [![Tests](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml)
 [![HACS](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
 [![Release](https://img.shields.io/github/v/release/redchupa/kr_baby_kit?include_prereleases&label=release)](https://github.com/redchupa/kr_baby_kit/releases)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
@@ -114,28 +113,28 @@ Home Assistant 화면에서:
 자녀 device 안에 다음 entity들이 자동 생성됩니다:
 
 ### 📏 측정 입력 (number, 슬라이더)
-- `키 입력` · `몸무게 입력` · `머리둘레 입력` — 한 손으로 슬라이더 움직이면 끝
+- `키_입력` · `몸무게_입력` · `머리둘레_입력` — 한 손으로 슬라이더 움직이면 끝
 
 ### 📊 또래 위치 (sensor, %)
-- `백분위 · 키 (1%=가장 큼)` · `백분위 · 몸무게 (1%=가장 무거움)`
+- `백분위_키_1퍼센트는_가장_큼` · `백분위_몸무게_1퍼센트는_가장_무거움`
 - 한 줄 요약: *"키: 또래 상위 5.3% (큰 편)"*
 
 ### 🚨 양극단 주의 (binary_sensor, on/off)
-- `머리둘레 양극단 주의` · `BMI 양극단 주의` · `신장별 몸무게 양극단 주의`
+- `양극단_주의_머리둘레` · `양극단_주의_BMI` · `양극단_주의_신장별_몸무게`
 - 평소 OFF, 양극단(< 5% 또는 > 95%)일 때만 ON
 
 ### 💉 일정 (sensor + binary_sensor)
-- `일정 · 다음 예방접종` · `일정 · 다음 검진` — D-day 형식 timestamp
-- `일정 · 이번 달 예방접종` · `일정 · 이번 달 검진` — 이번 달 일정 유무
+- `일정_다음_예방접종` · `일정_다음_검진` — D-day 형식 timestamp
+- `일정_이번_달_예방접종` · `일정_이번_달_검진` — 이번 달 일정 유무
 
 ### 🗓️ 캘린더 (calendar)
-- `캘린더 · 예방접종` · `캘린더 · 검진` — HA 캘린더 카드에 그대로 노출
+- `캘린더_예방접종` · `캘린더_검진` — HA 캘린더 카드에 그대로 노출
 
 ### 🏷️ 보육료 (sensor, KRW)
-- `보육료 · 표준` · `보육료 · 정부지원금` · `보육료 · 본인부담금`
+- `보육료_표준` · `보육료_정부지원금` · `보육료_본인부담금`
 
 ### ℹ️ 부가 정보 (sensor)
-- `정보 · BMI 수치` (kg/m²) · `정보 · 월령 (개월 수)`
+- `정보_BMI_수치` (kg/m²) · `정보_월령_개월_수`
 
 > 💡 **모든 entity 이름이 한국어**. HA UI에서 가나다순 정렬 시 카테고리별로 자연 묶임.
 
