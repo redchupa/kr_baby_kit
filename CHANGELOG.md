@@ -4,6 +4,17 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.5] - 2026-05-13
+
+### Docs only
+
+A release-tag bump so HACS picks up the fresh README. v0.8.4 already landed two important README edits on `main` (License badge removed, entity-name listing synced to underscore-only form) but HACS users were still seeing the v0.8.4 tag's README, where the badge URL was still present and triggering content-filter blocks in some environments.
+
+- README License badge (`shields.io/badge/License-MIT-blue.svg`) removed — frequently caught by adblock lists matching `*license*` path patterns. License information stays in the dedicated section at the bottom of the README.
+- "등록 후 대시보드에서 보이는 것들" section reflects the v0.8.4 underscore-only friendly-name form (`키_입력`, `백분위_키_1퍼센트는_가장_큼`, `양극단_주의_BMI`, …).
+
+No code or schema changes. unique_id, sensor values, attribute payloads, on-disk records all unchanged from v0.8.4.
+
 ## [0.8.4] - 2026-05-13
 
 ### Changed (friendly-name only)
