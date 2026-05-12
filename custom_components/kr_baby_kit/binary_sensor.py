@@ -97,12 +97,12 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
 
 class VaccineDueSensor(_DueSensor):
     _data_key = "upcoming_vaccines"
-    _label = "일정 · 이번 달 예방접종"
+    _label = "일정_이번_달_예방접종"
 
 
 class CheckupDueSensor(_DueSensor):
     _data_key = "upcoming_checkups"
-    _label = "일정 · 이번 달 검진"
+    _label = "일정_이번_달_검진"
 
 
 class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
@@ -177,7 +177,7 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
 
 class HeadConcernSensor(_ConcernSensor):
     _slug = "head"
-    _label = "머리둘레 양극단 주의"
+    _label = "양극단_주의_머리둘레"
 
     def _info(self) -> dict:
         return (self.coordinator.data or {}).get("percentiles", {}).get("head") or {}
@@ -185,7 +185,7 @@ class HeadConcernSensor(_ConcernSensor):
 
 class BMIConcernSensor(_ConcernSensor):
     _slug = "bmi"
-    _label = "BMI 양극단 주의"
+    _label = "양극단_주의_BMI"
 
     def _info(self) -> dict:
         data = self.coordinator.data or {}
@@ -211,7 +211,7 @@ class BMIConcernSensor(_ConcernSensor):
 
 class WeightForLengthConcernSensor(_ConcernSensor):
     _slug = "weight_for_length"
-    _label = "신장별 몸무게 양극단 주의"
+    _label = "양극단_주의_신장별_몸무게"
 
     def _info(self) -> dict:
         wfl = (self.coordinator.data or {}).get("weight_for_length") or {}

@@ -28,14 +28,14 @@ async def async_setup_entry(
                 entry,
                 data_key="upcoming_vaccines",
                 slug="immunization",
-                label="캘린더 · 예방접종",
+                label="캘린더_예방접종",
             ),
             BabyKitCalendar(
                 coordinator,
                 entry,
                 data_key="upcoming_checkups",
                 slug="checkup",
-                label="캘린더 · 검진",
+                label="캘린더_검진",
             ),
         ]
     )

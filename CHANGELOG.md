@@ -4,6 +4,33 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.4] - 2026-05-13
+
+### Changed (friendly-name only)
+
+All entity friendly names follow a single typographic rule: **no separator dots, no parentheses, no spaces** — every gap is an underscore. Symbols inside the previous parenthesized hints (`%`, `=`) are spelled out in Korean (`퍼센트`, `는`).
+
+| Before | After |
+|---|---|
+| `백분위 · 키 (1%=가장 큼)` | `백분위_키_1퍼센트는_가장_큼` |
+| `백분위 · 몸무게 (1%=가장 무거움)` | `백분위_몸무게_1퍼센트는_가장_무거움` |
+| `정보 · 월령 (개월 수)` | `정보_월령_개월_수` |
+| `정보 · BMI 수치` | `정보_BMI_수치` |
+| `일정 · 다음 예방접종` | `일정_다음_예방접종` |
+| `일정 · 다음 검진` | `일정_다음_검진` |
+| `일정 · 이번 달 예방접종` | `일정_이번_달_예방접종` |
+| `일정 · 이번 달 검진` | `일정_이번_달_검진` |
+| `보육료 · 표준` / `· 정부지원금` / `· 본인부담금` | `보육료_표준` / `보육료_정부지원금` / `보육료_본인부담금` |
+| `캘린더 · 예방접종` / `· 검진` | `캘린더_예방접종` / `캘린더_검진` |
+| `키 입력` / `몸무게 입력` / `머리둘레 입력` | `키_입력` / `몸무게_입력` / `머리둘레_입력` |
+| `머리둘레 양극단 주의` | `양극단_주의_머리둘레` |
+| `BMI 양극단 주의` | `양극단_주의_BMI` |
+| `신장별 몸무게 양극단 주의` | `양극단_주의_신장별_몸무게` |
+
+### Note
+
+The 양극단_주의 entities now share a common prefix (`양극단_주의_`) so they group together when the dashboard sorts by name. `unique_id`, sensor values, attributes, and on-disk records are unchanged — only the displayed names update.
+
 ## [0.8.3] - 2026-05-13
 
 ### Fixed
