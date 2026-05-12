@@ -129,3 +129,38 @@ async def test_invalid_date_raises(storage_mod) -> None:
         await storage_mod.async_append_measurement(
             hass=None, child_id="c1", measurement_date="not-a-date", height=75.0
         )
+
+
+@pytest.mark.asyncio
+async def test_out_of_range_height_rejected_at_storage_layer(storage_mod) -> None:
+    # storage.py is the last line of defence — even if a bad value bypasses
+    # the service-call schema and the dashboard number entity, it must not
+    # be persisted.
+    with pytest.raises(ValueError, match="허용 범위"):
+        await storage_mod.async_append_measurement(
+            hass=None, child_id="c1", measurement_date="2025-05-12", height=999.0
+        )
+
+
+@pytest.mark.asyncio
+async def test_negative_weight_rejected_at_storage_layer(storage_mod) -> None:
+    with pytest.raises(ValueError, match="허용 범위"):
+        await storage_mod.async_append_measurement(
+            hass=None, child_id="c1", measurement_date="2025-05-12", weight=-3.0
+        )
+
+
+@pytest.mark.asyncio
+async def test_non_numeric_height_rejected_at_storage_layer(storage_mod) -> None:
+    with pytest.raises(ValueError, match="숫자로 읽지 못했습니다"):
+        await storage_mod.async_append_measurement(
+            hass=None, child_id="c1", measurement_date="2025-05-12", height="abc"
+        )
+
+
+@pytest.mark.asyncio
+async def test_nan_height_rejected_at_storage_layer(storage_mod) -> None:
+    with pytest.raises(ValueError, match="NaN"):
+        await storage_mod.async_append_measurement(
+            hass=None, child_id="c1", measurement_date="2025-05-12", height=float("nan")
+        )

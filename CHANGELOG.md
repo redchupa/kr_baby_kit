@@ -4,6 +4,45 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.2] - 2026-05-13
+
+### Added — three-layer input validation
+
+A new `validation.py` module centralises measurement-input checking. Every path now routes through `validate_measurement(kind, value)` so a bad number can't sneak in via one entry point and trash the downstream percentile / BMI / weight-for-length math.
+
+Inputs rejected with a Korean error message in the HA UI:
+
+| Bad input | Behaviour |
+|---|---|
+| 빈 값 / `None` | `"키 값이 비어 있습니다."` |
+| 문자열 `"abc"`, `"!!"`, `"1,2"`, `""` | `"키 값을 숫자로 읽지 못했습니다: 'abc'"` |
+| `True` / `False` (booleans coerce silently to 1.0/0.0 in plain `float()`) | `"키 값은 숫자여야 합니다 (참/거짓 X)."` |
+| `NaN` | `"몸무게 값이 NaN 입니다."` |
+| `±Infinity` | `"몸무게 값이 무한대입니다."` |
+| Out-of-range (e.g. weight=150, height=-5) | `"키 값이 허용 범위를 벗어났습니다: -5.0 cm (허용: 30.0–200.0 cm)."` |
+| Out-of-range measurement date | `"측정일 형식이 올바르지 않습니다 (YYYY-MM-DD): 'not-a-date'"` |
+
+Plausibility ranges (chosen wider than the KDCA 0–228 month chart itself so a slightly off entry still stores; clearly-mistyped values like weight in grams are caught up front):
+
+| 항목 | 최소 | 최대 |
+|---|---|---|
+| 키 | 30.0 cm | 200.0 cm |
+| 몸무게 | 1.0 kg | 100.0 kg |
+| 머리둘레 | 25.0 cm | 65.0 cm |
+
+### Where the three layers live
+
+1. **`record_measurement` service** — `_bounded_float()` schema fragment validates type, NaN/Inf, and range up front so the service-call response carries a clean voluptuous error.
+2. **Dashboard `number` entity** — HA's native `min`/`max`/`step` already constrain the slider; no behavioural change here.
+3. **`storage.async_append_measurement`** — re-runs `validate_measurement()` regardless of how the value arrived (last line of defence).
+
+### Tests
+
+- New `tests/test_validation.py` covers every rejection class (37 assertions) and pins the public bounds.
+- `tests/test_storage.py` adds four scenarios proving out-of-range / negative / non-numeric / NaN values are rejected at the storage layer, not just at the schema.
+
+`unique_id`, sensor values, and on-disk records are unchanged.
+
 ## [0.8.1] - 2026-05-13
 
 ### Fixed (data correctness)

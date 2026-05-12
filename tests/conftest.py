@@ -38,6 +38,7 @@ def _load(rel_name: str, file_path: Path) -> None:
 _load("custom_components.kr_baby_kit.growth", COMPONENT_DIR / "growth.py")
 _load("custom_components.kr_baby_kit.schedule", COMPONENT_DIR / "schedule.py")
 _load("custom_components.kr_baby_kit.care_tuition", COMPONENT_DIR / "care_tuition.py")
+_load("custom_components.kr_baby_kit.validation", COMPONENT_DIR / "validation.py")
 
 # Re-export private helpers used by tests.
 import importlib  # noqa: E402

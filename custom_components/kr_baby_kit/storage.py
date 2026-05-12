@@ -12,6 +12,7 @@ from .const import (
     STORAGE_KEY_RECORDS,
     STORAGE_VERSION,
 )
+from .validation import validate_measurement
 
 
 def _store(hass: HomeAssistant) -> Store:
@@ -40,17 +41,26 @@ async def async_append_measurement(
     """
     if not child_id:
         raise ValueError("child_id is required")
-    date.fromisoformat(measurement_date)  # validate
+    try:
+        date.fromisoformat(measurement_date)  # validate
+    except (TypeError, ValueError) as err:
+        raise ValueError(
+            f"측정일 형식이 올바르지 않습니다 (YYYY-MM-DD): {measurement_date!r}"
+        ) from err
 
+    # Validate each provided measurement through the central helper. This is
+    # the last line of defence: the service-call schema and the dashboard
+    # number entity also validate, but persistence must never store an
+    # implausible value regardless of how it arrived.
     new_fields: dict[str, Any] = {}
     if height is not None:
-        new_fields["height"] = float(height)
+        new_fields["height"] = validate_measurement("height", height)
     if weight is not None:
-        new_fields["weight"] = float(weight)
+        new_fields["weight"] = validate_measurement("weight", weight)
     if head is not None:
-        new_fields["head"] = float(head)
+        new_fields["head"] = validate_measurement("head", head)
     if not new_fields:
-        raise ValueError("at least one measurement value must be provided")
+        raise ValueError("키·몸무게·머리둘레 중 최소 한 값은 입력되어야 합니다.")
 
     records = await async_load_records(hass)
     child_records = records.setdefault(child_id, [])

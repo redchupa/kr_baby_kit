@@ -1,6 +1,8 @@
 """kr_baby_kit services — record_measurement."""
 from __future__ import annotations
 
+import math
+
 import voluptuous as vol
 from homeassistant.core import (
     HomeAssistant,
@@ -12,16 +14,48 @@ from homeassistant.exceptions import HomeAssistantError
 
 from .const import CONF_CHILD_ID, DOMAIN, LOGGER
 from .storage import async_append_measurement
+from .validation import measurement_range
 
 SERVICE_RECORD_MEASUREMENT = "record_measurement"
+
+
+def _bounded_float(kind: str):
+    """Schema fragment: coerce to float, reject NaN/Inf, enforce kind's range.
+
+    The storage layer re-validates with the same bounds via
+    ``validation.validate_measurement`` — this schema rejects bad input
+    early so the service-call response carries a clean voluptuous error,
+    but is not the authoritative check.
+    """
+    lo, hi = measurement_range(kind)
+
+    def _coerce(value):
+        if isinstance(value, bool):
+            raise vol.Invalid(f"{kind} 값은 숫자여야 합니다 (참/거짓 X).")
+        try:
+            v = float(value)
+        except (TypeError, ValueError) as err:
+            raise vol.Invalid(
+                f"{kind} 값을 숫자로 읽지 못했습니다: {value!r}"
+            ) from err
+        if math.isnan(v) or math.isinf(v):
+            raise vol.Invalid(f"{kind} 값이 NaN/Infinity 입니다.")
+        if v < lo or v > hi:
+            raise vol.Invalid(
+                f"{kind} 값이 허용 범위를 벗어났습니다: {v} (허용: {lo}–{hi})."
+            )
+        return v
+
+    return _coerce
+
 
 _RECORD_SCHEMA = vol.Schema(
     {
         vol.Optional("child_id"): str,
         vol.Required("date"): str,
-        vol.Optional("height"): vol.Coerce(float),
-        vol.Optional("weight"): vol.Coerce(float),
-        vol.Optional("head"): vol.Coerce(float),
+        vol.Optional("height"): _bounded_float("height"),
+        vol.Optional("weight"): _bounded_float("weight"),
+        vol.Optional("head"): _bounded_float("head"),
     }
 )
 
