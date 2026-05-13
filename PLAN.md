@@ -114,7 +114,7 @@ kr_baby_kit/
 - [x] docs/ 한·영 완성
 - [x] 후원 섹션
 - [x] 보육료 통합 (v0.4.0 — 번들 JSON + sensor 3종 + LLM tool. 교육부 「2026년도 보육사업안내 부록 2」 실측 단가 적용. 매년 1월 교육부 갱신본으로 JSON 동기화 필요)
-- [ ] HACS Default PR (스킵 — 한국 전용. Custom Repository로만 배포)
+- [x] HACS Default PR — 2026-05-13 제출 (hacs/default#7628, OPEN, 봇 11개 검증 전부 SUCCESS, 메인테이너 수동 머지 대기)
 - [x] GitHub 릴리스 v0.2.0
 - [x] v0.3.0 BMI/timestamp 센서
 - [x] v0.4.0 보육료 실측 단가 + 릴리스 게이트 스크립트
