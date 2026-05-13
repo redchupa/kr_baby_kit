@@ -25,3 +25,13 @@ else:
     @pytest.fixture(autouse=True)
     def auto_enable_custom_integrations(enable_custom_integrations):
         yield
+
+    @pytest.fixture(autouse=True)
+    async def _bootstrap_homeassistant_component(hass):
+        # Our integration's LLM tool registration calls
+        # `homeassistant.components.homeassistant.exposed_entities.async_should_expose`,
+        # which only works after the `homeassistant` core integration is set up.
+        from homeassistant.setup import async_setup_component
+
+        await async_setup_component(hass, "homeassistant", {})
+        yield
