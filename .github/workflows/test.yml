@@ -31,9 +31,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install pytest-homeassistant-custom-component + conversation deps
-        # hassil is pulled in transitively by homeassistant.helpers.llm; the
-        # HA test plugin doesn't ship it by default, so add it explicitly.
-        run: python -m pip install --upgrade pip pytest-homeassistant-custom-component hassil
+        # llm_api.py imports homeassistant.helpers.llm at module load, which
+        # transitively pulls in the conversation integration's deps. The HA
+        # test plugin doesn't ship them, so install them explicitly.
+        run: python -m pip install --upgrade pip pytest-homeassistant-custom-component hassil home-assistant-intents
       - name: Run HA-stack integration tests
         run: python -m pytest tests/integration -q
 
