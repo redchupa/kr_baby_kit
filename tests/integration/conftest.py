@@ -15,9 +15,17 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-if sys.platform == "win32":
-    # HA's runner.py imports fcntl, so integration tests can't even be collected
-    # on Windows. CI uses Ubuntu — this is the documented limitation.
+def _has_conversation_deps() -> bool:
+    import importlib.util
+
+    return importlib.util.find_spec("hassil") is not None
+
+
+if sys.platform == "win32" or not _has_conversation_deps():
+    # On Windows HA's runner.py imports fcntl. In CI the conversation
+    # integration's transitive deps (hassil, mutagen, haffmpeg, …) aren't part
+    # of the test plugin's default install, so the test module's imports
+    # cascade into errors. Skip *collection* entirely in those environments.
     collect_ignore_glob = ["*.py"]
 else:
     pytest_plugins = ["pytest_homeassistant_custom_component.plugins"]
