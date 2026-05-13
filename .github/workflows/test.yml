@@ -31,10 +31,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install pytest-homeassistant-custom-component + conversation deps
-        # llm_api.py imports homeassistant.helpers.llm at module load, which
-        # transitively pulls in the conversation integration's deps. The HA
-        # test plugin doesn't ship them, so install them explicitly.
-        run: python -m pip install --upgrade pip pytest-homeassistant-custom-component hassil home-assistant-intents
+        # The conversation integration that our llm tool depends on transitively
+        # needs: hassil + home-assistant-intents (intent matcher) and mutagen
+        # (TTS audio metadata). The HA test plugin doesn't ship them, so add
+        # them explicitly.
+        run: python -m pip install --upgrade pip pytest-homeassistant-custom-component hassil home-assistant-intents mutagen
       - name: Run HA-stack integration tests
         run: python -m pytest tests/integration -q
 
