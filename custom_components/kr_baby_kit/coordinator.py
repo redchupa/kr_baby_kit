@@ -29,13 +29,25 @@ from .storage import async_load_records, latest
 class BabyKitCoordinator(DataUpdateCoordinator):
     """Refreshes derived state for a single registered child."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+        *,
+        chart: GrowthChart,
+        nip_schedule: dict,
+        checkup_schedule: dict,
+        tuition_table: dict,
+    ) -> None:
         self.entry = entry
         self.child_name: str = entry.data[CONF_CHILD_NAME]
         self.child_id: str = entry.data.get(CONF_CHILD_ID, entry.entry_id)
         self.child_sex: str = entry.data[CONF_CHILD_SEX]
         self.birthdate: date = date.fromisoformat(entry.data[CONF_CHILD_BIRTHDATE])
-        self.chart = GrowthChart.from_default()
+        self.chart = chart
+        self._nip_schedule = nip_schedule
+        self._checkup_schedule = checkup_schedule
+        self._tuition_table = tuition_table
         super().__init__(
             hass,
             LOGGER,
@@ -123,10 +135,16 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                     ),
                 }
 
-        vaccines = upcoming(project_vaccine_events(self.birthdate), today)
-        checkups = upcoming(project_checkup_events(self.birthdate), today)
+        vaccines = upcoming(
+            project_vaccine_events(self.birthdate, self._nip_schedule), today
+        )
+        checkups = upcoming(
+            project_checkup_events(self.birthdate, self._checkup_schedule), today
+        )
 
-        tier: TuitionTier | None = tuition_for_age_months(age_m)
+        tier: TuitionTier | None = tuition_for_age_months(
+            age_m, self._tuition_table
+        )
         care_tuition = None
         if tier is not None:
             care_tuition = {

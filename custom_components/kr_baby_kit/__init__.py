@@ -21,9 +21,24 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up a child entry."""
     hass.data.setdefault(DOMAIN, {})
 
+    from .care_tuition import async_load_tuition_table
     from .coordinator import BabyKitCoordinator
+    from .growth import GrowthChart
+    from .schedule import async_load_checkup_schedule, async_load_nip_schedule
 
-    coordinator = BabyKitCoordinator(hass, entry)
+    chart = await GrowthChart.async_from_default(hass)
+    nip_schedule = await async_load_nip_schedule(hass)
+    checkup_schedule = await async_load_checkup_schedule(hass)
+    tuition_table = await async_load_tuition_table(hass)
+
+    coordinator = BabyKitCoordinator(
+        hass,
+        entry,
+        chart=chart,
+        nip_schedule=nip_schedule,
+        checkup_schedule=checkup_schedule,
+        tuition_table=tuition_table,
+    )
     await coordinator.async_config_entry_first_refresh()
 
     unregister_llm = await async_setup_llm_api(

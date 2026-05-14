@@ -43,6 +43,16 @@ def load_checkup_schedule(path: Path | None = None) -> dict:
         return json.load(fh)
 
 
+async def async_load_nip_schedule(hass, path: Path | None = None) -> dict:
+    """Async variant safe to call from the HA event loop."""
+    return await hass.async_add_executor_job(load_nip_schedule, path)
+
+
+async def async_load_checkup_schedule(hass, path: Path | None = None) -> dict:
+    """Async variant safe to call from the HA event loop."""
+    return await hass.async_add_executor_job(load_checkup_schedule, path)
+
+
 def project_vaccine_events(
     birthdate: date,
     schedule: dict | None = None,

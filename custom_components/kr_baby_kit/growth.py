@@ -84,6 +84,11 @@ class GrowthChart:
         with _DATA_PATH.open(encoding="utf-8") as fh:
             return cls(json.load(fh))
 
+    @classmethod
+    async def async_from_default(cls, hass) -> "GrowthChart":
+        """Async variant safe to call from the HA event loop."""
+        return await hass.async_add_executor_job(cls.from_default)
+
     def has(self, sex: str, kind: str) -> bool:
         return (sex, kind) in self._table and bool(self._table[(sex, kind)])
 

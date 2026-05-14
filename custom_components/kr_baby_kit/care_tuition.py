@@ -43,6 +43,13 @@ def load_tuition_table(path: Path | None = None) -> dict[str, Any]:
         return json.load(fh)
 
 
+async def async_load_tuition_table(
+    hass, path: Path | None = None
+) -> dict[str, Any]:
+    """Async variant safe to call from the HA event loop."""
+    return await hass.async_add_executor_job(load_tuition_table, path)
+
+
 def is_placeholder(table: dict[str, Any]) -> bool:
     """True when the table still holds the shipped zero-values."""
     meta = table.get("_meta") or {}
@@ -102,6 +109,7 @@ def tuition_for_age_months(
 __all__ = [
     "TuitionTier",
     "load_tuition_table",
+    "async_load_tuition_table",
     "is_placeholder",
     "tuition_for_age_months",
 ]
