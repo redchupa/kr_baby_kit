@@ -4,6 +4,16 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.8.9] - 2026-05-14
+
+### Fixed
+
+- **Blocking-IO warnings on setup.** Home Assistant 2024+ flags synchronous file reads inside the event loop. The coordinator was loading four bundled JSON tables (`growth_chart_kr.json`, `nip_schedule.json`, `health_checkup_schedule.json`, `care_tuition_kr.json`) with plain `open()` calls in `__init__` and on every refresh, producing four `Detected blocking call to open` warnings per child entry.
+
+  Now all four files are pre-loaded once via `hass.async_add_executor_job` in `async_setup_entry` and handed to the coordinator as plain dicts, so update cycles stay pure-CPU. The sync `load_*` / `from_default` helpers remain for tests.
+
+No schema, entity, or behavior changes — only the I/O path moved.
+
 ## [0.8.8] - 2026-05-13
 
 ### Removed
