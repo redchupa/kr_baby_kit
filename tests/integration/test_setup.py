@@ -98,6 +98,9 @@ async def test_setup_registers_sensors_and_calendars(hass: HomeAssistant) -> Non
         f"{DOMAIN}_{CHILD_ID}_next_vaccine",
         f"{DOMAIN}_{CHILD_ID}_next_checkup",
         f"{DOMAIN}_{CHILD_ID}_next_oral_checkup",
+        f"{DOMAIN}_{CHILD_ID}_vaccine_open_deadline",
+        f"{DOMAIN}_{CHILD_ID}_checkup_open_deadline",
+        f"{DOMAIN}_{CHILD_ID}_oral_checkup_open_deadline",
         f"{DOMAIN}_{CHILD_ID}_standard_tuition",
         f"{DOMAIN}_{CHILD_ID}_government_subsidy",
         f"{DOMAIN}_{CHILD_ID}_parent_share",
@@ -526,3 +529,31 @@ async def test_single_dose_vaccine_has_no_dose_suffix(hass: HomeAssistant) -> No
     bcg = [s for s in summaries if "BCG" in s]
     assert bcg and all("차)" not in s for s in bcg)
     assert any("B형간염 (1차)" in s for s in summaries)
+
+
+
+async def test_next_and_deadline_sensors_split_open_windows(hass: HomeAssistant) -> None:
+    """The next-event sensor only shows windows that have not opened yet
+    (never a past date); open windows go to the deadline sensor."""
+    await _setup(hass, _young_entry())
+    today = datetime.now(TZ_ASIA_SEOUL).date()
+
+    nxt = hass.states.get(_entity_id(hass, f"{DOMAIN}_{YOUNG_ID}_next_vaccine"))
+    assert dt_util.parse_datetime(nxt.state).astimezone(TZ_ASIA_SEOUL).date() > today
+    assert nxt.attributes["days_until_start"] > 0
+    assert "DTaP_1" in nxt.attributes["open_event_ids"]
+
+    dl = hass.states.get(
+        _entity_id(hass, f"{DOMAIN}_{YOUNG_ID}_vaccine_open_deadline")
+    )
+    deadline = dt_util.parse_datetime(dl.state).astimezone(TZ_ASIA_SEOUL)
+    assert deadline.date() >= today
+    assert dl.attributes["days_left"] >= 0
+    assert {"DTaP_1", "IPV_1"} <= set(dl.attributes["open_event_ids"])
+
+    # No oral checkup window is open for a 2-month-old.
+    oral_dl = hass.states.get(
+        _entity_id(hass, f"{DOMAIN}_{YOUNG_ID}_oral_checkup_open_deadline")
+    )
+    assert oral_dl.state == "unknown"
+    assert oral_dl.attributes["open_count"] == 0

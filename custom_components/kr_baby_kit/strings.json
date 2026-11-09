@@ -63,5 +63,46 @@
       "invalid_date": "올바른 날짜 형식이 아닙니다 (YYYY-MM-DD).",
       "future_date": "미래 날짜는 사용할 수 없습니다."
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "vaccine_due": {
+        "name": "예방접종_이번_달_일정",
+        "state": {
+          "on": "이번 달 접종 있음",
+          "off": "이번 달 접종 없음"
+        }
+      },
+      "checkup_due": {
+        "name": "건강검진_이번_달_일정",
+        "state": {
+          "on": "이번 달 검진 있음",
+          "off": "이번 달 검진 없음"
+        }
+      },
+      "oral_checkup_due": {
+        "name": "구강검진_이번_달_일정",
+        "state": {
+          "on": "이번 달 구강검진 있음",
+          "off": "이번 달 구강검진 없음"
+        }
+      },
+      "growth_concern": {
+        "name": "양극단_주의",
+        "state": {
+          "on": "주의 필요",
+          "off": "주의 신호 없음"
+        }
+      }
+    },
+    "calendar": {
+      "schedule_calendar": {
+        "name": "전체_일정_캘린더",
+        "state": {
+          "on": "지금 기간 중인 일정 있음",
+          "off": "지금 기간 중인 일정 없음"
+        }
+      }
+    }
   }
 }

@@ -65,8 +65,8 @@ data:
 자녀 만 나이에 자동 매칭되는 보육료 센서가 자녀 device에 함께 생성됩니다:
 
 - `sensor.<자녀>_표준보육료` (단위: KRW)
-- `sensor.<자녀>_보육료_정부지원금` (단위: KRW)
-- `sensor.<자녀>_보육료_본인부담금` (단위: KRW)
+- `sensor.<자녀>_보육료_월_정부지원금` (단위: KRW)
+- `sensor.<자녀>_보육료_월_본인부담금` (단위: KRW)
 
 ⚠️ 번들된 보육료 JSON(`custom_components/kr_baby_kit/data/care_tuition_kr.json`)은
 **placeholder 데이터(`data_year: 0`, 모든 값 `0`)**로 출시됩니다. 통합을

@@ -68,8 +68,8 @@ Three KRW-denominated sensors are auto-matched to the child's age class
 (만 0~6세반):
 
 - `sensor.<child>_표준보육료` (standard tuition)
-- `sensor.<child>_보육료_정부지원금` (government subsidy)
-- `sensor.<child>_보육료_본인부담금` (parent's share)
+- `sensor.<child>_보육료_월_정부지원금` (government subsidy)
+- `sensor.<child>_보육료_월_본인부담금` (parent's share)
 
 ⚠️ The bundled `data/care_tuition_kr.json` ships with **placeholder zeros**
 (`data_year: 0`). Update it with the latest 보건복지부 표준보육료 고시

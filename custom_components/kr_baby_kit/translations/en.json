@@ -63,5 +63,46 @@
       "name": "Get schedule",
       "description": "Return every vaccine/checkup/oral-checkup window with event_id and status."
     }
+  },
+  "entity": {
+    "binary_sensor": {
+      "vaccine_due": {
+        "name": "Vaccines this month",
+        "state": {
+          "on": "Vaccine due this month",
+          "off": "No vaccine this month"
+        }
+      },
+      "checkup_due": {
+        "name": "Checkups this month",
+        "state": {
+          "on": "Checkup due this month",
+          "off": "No checkup this month"
+        }
+      },
+      "oral_checkup_due": {
+        "name": "Oral checkups this month",
+        "state": {
+          "on": "Oral checkup due this month",
+          "off": "No oral checkup this month"
+        }
+      },
+      "growth_concern": {
+        "name": "Growth concern",
+        "state": {
+          "on": "Needs attention",
+          "off": "No concern signal"
+        }
+      }
+    },
+    "calendar": {
+      "schedule_calendar": {
+        "name": "Schedule calendar",
+        "state": {
+          "on": "Window open now",
+          "off": "No window open now"
+        }
+      }
+    }
   }
 }

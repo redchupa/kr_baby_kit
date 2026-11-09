@@ -35,9 +35,9 @@ from .schedule import (
 
 _CALENDARS: tuple[tuple[str, str, str, str], ...] = (
     # (upcoming data key, full-list data key, unique-id slug, friendly name)
-    ("upcoming_vaccines", "all_vaccines", "immunization", "캘린더_예방접종"),
-    ("upcoming_checkups", "all_checkups", "checkup", "캘린더_검진"),
-    ("upcoming_oral_checkups", "all_oral_checkups", "oral_checkup", "캘린더_구강검진"),
+    ("upcoming_vaccines", "all_vaccines", "immunization", "예방접종_전체_일정_캘린더"),
+    ("upcoming_checkups", "all_checkups", "checkup", "건강검진_전체_일정_캘린더"),
+    ("upcoming_oral_checkups", "all_oral_checkups", "oral_checkup", "구강검진_전체_일정_캘린더"),
 )
 
 
@@ -105,6 +105,8 @@ def _to_calendar_event(
 class BabyKitCalendar(CoordinatorEntity[BabyKitCoordinator], CalendarEntity):
     _attr_has_entity_name = True
     _attr_attribution = ATTRIBUTION
+    # on/off -> "지금 기간 중인 일정 있음/없음" instead of 켜짐/꺼짐
+    _attr_translation_key = "schedule_calendar"
 
     def __init__(
         self,

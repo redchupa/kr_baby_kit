@@ -20,8 +20,8 @@ from .schedule import event_to_dict
 
 
 _KIND_LABELS = {
-    "height": ("백분위_키_1퍼센트는_가장_큼", "Height percentile (1% = tallest)"),
-    "weight": ("백분위_몸무게_1퍼센트는_가장_무거움", "Weight percentile (1% = heaviest)"),
+    "height": ("키_또래_중_상위_몇_퍼센트", "Height rank among peers (top %)"),
+    "weight": ("몸무게_또래_중_상위_몇_퍼센트", "Weight rank among peers (top %)"),
 }
 # head / bmi / weight-for-length intentionally omitted — they are bi-directional
 # (양극단 우려) and exposing them as a percentile sensor invited users to read a
@@ -30,10 +30,38 @@ _KIND_LABELS = {
 
 
 _CARE_TUITION_FIELDS: list[tuple[str, str, str]] = [
-    ("standard_tuition", "standard_tuition", "보육료_표준"),
-    ("government_subsidy", "government_subsidy", "보육료_정부지원금"),
-    ("parent_share", "parent_share", "보육료_본인부담금"),
+    ("standard_tuition", "standard_tuition", "보육료_월_표준_금액"),
+    ("government_subsidy", "government_subsidy", "보육료_월_정부지원금"),
+    ("parent_share", "parent_share", "보육료_월_본인부담금"),
 ]
+
+
+# (data key, next-event uid slug, open-deadline uid slug, names)
+# The two sensors split what one sensor used to mix: an already-open window
+# showed its (past) start date under a "다음" name.
+_SCHEDULE_SENSORS: tuple[tuple[str, str, str, str, str], ...] = (
+    (
+        "upcoming_vaccines",
+        "next_vaccine",
+        "vaccine_open_deadline",
+        "예방접종_다음_일정_시작일",
+        "예방접종_지금_맞을_수_있는_마감일",
+    ),
+    (
+        "upcoming_checkups",
+        "next_checkup",
+        "checkup_open_deadline",
+        "건강검진_다음_일정_시작일",
+        "건강검진_지금_받을_수_있는_마감일",
+    ),
+    (
+        "upcoming_oral_checkups",
+        "next_oral_checkup",
+        "oral_checkup_open_deadline",
+        "구강검진_다음_일정_시작일",
+        "구강검진_지금_받을_수_있는_마감일",
+    ),
+)
 
 
 async def async_setup_entry(
@@ -46,33 +74,17 @@ async def async_setup_entry(
         PercentileSensor(coordinator, entry, kind) for kind in _KIND_LABELS
     ]
     entities.append(AgeMonthsSensor(coordinator, entry))
-    entities.append(
-        NextEventSensor(
-            coordinator,
-            entry,
-            data_key="upcoming_vaccines",
-            slug="next_vaccine",
-            label="일정_다음_예방접종",
+    for data_key, next_slug, open_slug, next_label, open_label in _SCHEDULE_SENSORS:
+        entities.append(
+            NextEventSensor(
+                coordinator, entry, data_key=data_key, slug=next_slug, label=next_label
+            )
         )
-    )
-    entities.append(
-        NextEventSensor(
-            coordinator,
-            entry,
-            data_key="upcoming_checkups",
-            slug="next_checkup",
-            label="일정_다음_검진",
+        entities.append(
+            OpenDeadlineSensor(
+                coordinator, entry, data_key=data_key, slug=open_slug, label=open_label
+            )
         )
-    )
-    entities.append(
-        NextEventSensor(
-            coordinator,
-            entry,
-            data_key="upcoming_oral_checkups",
-            slug="next_oral_checkup",
-            label="일정_다음_구강검진",
-        )
-    )
     for tuition_field, slug, label in _CARE_TUITION_FIELDS:
         entities.append(CareTuitionSensor(coordinator, entry, tuition_field, slug, label))
     entities.append(BMIRawSensor(coordinator, entry))
@@ -128,7 +140,7 @@ class PercentileSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
 
 class AgeMonthsSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     _attr_has_entity_name = True
-    _attr_name = "정보_월령_개월_수"
+    _attr_name = "월령_태어난_지_몇_개월"
     _attr_native_unit_of_measurement = "mo"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_attribution = ATTRIBUTION
@@ -148,11 +160,11 @@ class AgeMonthsSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
 
 
 class NextEventSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
-    """Timestamp sensor exposing the start of the next scheduled event.
+    """Start date of the next window that has NOT opened yet (always future).
 
-    Lets dashboards render `Relative` cards ("in 14 days") and lets
-    automations use `numeric_state` triggers without parsing calendar
-    entity attributes.
+    Windows that are already open live on ``OpenDeadlineSensor`` instead;
+    before v0.9.0 this sensor showed an open window's past start date under
+    a "다음" name. ``open_event_ids`` is still exposed for scripts.
     """
 
     _attr_has_entity_name = True
@@ -177,9 +189,18 @@ class NextEventSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     def device_info(self):
         return child_device(self.coordinator.entry)
 
+    def _today(self) -> date | None:
+        data = self.coordinator.data or {}
+        return date.fromisoformat(data["today"]) if data.get("today") else None
+
+    def _events(self) -> list:
+        return (self.coordinator.data or {}).get(self._data_key, [])
+
     def _next_event(self):
-        events = (self.coordinator.data or {}).get(self._data_key, [])
-        return events[0] if events else None
+        today = self._today()
+        return next(
+            (e for e in self._events() if today is None or e.start > today), None
+        )
 
     @property
     def native_value(self) -> datetime | None:
@@ -191,20 +212,74 @@ class NextEventSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         data = self.coordinator.data or {}
-        event = self._next_event()
-        events = data.get(self._data_key, [])
-        if event is None:
-            return {"upcoming_count": 0}
-        today = date.fromisoformat(data["today"]) if data.get("today") else None
-        attrs = event_to_dict(event, today, data.get("completed"))
-        attrs["upcoming_count"] = len(events)
-        # Every event whose window is open right now — e.g. the 2-month
-        # visit has DTaP/IPV/Hib/PCV/RV together. Handy for one-shot
-        # mark_event_done calls.
-        attrs["open_event_ids"] = [
+        today = self._today()
+        events = self._events()
+        open_ids = [
             e.event_id for e in events if today is not None and e.start <= today
         ]
+        event = self._next_event()
+        if event is None:
+            return {"upcoming_count": 0, "open_event_ids": open_ids}
+        attrs = event_to_dict(event, today, data.get("completed"))
+        if today is not None:
+            attrs["days_until_start"] = (event.start - today).days
+        attrs["upcoming_count"] = len(events)
+        # Windows open right now (e.g. the whole 2-month bundle) for
+        # one-shot mark_event_done scripts.
+        attrs["open_event_ids"] = open_ids
         return attrs
+
+
+class OpenDeadlineSensor(NextEventSensor):
+    """Deadline of the window(s) open right now; unknown when none is open.
+
+    State is the end of the last allowed day, so a dashboard shows
+    "N일 후" until the deadline passes. Every open, not-completed event is
+    listed with its own deadline in ``open_events``.
+    """
+
+    def _open_events(self) -> list:
+        today = self._today()
+        if today is None:
+            return []
+        return sorted(
+            (e for e in self._events() if e.start <= today <= e.end),
+            key=lambda e: (e.end, e.event_id),
+        )
+
+    @property
+    def native_value(self) -> datetime | None:
+        events = self._open_events()
+        if not events:
+            return None
+        return datetime.combine(events[0].end, time(23, 59, 59), tzinfo=TZ_ASIA_SEOUL)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        today = self._today()
+        events = self._open_events()
+        out = {
+            "open_count": len(events),
+            "open_event_ids": [e.event_id for e in events],
+            "open_events": [
+                {
+                    "event_id": e.event_id,
+                    "name_ko": e.name_ko,
+                    "dose": e.dose,
+                    "window_start": e.start.isoformat(),
+                    "deadline": e.end.isoformat(),
+                    "days_left": (e.end - today).days if today else None,
+                }
+                for e in events
+            ],
+        }
+        if events:
+            first = events[0]
+            out["event_id"] = first.event_id
+            out["name_ko"] = first.name_ko
+            out["deadline"] = first.end.isoformat()
+            out["days_left"] = (first.end - today).days if today else None
+        return out
 
 
 class CareTuitionSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
@@ -279,7 +354,7 @@ class BMIRawSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     """
 
     _attr_has_entity_name = True
-    _attr_name = "정보_BMI_수치"
+    _attr_name = "BMI_체질량지수_수치"
     _attr_native_unit_of_measurement = "kg/m²"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_attribution = ATTRIBUTION

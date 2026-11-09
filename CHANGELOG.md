@@ -19,6 +19,8 @@ versions follow [SemVer](https://semver.org/).
 
 ### Changed
 
+- **Clearer entity names and states** (entity_ids unchanged, so automations keep working). Names now say what the value means and start with the category so they group when sorted: `예방접종_…`, `건강검진_…`, `구강검진_…`, `보육료_월_…`, `키_또래_중_상위_몇_퍼센트`, `월령_태어난_지_몇_개월`, `키_기록하기_오늘_날짜로`, `…_전체_일정_캘린더`. Binary sensors and calendars show readable states via entity translations instead of 켜짐/꺼짐: "이번 달 접종 있음/없음", "주의 필요/주의 신호 없음", "지금 기간 중인 일정 있음/없음".
+- **Next-event vs. deadline split**: `…_다음_일정_시작일` (existing `next_*` entities) now only shows a window that has not opened yet, so it never displays a past date. New `…_지금_맞을_수_있는_마감일` / `…_지금_받을_수_있는_마감일` sensors (`*_open_deadline`) show the last day of the window(s) open right now, with per-event `open_events` (deadline, days_left).
 - **Refresh cadence** 6 h → 1 h, plus a refresh right after every Asia/Seoul midnight so 월령 and "이번 달" state flip at the day boundary. Service calls and number inputs refresh immediately instead of through the ~10 s debouncer.
 - **Checkup windows are inclusive month-of-age ranges**: "생후 4~6개월" now ends the day before 7 months (previously the day the child turned 6 months, about a month short). 1차 검진 uses exact days (14~35일). Whole-month offsets use calendar months instead of 30.4375-day averages.
 - **Influenza** is projected per season (10/1 ~ 4/30, `IIV_<year>`) instead of one 13-year window that would otherwise sit at the top of the next-vaccine sensor forever.

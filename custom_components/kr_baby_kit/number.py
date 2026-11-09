@@ -23,21 +23,21 @@ from .storage import async_append_measurement, latest
 
 _NUMBER_SPECS = {
     "height": {
-        "name": "키_입력",
+        "name": "키_기록하기_오늘_날짜로",
         "unit": "cm",
         "min": 30.0,
         "max": 200.0,
         "step": 0.1,
     },
     "weight": {
-        "name": "몸무게_입력",
+        "name": "몸무게_기록하기_오늘_날짜로",
         "unit": "kg",
         "min": 1.0,
         "max": 100.0,
         "step": 0.05,
     },
     "head": {
-        "name": "머리둘레_입력",
+        "name": "머리둘레_기록하기_오늘_날짜로",
         "unit": "cm",
         "min": 25.0,
         "max": 65.0,

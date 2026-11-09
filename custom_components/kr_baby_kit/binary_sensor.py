@@ -50,10 +50,17 @@ def _window_overlaps_month(start: date, end: date, ref: date) -> bool:
 
 
 class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
+    """on = a window of this kind overlaps the current month.
+
+    ``translation_key`` maps on/off to readable states ("이번 달 접종 있음")
+    instead of 켜짐/꺼짐.
+    """
+
     _attr_has_entity_name = True
     _attr_attribution = ATTRIBUTION
     _data_key = ""
     _label = ""
+    _translation_key = ""
 
     def __init__(self, coordinator: BabyKitCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
@@ -62,6 +69,7 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
             f"{DOMAIN}_{coordinator.child_id}_{self._data_key}_due_this_month"
         )
         self._attr_name = self._label
+        self._attr_translation_key = self._translation_key
 
     @property
     def device_info(self):
@@ -109,17 +117,20 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
 
 class VaccineDueSensor(_DueSensor):
     _data_key = "upcoming_vaccines"
-    _label = "일정_이번_달_예방접종"
+    _label = "예방접종_이번_달_일정"
+    _translation_key = "vaccine_due"
 
 
 class CheckupDueSensor(_DueSensor):
     _data_key = "upcoming_checkups"
-    _label = "일정_이번_달_검진"
+    _label = "건강검진_이번_달_일정"
+    _translation_key = "checkup_due"
 
 
 class OralCheckupDueSensor(_DueSensor):
     _data_key = "upcoming_oral_checkups"
-    _label = "일정_이번_달_구강검진"
+    _label = "구강검진_이번_달_일정"
+    _translation_key = "oral_checkup_due"
 
 
 class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
@@ -135,6 +146,9 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
     _attr_has_entity_name = True
     _attr_attribution = ATTRIBUTION
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
+    # on -> "주의 필요", off -> "주의 신호 없음" (also true when the metric
+    # is not defined at this age, unlike the device-class default "정상").
+    _attr_translation_key = "growth_concern"
     _slug: str = ""
     _label: str = ""
 
