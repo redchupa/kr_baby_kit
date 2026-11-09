@@ -474,3 +474,23 @@ async def test_remove_entry_deletes_child_records(hass: HomeAssistant) -> None:
     assert await hass.config_entries.async_remove(entry.entry_id)
     await hass.async_block_till_done()
     assert CHILD_ID not in await async_load_records(hass)
+
+
+async def test_bmi_concern_advisory_uses_age_at_measurement(hass: HomeAssistant) -> None:
+    """Child is now >24 months but was measured at 18 months: no KDCA BMI
+    percentile exists for that measurement, so the entity must show the
+    advisory (state off) instead of going unavailable."""
+    await _setup(hass, _mock_entry())
+    await hass.services.async_call(
+        DOMAIN,
+        "record_measurement",
+        {"date": "2021-09-15", "height": 82.0, "weight": 11.0},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    eid = _entity_id(hass, f"{DOMAIN}_{CHILD_ID}_bmi_concern")
+    state = hass.states.get(eid)
+    assert state.state == "off"
+    assert "측정 당시" in state.attributes["summary_ko"]
+    raw = hass.states.get(_entity_id(hass, f"{DOMAIN}_{CHILD_ID}_bmi_raw"))
+    assert "측정 당시" in raw.attributes["summary_ko"]

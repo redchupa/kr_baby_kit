@@ -215,13 +215,16 @@ class BMIConcernSensor(_ConcernSensor):
         # human-readable advisory + the raw BMI so the entity stays available
         # and the parent sees *why* there's no percentile yet — rather than a
         # bare "unavailable" badge.
-        age_m = data.get("age_months")
+        age_m = data.get("bmi_age_months")
+        if age_m is None:
+            age_m = data.get("age_months")
         if age_m is not None and age_m < 24:
             return {
                 "summary_ko": (
-                    "만 24개월 미만 — BMI 백분위는 KDCA 기준상 만 2세부터 "
-                    "적용됩니다. 같은 자녀의 '신장별 몸무게 양극단 주의' "
-                    "binary_sensor 를 함께 확인하세요."
+                    "측정 당시 만 24개월 미만 — BMI 백분위는 KDCA 기준상 "
+                    "만 2세부터 적용됩니다. 같은 자녀의 '신장별 몸무게 양극단 "
+                    "주의' binary_sensor 를 함께 확인하고, 만 2세 이후 다시 "
+                    "측정하면 BMI 백분위가 계산됩니다."
                 ),
                 "value": data.get("bmi_raw"),
             }

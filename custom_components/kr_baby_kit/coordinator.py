@@ -149,6 +149,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
         # only starts at 24 months (under-2s use weight-for-length instead).
         bmi_raw: float | None = None
         bmi_measured_at: str | None = None
+        bmi_age: float | None = None
         if h_record and w_record:
             h_cm = float(h_record["height"])
             w_kg = float(w_record["weight"])
@@ -234,4 +235,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
             "care_tuition": care_tuition,
             "bmi_raw": bmi_raw,
             "bmi_measured_at": bmi_measured_at,
+            # Age at the BMI measurement: decides the under-24-month advisory
+            # (KDCA BMI percentiles start at 24 months of age *at measurement*).
+            "bmi_age_months": round(bmi_age, 2) if bmi_age is not None else None,
         }

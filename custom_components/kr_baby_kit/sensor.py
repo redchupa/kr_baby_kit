@@ -300,9 +300,11 @@ class BMIRawSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     def extra_state_attributes(self) -> dict:
         data = self.coordinator.data or {}
         bmi_info = (data.get("percentiles") or {}).get("bmi") or {}
-        age_m = data.get("age_months") or 0
+        age_m = data.get("bmi_age_months")
+        if age_m is None:
+            age_m = data.get("age_months") or 0
         if age_m < 24:
-            summary = "만 24개월 미만 — KDCA BMI 백분위 미정의, 신장별 몸무게 백분위를 함께 확인하세요."
+            summary = "측정 당시 만 24개월 미만 — KDCA BMI 백분위 미정의, 신장별 몸무게 백분위를 함께 확인하세요."
         else:
             summary = bmi_info.get("summary_ko")
         return {
