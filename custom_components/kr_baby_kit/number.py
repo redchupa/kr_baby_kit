@@ -11,6 +11,7 @@ from datetime import datetime
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -93,10 +94,14 @@ class MeasurementNumber(CoordinatorEntity[BabyKitCoordinator], NumberEntity):
 
     async def async_set_native_value(self, value: float) -> None:
         today = datetime.now(TZ_ASIA_SEOUL).date().isoformat()
-        await async_append_measurement(
-            self.hass,
-            child_id=self.coordinator.child_id,
-            measurement_date=today,
-            **{self._kind: value},
-        )
-        await self.coordinator.async_request_refresh()
+        try:
+            await async_append_measurement(
+                self.hass,
+                child_id=self.coordinator.child_id,
+                measurement_date=today,
+                **{self._kind: value},
+            )
+        except ValueError as err:
+            # Surface as a clean UI error instead of an unhandled traceback.
+            raise ServiceValidationError(str(err)) from err
+        await self.coordinator.async_refresh()

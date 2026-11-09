@@ -2,7 +2,7 @@
 
 ## 1. 사전 준비
 
-- Home Assistant 2024.6 이상
+- Home Assistant 2024.11 이상
 - HACS 설치 완료
 - 자녀의 생년월일·성별 정보
 

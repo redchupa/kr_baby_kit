@@ -19,7 +19,7 @@ jobs:
       - name: Install pytest + openpyxl (build-script smoke)
         run: python -m pip install --upgrade pip pytest pytest-asyncio openpyxl
       - name: Run pure-Python unit tests
-        run: python -m pytest tests/test_growth.py tests/test_schedule.py tests/test_build_growth_chart.py tests/test_storage.py tests/test_weight_for_length.py tests/test_care_tuition.py tests/test_check_care_tuition.py tests/test_percentile_summary.py -q
+        run: python -m pytest tests/test_growth.py tests/test_schedule.py tests/test_build_growth_chart.py tests/test_storage.py tests/test_weight_for_length.py tests/test_care_tuition.py tests/test_check_care_tuition.py tests/test_percentile_summary.py tests/test_validation.py -q
       - name: Sanity-check care_tuition table (non-strict)
         run: python scripts/check_care_tuition.py
 
@@ -29,9 +29,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
       - name: Install pytest-homeassistant-custom-component
         run: python -m pip install --upgrade pip pytest-homeassistant-custom-component
+      - name: Install conversation deps pinned by the installed HA
+        # Read the exact requirement pins from HA core manifests so they
+        # always match the HA version the test plugin pulled in.
+        run: |
+          REQS=$(python scripts/ha_conversation_reqs.py)
+          echo "Installing: $REQS"
+          python -m pip install $REQS
       - name: Run HA-stack integration tests
         # Exit code 5 means pytest collected zero tests, which happens when
         # the integration suite is collect_ignored for missing conversation

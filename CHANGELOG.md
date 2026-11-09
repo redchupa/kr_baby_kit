@@ -4,6 +4,39 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.9.0] - 2026-11-09
+
+### Added
+
+- **영유아 구강검진 4회** (NHIS: 18~29 · 30~41 · 42~53 · 54~65개월) — new `sensor.<child>_일정_다음_구강검진`, `binary_sensor.<child>_일정_이번_달_구강검진`, `calendar.<child>_캘린더_구강검진`, and the `get_next_oral_checkup` LLM tool. Each checkup now carries its 검진 항목 (`items_ko`) and the official window text (`window_note_ko`). Source: 국민건강보험공단 건강검진정보 via 국립재활원 정보포털.
+- **Completion tracking** — `kr_baby_kit.mark_event_done` / `unmark_event_done` (one or many `event_id`s, optional date). Completed doses/checkups drop out of the next-event sensors and the "이번 달" binary sensors; calendars keep them with a ✅ prefix and flag passed windows without a mark with ⚠️. New `get_completed_events` LLM tool.
+- `kr_baby_kit.get_schedule` (response only) — every vaccine/checkup/oral-checkup window with `event_id` and status `done/open/upcoming/missed`.
+- Next-event sensors expose `event_id` and `open_event_ids` (every window open today, e.g. the whole 2-month bundle) for one-tap completion scripts.
+- **Options flow** (통합 → 구성) to edit name, birthdate, and sex. `child_id` is kept, so records and completion marks survive; the entry reloads and recomputes everything.
+- `kr_baby_kit.delete_measurement` (whole record or selected fields) and `kr_baby_kit.get_measurements` (response only, optional date range).
+- Deleting a child entry now deletes that child's records and completion marks.
+- `record_measurement` `date` is optional (defaults to today, Asia/Seoul) and rejects future dates and dates before the birthdate.
+
+### Changed
+
+- **Refresh cadence** 6 h → 1 h, plus a refresh right after every Asia/Seoul midnight so 월령 and "이번 달" state flip at the day boundary. Service calls and number inputs refresh immediately instead of through the ~10 s debouncer.
+- **Checkup windows are inclusive month-of-age ranges**: "생후 4~6개월" now ends the day before 7 months (previously the day the child turned 6 months, about a month short). 1차 검진 uses exact days (14~35일). Whole-month offsets use calendar months instead of 30.4375-day averages.
+- **Influenza** is projected per season (10/1 ~ 4/30, `IIV_<year>`) instead of one 13-year window that would otherwise sit at the top of the next-vaccine sensor forever.
+- **NIP data synced 2026-11-09**: HPV extended to 12-year-old boys (2014년생~, from 2026-05-06) and moved to 만 12세; influenza 6개월~만 13세; Hib/PCV 4차 12~15개월; HepA 1차 12~23개월; DTaP 5·IPV 4·MMR 2 until the 7th birthday (만 4~6세); IJEV 4차 만 6세, 5차 만 12세.
+- Calendars show the full schedule (past windows included) as all-day events with a stable `uid`.
+- Minimum Home Assistant raised to **2024.11** (coordinator `config_entry` argument, modern `OptionsFlow`).
+- Docs no longer claim encrypted storage: records live in HA's `.storage/` as plain JSON, same as other integrations.
+
+### Fixed
+
+- **Percentiles were computed at the child's current age, not the age at measurement.** An old record kept sliding toward the bottom of the chart as the child grew. Height/weight/head/BMI/weight-for-length now use the measurement date (`age_months_at_measurement` attribute added).
+- **Next-vaccine sensor picked the first open dose in JSON order** (BCG, HepB, DTaP …) rather than the chronologically next one. Upcoming lists are now sorted by window start.
+- **Lost updates on quick successive inputs**: each storage call built a new `Store` with no lock, so setting height and weight back-to-back could drop one value. One cached store per key plus an `asyncio.Lock` now serialise writes.
+- **Entry reload failed on HA versions whose `llm.async_register_api` returns `None`** ("API … is already registered"), which broke reloading and the new options flow. A fallback unregister is installed.
+- Number inputs out of range now raise a clean `ServiceValidationError` instead of an unhandled `ValueError`.
+- Concern / tuition entities respect coordinator availability (they used to stay "available" when the coordinator failed).
+- CI: `test_validation.py` is part of the unit job; the integration job installs conversation deps pinned from HA's own manifests, so the integration suite actually runs (it was always skipped before).
+
 ## [0.8.9] - 2026-05-14
 
 ### Fixed

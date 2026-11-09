@@ -1,7 +1,7 @@
 """Growth percentile sensors per registered child."""
 from __future__ import annotations
 
-from datetime import datetime, time
+from datetime import date, datetime, time
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -16,6 +16,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import ATTRIBUTION, DOMAIN, MEDICAL_DISCLAIMER, TZ_ASIA_SEOUL
 from .coordinator import BabyKitCoordinator
 from .device import child_device
+from .schedule import event_to_dict
 
 
 _KIND_LABELS = {
@@ -61,6 +62,15 @@ async def async_setup_entry(
             data_key="upcoming_checkups",
             slug="next_checkup",
             label="일정_다음_검진",
+        )
+    )
+    entities.append(
+        NextEventSensor(
+            coordinator,
+            entry,
+            data_key="upcoming_oral_checkups",
+            slug="next_oral_checkup",
+            label="일정_다음_구강검진",
         )
     )
     for tuition_field, slug, label in _CARE_TUITION_FIELDS:
@@ -179,19 +189,21 @@ class NextEventSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
+        data = self.coordinator.data or {}
         event = self._next_event()
+        events = data.get(self._data_key, [])
         if event is None:
             return {"upcoming_count": 0}
-        events = (self.coordinator.data or {}).get(self._data_key, [])
-        return {
-            "code": event.code,
-            "name_ko": event.name_ko,
-            "name_en": event.name_en,
-            "dose": event.dose,
-            "window_start": event.start.isoformat(),
-            "window_end": event.end.isoformat(),
-            "upcoming_count": len(events),
-        }
+        today = date.fromisoformat(data["today"]) if data.get("today") else None
+        attrs = event_to_dict(event, today, data.get("completed"))
+        attrs["upcoming_count"] = len(events)
+        # Every event whose window is open right now — e.g. the 2-month
+        # visit has DTaP/IPV/Hib/PCV/RV together. Handy for one-shot
+        # mark_event_done calls.
+        attrs["open_event_ids"] = [
+            e.event_id for e in events if today is not None and e.start <= today
+        ]
+        return attrs
 
 
 class CareTuitionSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
@@ -230,7 +242,7 @@ class CareTuitionSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
 
     @property
     def available(self) -> bool:
-        return self._tier() is not None
+        return super().available and self._tier() is not None
 
     @property
     def native_value(self) -> int | None:

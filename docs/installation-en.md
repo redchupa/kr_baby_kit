@@ -2,7 +2,7 @@
 
 ## 1. Prerequisites
 
-- Home Assistant 2024.6 or later
+- Home Assistant 2024.11 or later
 - HACS installed
 - Your child's birthdate and sex
 

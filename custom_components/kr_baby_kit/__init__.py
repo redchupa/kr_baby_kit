@@ -56,6 +56,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     async_register_services(hass)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
+    # Armed last so a failed setup never leaves a timer behind.
+    entry.async_on_unload(coordinator.async_schedule_midnight_refresh())
     return True
 
 
@@ -69,3 +71,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         async_cleanup_llm_api(store.get("unregister_llm"))
         async_unregister_services(hass)
     return unload_ok
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Deleting a child entry also deletes that child's stored records."""
+    from .storage import async_remove_child_data
+
+    await async_remove_child_data(
+        hass, entry.data.get(CONF_CHILD_ID, entry.entry_id)
+    )

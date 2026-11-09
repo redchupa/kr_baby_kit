@@ -19,5 +19,49 @@
     "abort": {
       "already_configured": "This child is already registered."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Edit child",
+        "description": "Edit name, birthdate, or sex. Stored measurements and completion marks are kept; schedules and percentiles are recalculated.",
+        "data": {
+          "child_name": "Child name or alias",
+          "child_birthdate": "Birthdate",
+          "child_sex": "Sex"
+        }
+      }
+    },
+    "error": {
+      "required": "Required field.",
+      "invalid_date": "Invalid date format (YYYY-MM-DD).",
+      "future_date": "Future dates are not allowed."
+    }
+  },
+  "services": {
+    "record_measurement": {
+      "name": "Record measurement",
+      "description": "Store height/weight/head circumference and refresh percentiles."
+    },
+    "delete_measurement": {
+      "name": "Delete measurement",
+      "description": "Delete a whole record for a date, or only some of its fields."
+    },
+    "get_measurements": {
+      "name": "Get measurements",
+      "description": "Return stored measurement records in date order."
+    },
+    "mark_event_done": {
+      "name": "Mark event done",
+      "description": "Mark vaccine doses, infant checkups, or oral checkups as done."
+    },
+    "unmark_event_done": {
+      "name": "Unmark event done",
+      "description": "Undo a completion mark."
+    },
+    "get_schedule": {
+      "name": "Get schedule",
+      "description": "Return every vaccine/checkup/oral-checkup window with event_id and status."
+    }
   }
 }

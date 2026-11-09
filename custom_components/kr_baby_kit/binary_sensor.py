@@ -34,6 +34,7 @@ async def async_setup_entry(
         [
             VaccineDueSensor(coordinator, entry),
             CheckupDueSensor(coordinator, entry),
+            OralCheckupDueSensor(coordinator, entry),
             HeadConcernSensor(coordinator, entry),
             BMIConcernSensor(coordinator, entry),
             WeightForLengthConcernSensor(coordinator, entry),
@@ -78,11 +79,22 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        events = (self.coordinator.data or {}).get(self._data_key, [])
+        data = self.coordinator.data or {}
+        events = data.get(self._data_key, [])
+        this_month: list[str] = []
+        if data.get("today"):
+            today = date.fromisoformat(data["today"])
+            this_month = [
+                e.event_id
+                for e in events
+                if _window_overlaps_month(e.start, e.end, today)
+            ]
         return {
             "count_within_horizon": len(events),
+            "this_month_event_ids": this_month,
             "next": (
                 {
+                    "event_id": events[0].event_id,
                     "code": events[0].code,
                     "name_ko": events[0].name_ko,
                     "dose": events[0].dose,
@@ -103,6 +115,11 @@ class VaccineDueSensor(_DueSensor):
 class CheckupDueSensor(_DueSensor):
     _data_key = "upcoming_checkups"
     _label = "일정_이번_달_검진"
+
+
+class OralCheckupDueSensor(_DueSensor):
+    _data_key = "upcoming_oral_checkups"
+    _label = "일정_이번_달_구강검진"
 
 
 class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
@@ -140,6 +157,8 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
         # to surface via attributes (e.g. the <24mo BMI advisory). This keeps
         # the entity from showing "unavailable" when the missing percentile
         # itself is the information the parent needs to see.
+        if not super().available:
+            return False
         info = self._info()
         return (
             info.get("statistical_percentile") is not None

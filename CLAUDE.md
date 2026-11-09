@@ -25,7 +25,7 @@
 1. **`PLAN.md` 정독** — §7 자녀 데이터 가드, §8 자산 참조
 2. **`../MASTER_PLAN.md` 정독** — 공통 규칙
 3. **`../kr_component_kit/custom_components/kr_component_kit/`** 패턴 참고
-4. 현재 마일스톤 확인 (M0/M1/M2 완료, M3 옵션 기능만 남음)
+4. 현재 마일스톤 확인 (M0~M3 완료, v0.9.0: 구강검진·완료 표시·Options Flow·측정 삭제/조회)
 
 ## 데이터 소스 (모두 무료·공개)
 
@@ -40,7 +40,7 @@
 
 - Python 3.12+, HA custom_component 표준
 - Config Flow로 자녀 다중 등록
-- 측정 기록은 HA Storage(암호화)에 저장
+- 측정 기록·완료 표시는 HA Store(`.storage/`, 평문 JSON)에 저장 — 별도 암호화 없음 (v0.9.0 결정)
 - AI 호출 인라인 유지
 - 의학·진단 책임 회피 면책 명시
 

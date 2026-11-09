@@ -25,10 +25,10 @@ pytestmark = [
         sys.platform == "win32",
         reason="pytest-homeassistant-custom-component requires POSIX (fcntl).",
     ),
-    pytest.mark.skip(
-        reason="Full HA conversation deps not installed in CI; tracked separately.",
-    ),
 ]
+# Collection is skipped entirely (tests/integration/conftest.py) when the
+# conversation integration's deps (hassil, ...) are missing, which is the
+# case in the default CI install.
 
 from homeassistant.config_entries import ConfigEntryState  # noqa: E402
 from homeassistant.core import HomeAssistant  # noqa: E402
@@ -91,10 +91,13 @@ async def test_setup_registers_sensors_and_calendars(hass: HomeAssistant) -> Non
         f"{DOMAIN}_{CHILD_ID}_weight_for_length_concern",
         f"{DOMAIN}_{CHILD_ID}_upcoming_vaccines_due_this_month",
         f"{DOMAIN}_{CHILD_ID}_upcoming_checkups_due_this_month",
+        f"{DOMAIN}_{CHILD_ID}_upcoming_oral_checkups_due_this_month",
         f"{DOMAIN}_{CHILD_ID}_immunization_calendar",
         f"{DOMAIN}_{CHILD_ID}_checkup_calendar",
+        f"{DOMAIN}_{CHILD_ID}_oral_checkup_calendar",
         f"{DOMAIN}_{CHILD_ID}_next_vaccine",
         f"{DOMAIN}_{CHILD_ID}_next_checkup",
+        f"{DOMAIN}_{CHILD_ID}_next_oral_checkup",
         f"{DOMAIN}_{CHILD_ID}_standard_tuition",
         f"{DOMAIN}_{CHILD_ID}_government_subsidy",
         f"{DOMAIN}_{CHILD_ID}_parent_share",
@@ -249,3 +252,225 @@ async def test_unload_entry(hass: HomeAssistant) -> None:
 
     assert await hass.config_entries.async_unload(entry.entry_id)
     assert entry.state == ConfigEntryState.NOT_LOADED
+
+
+# ---------------------------------------------------------------- v0.9.0
+
+from datetime import datetime, timedelta  # noqa: E402
+
+from homeassistant.exceptions import (  # noqa: E402
+    HomeAssistantError,
+    ServiceValidationError,
+)
+from homeassistant.util import dt as dt_util  # noqa: E402
+
+from custom_components.kr_baby_kit.const import TZ_ASIA_SEOUL  # noqa: E402
+from custom_components.kr_baby_kit.schedule import add_calendar_months  # noqa: E402
+from custom_components.kr_baby_kit.storage import async_load_records  # noqa: E402
+
+YOUNG_ID = "synthetic_baby_b"
+
+
+def _young_entry(months_old: int = 2) -> MockConfigEntry:
+    """A child a few days past ``months_old`` so the 2-month bundle is open."""
+    today = datetime.now(TZ_ASIA_SEOUL).date()
+    bd = add_calendar_months(today, -months_old) - timedelta(days=3)
+    return MockConfigEntry(
+        domain=DOMAIN,
+        title="Baby B",
+        data={
+            CONF_CHILD_ID: YOUNG_ID,
+            CONF_CHILD_NAME: "Baby B",
+            CONF_CHILD_BIRTHDATE: bd.isoformat(),
+            CONF_CHILD_SEX: "female",
+        },
+        unique_id=YOUNG_ID,
+    )
+
+
+async def _setup(hass: HomeAssistant, entry: MockConfigEntry) -> None:
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done()
+
+
+async def test_mark_event_done_removes_it_from_next_vaccine(
+    hass: HomeAssistant,
+) -> None:
+    await _setup(hass, _young_entry())
+    next_vaccine = _entity_id(hass, f"{DOMAIN}_{YOUNG_ID}_next_vaccine")
+    state = hass.states.get(next_vaccine)
+    open_ids = state.attributes["open_event_ids"]
+    assert "DTaP_1" in open_ids
+
+    resp = await hass.services.async_call(
+        DOMAIN,
+        "mark_event_done",
+        {"event_id": ", ".join(open_ids)},
+        blocking=True,
+        return_response=True,
+    )
+    assert set(resp["completed"]) == set(open_ids)
+    await hass.async_block_till_done()
+
+    state = hass.states.get(next_vaccine)
+    assert state.attributes.get("event_id") not in open_ids
+
+    schedule = await hass.services.async_call(
+        DOMAIN, "get_schedule", {}, blocking=True, return_response=True
+    )
+    status = {v["event_id"]: v["status"] for v in schedule["vaccines"]}
+    assert status["DTaP_1"] == "done"
+    assert len(schedule["oral_checkups"]) == 4
+
+    await hass.services.async_call(
+        DOMAIN, "unmark_event_done", {"event_id": "DTaP_1"}, blocking=True
+    )
+    await hass.async_block_till_done()
+    state = hass.states.get(next_vaccine)
+    assert "DTaP_1" in state.attributes["open_event_ids"]
+
+
+async def test_mark_event_done_rejects_unknown_id(hass: HomeAssistant) -> None:
+    await _setup(hass, _young_entry())
+    with pytest.raises(ServiceValidationError):
+        await hass.services.async_call(
+            DOMAIN, "mark_event_done", {"event_id": "NOPE_9"}, blocking=True
+        )
+
+
+async def test_delete_and_get_measurements(hass: HomeAssistant) -> None:
+    await _setup(hass, _mock_entry())
+    await hass.services.async_call(
+        DOMAIN,
+        "record_measurement",
+        {"date": "2025-03-15", "height": 110.0, "weight": 18.0},
+        blocking=True,
+    )
+    await hass.services.async_call(
+        DOMAIN,
+        "delete_measurement",
+        {"date": "2025-03-15", "kinds": ["weight"]},
+        blocking=True,
+    )
+    resp = await hass.services.async_call(
+        DOMAIN, "get_measurements", {}, blocking=True, return_response=True
+    )
+    assert resp["records"] == [{"date": "2025-03-15", "height": 110.0}]
+
+
+async def test_record_measurement_defaults_to_today(hass: HomeAssistant) -> None:
+    await _setup(hass, _mock_entry())
+    resp = await hass.services.async_call(
+        DOMAIN,
+        "record_measurement",
+        {"height": 110.0},
+        blocking=True,
+        return_response=True,
+    )
+    assert resp["record"]["date"] == datetime.now(TZ_ASIA_SEOUL).date().isoformat()
+
+
+async def test_number_out_of_range_raises_ha_error(hass: HomeAssistant) -> None:
+    await _setup(hass, _mock_entry())
+    from custom_components.kr_baby_kit.number import MeasurementNumber
+
+    entry = hass.config_entries.async_entries(DOMAIN)[0]
+    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    number = MeasurementNumber(coordinator, entry, "height")
+    number.hass = hass
+    with pytest.raises(HomeAssistantError):
+        await number.async_set_native_value(999.0)
+
+
+async def test_options_flow_updates_child(hass: HomeAssistant) -> None:
+    entry = _mock_entry()
+    await _setup(hass, entry)
+    await hass.services.async_call(
+        DOMAIN,
+        "record_measurement",
+        {"date": "2025-03-15", "height": 110.0},
+        blocking=True,
+    )
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] == "form"
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_CHILD_NAME: "Baby A2",
+            CONF_CHILD_BIRTHDATE: "2020-04-15",
+            CONF_CHILD_SEX: "female",
+        },
+    )
+    assert result["type"] == "create_entry"
+    await hass.async_block_till_done()
+
+    assert entry.title == "Baby A2"
+    assert entry.data[CONF_CHILD_BIRTHDATE] == "2020-04-15"
+    assert entry.data[CONF_CHILD_ID] == CHILD_ID  # identity unchanged
+    assert entry.state == ConfigEntryState.LOADED
+    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    assert coordinator.birthdate.isoformat() == "2020-04-15"
+    resp = await hass.services.async_call(
+        DOMAIN, "get_measurements", {}, blocking=True, return_response=True
+    )
+    assert resp["count"] == 1  # records survive the reload
+
+
+async def test_options_flow_rejects_future_birthdate(hass: HomeAssistant) -> None:
+    entry = _mock_entry()
+    await _setup(hass, entry)
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_CHILD_NAME: "Baby A",
+            CONF_CHILD_BIRTHDATE: "2999-01-01",
+            CONF_CHILD_SEX: "male",
+        },
+    )
+    assert result["type"] == "form"
+    assert result["errors"] == {CONF_CHILD_BIRTHDATE: "future_date"}
+
+
+async def test_calendar_lists_past_and_completed_events(hass: HomeAssistant) -> None:
+    await _setup(hass, _mock_entry())
+    await hass.services.async_call(
+        DOMAIN,
+        "mark_event_done",
+        {"event_id": "oral_checkup_1", "date": "2021-10-01"},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    cal_id = _entity_id(hass, f"{DOMAIN}_{CHILD_ID}_oral_checkup_calendar")
+    resp = await hass.services.async_call(
+        "calendar",
+        "get_events",
+        {
+            "entity_id": cal_id,
+            "start_date_time": dt_util.as_local(datetime(2021, 1, 1)).isoformat(),
+            "end_date_time": dt_util.as_local(datetime(2026, 1, 1)).isoformat(),
+        },
+        blocking=True,
+        return_response=True,
+    )
+    events = resp[cal_id]["events"]
+    assert len(events) == 4
+    assert events[0]["summary"].startswith("✅")
+    assert events[1]["summary"].startswith("⚠️")
+
+
+async def test_remove_entry_deletes_child_records(hass: HomeAssistant) -> None:
+    entry = _mock_entry()
+    await _setup(hass, entry)
+    await hass.services.async_call(
+        DOMAIN,
+        "record_measurement",
+        {"date": "2025-03-15", "height": 110.0},
+        blocking=True,
+    )
+    assert CHILD_ID in await async_load_records(hass)
+    assert await hass.config_entries.async_remove(entry.entry_id)
+    await hass.async_block_till_done()
+    assert CHILD_ID not in await async_load_records(hass)

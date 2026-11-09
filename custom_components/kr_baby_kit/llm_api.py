@@ -12,9 +12,11 @@ from typing import Any, Callable
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import llm
 
 from .const import DOMAIN, MEDICAL_DISCLAIMER
+from .schedule import event_to_dict
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -27,7 +29,9 @@ def _api_prompt(child_name: str) -> str:
     return (
         f"You can answer questions about the child '{child_name}'. "
         "Use the available tools to look up upcoming immunizations, "
-        "upcoming infant/child checkups, the latest growth percentiles, "
+        "upcoming infant/child checkups (영유아 건강검진), infant oral "
+        "checkups (영유아 구강검진), which doses/checkups were already "
+        "marked as done, the latest growth percentiles, "
         "and the childcare tuition tier (표준보육료 / 정부지원금 / "
         "본인부담금) that applies to the child's age class. Always end "
         "medical-adjacent answers with a brief reminder that this is "
@@ -38,36 +42,21 @@ def _api_prompt(child_name: str) -> str:
 
 
 def _next_event(events: list, today: date) -> dict | None:
+    # ``events`` is the coordinator's upcoming list: chronologically sorted
+    # and already stripped of completed items.
     for e in events:
         if e.end >= today:
-            return {
-                "code": e.code,
-                "name_ko": e.name_ko,
-                "name_en": e.name_en,
-                "dose": e.dose,
-                "window_start": e.start.isoformat(),
-                "window_end": e.end.isoformat(),
-                "note": e.note,
-            }
+            return event_to_dict(e, today)
     return None
 
 
 def _events_in_window(events: list, today: date, days: int) -> list[dict]:
     horizon = today + timedelta(days=days)
-    out = []
-    for e in events:
-        if e.end < today or e.start > horizon:
-            continue
-        out.append(
-            {
-                "code": e.code,
-                "name_ko": e.name_ko,
-                "dose": e.dose,
-                "window_start": e.start.isoformat(),
-                "window_end": e.end.isoformat(),
-            }
-        )
-    return out
+    return [
+        event_to_dict(e, today)
+        for e in events
+        if not (e.end < today or e.start > horizon)
+    ]
 
 
 class _BabyKitTool(llm.Tool):
@@ -132,6 +121,69 @@ class GetNextCheckupTool(_BabyKitTool):
             "child_name": coord.child_name,
             "today": coord.data["today"],
             "next_checkup": nxt,
+            "disclaimer": MEDICAL_DISCLAIMER,
+        }
+
+
+class GetNextOralCheckupTool(_BabyKitTool):
+    name = "get_next_oral_checkup"
+    description = (
+        "Return the next upcoming or currently-open 영유아 구강검진 (infant "
+        "oral/dental checkup) window for this child. Korea runs 4 oral "
+        "checkups: 18-29, 30-41, 42-53, 54-65 months."
+    )
+    parameters = vol.Schema({})
+
+    async def async_call(
+        self,
+        hass: HomeAssistant,
+        tool_input: llm.ToolInput,
+        llm_context: llm.LLMContext,
+    ) -> dict[str, Any]:
+        coord = self._coordinator()
+        if coord is None or coord.data is None:
+            return {"error": "데이터 준비 중", "disclaimer": MEDICAL_DISCLAIMER}
+        today = date.fromisoformat(coord.data["today"])
+        nxt = _next_event(coord.data.get("upcoming_oral_checkups", []), today)
+        return {
+            "child_name": coord.child_name,
+            "today": coord.data["today"],
+            "next_oral_checkup": nxt,
+            "disclaimer": MEDICAL_DISCLAIMER,
+        }
+
+
+class GetCompletedEventsTool(_BabyKitTool):
+    name = "get_completed_events"
+    description = (
+        "Return the vaccine doses and checkups the parent has marked as done "
+        "for this child (event_id, name, completed date), plus windows that "
+        "already passed without a completion mark."
+    )
+    parameters = vol.Schema({})
+
+    async def async_call(
+        self,
+        hass: HomeAssistant,
+        tool_input: llm.ToolInput,
+        llm_context: llm.LLMContext,
+    ) -> dict[str, Any]:
+        coord = self._coordinator()
+        if coord is None or coord.data is None:
+            return {"error": "데이터 준비 중", "disclaimer": MEDICAL_DISCLAIMER}
+        today = date.fromisoformat(coord.data["today"])
+        completed = coord.data.get("completed") or {}
+        all_events = [
+            *coord.all_vaccines,
+            *coord.all_checkups,
+            *coord.all_oral_checkups,
+        ]
+        dumped = [event_to_dict(e, today, completed) for e in all_events]
+        return {
+            "child_name": coord.child_name,
+            "today": coord.data["today"],
+            "completed": [d for d in dumped if d["status"] == "done"],
+            "missed_without_mark": [d for d in dumped if d["status"] == "missed"],
             "disclaimer": MEDICAL_DISCLAIMER,
         }
 
@@ -203,8 +255,8 @@ class GetCareTuitionTool(_BabyKitTool):
 class ListUpcomingEventsTool(_BabyKitTool):
     name = "list_upcoming_events"
     description = (
-        "List all upcoming vaccine and checkup windows within the next N "
-        "days for this child."
+        "List all upcoming (not yet completed) vaccine, checkup and oral "
+        "checkup windows within the next N days for this child."
     )
     parameters = vol.Schema(
         {
@@ -234,6 +286,9 @@ class ListUpcomingEventsTool(_BabyKitTool):
             "checkups": _events_in_window(
                 coord.data.get("upcoming_checkups", []), today, days
             ),
+            "oral_checkups": _events_in_window(
+                coord.data.get("upcoming_oral_checkups", []), today, days
+            ),
             "disclaimer": MEDICAL_DISCLAIMER,
         }
 
@@ -241,6 +296,8 @@ class ListUpcomingEventsTool(_BabyKitTool):
 _TOOL_CLASSES = [
     GetNextVaccineTool,
     GetNextCheckupTool,
+    GetNextOralCheckupTool,
+    GetCompletedEventsTool,
     GetGrowthPercentilesTool,
     GetCareTuitionTool,
     ListUpcomingEventsTool,
@@ -280,9 +337,28 @@ async def async_setup_llm_api(
     hass: HomeAssistant, entry: ConfigEntry, child_id: str, child_name: str
 ) -> Callable[[], None] | None:
     api = _BabyKitAPI(hass, entry.entry_id, child_id, child_name)
-    unreg = llm.async_register_api(hass, api)
+    try:
+        unreg = llm.async_register_api(hass, api)
+    except HomeAssistantError:
+        # A stale registration survived a failed unload; replace it.
+        _drop_api(hass, api.id)
+        unreg = llm.async_register_api(hass, api)
+    if unreg is None:
+        # HA releases before the unregister callable existed return None.
+        # Without this fallback every entry reload failed with
+        # "API ... is already registered".
+        def unreg() -> None:
+            _drop_api(hass, api.id)
+
     _LOGGER.info("Registered LLM API %s", api.id)
     return unreg
+
+
+def _drop_api(hass: HomeAssistant, api_id: str) -> None:
+    get_apis = getattr(llm, "_async_get_apis", None)
+    if get_apis is None:  # pragma: no cover - future HA internals
+        return
+    get_apis(hass).pop(api_id, None)
 
 
 def async_cleanup_llm_api(unregister: Callable[[], None] | None) -> None:

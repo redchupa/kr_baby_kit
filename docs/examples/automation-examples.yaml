@@ -135,3 +135,52 @@
           custom_components/kr_baby_kit/data/care_tuition_kr.json 이
           placeholder 상태입니다. 보건복지부 표준보육료 고시로 갱신 후
           HA를 재시작하세요. 자세한 절차는 docs/release-checklist.md 참고.
+
+# 8. (v0.9.0) 구강검진 기간 시작 알림 — 이번 달에 구강검진 창이 열리면
+- alias: 구강검진 시기 알림
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.kr_baby_kit_baby_a_일정_이번_달_구강검진
+      to: "on"
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "영유아 구강검진 시기"
+        message: >-
+          {% set e = 'sensor.kr_baby_kit_baby_a_일정_다음_구강검진' %}
+          {{ state_attr(e, 'name_ko') }}
+          ({{ state_attr(e, 'window_start') }} ~ {{ state_attr(e, 'window_end') }}).
+          기간이 지나면 해당 차수는 받을 수 없어요.
+
+# 9. (v0.9.0) 대시보드 버튼용 스크립트 — 지금 열려 있는 접종을 오늘 날짜로 완료 처리
+#    (2개월 접종처럼 여러 백신을 한 번에 맞는 날)
+- alias: 오늘 접종 완료
+  sequence:
+    - service: kr_baby_kit.mark_event_done
+      data:
+        event_id: >-
+          {{ state_attr('sensor.kr_baby_kit_baby_a_일정_다음_예방접종', 'open_event_ids') | join(',') }}
+
+# 10. (v0.9.0) 매주 일요일 밤, 기간이 지났는데 완료 표시가 없는 일정 점검
+- alias: 놓친 접종·검진 점검
+  trigger:
+    - platform: time
+      at: "21:00:00"
+  condition:
+    - condition: time
+      weekday: [sun]
+  action:
+    - service: kr_baby_kit.get_schedule
+      response_variable: schedule
+    - variables:
+        missed: >-
+          {{ (schedule.vaccines + schedule.checkups + schedule.oral_checkups)
+             | selectattr('status', 'eq', 'missed') | map(attribute='name_ko') | list }}
+    - condition: template
+      value_template: "{{ missed | count > 0 }}"
+    - service: notify.mobile_app
+      data:
+        title: "완료 표시가 없는 지난 일정"
+        message: >-
+          {{ missed[:5] | join(', ') }}{% if missed | count > 5 %} 외 {{ missed | count - 5 }}건{% endif %}.
+          이미 했다면 mark_event_done 으로 표시해 주세요.
