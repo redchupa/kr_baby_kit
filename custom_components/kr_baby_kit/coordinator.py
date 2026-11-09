@@ -19,7 +19,7 @@ from .const import (
     TZ_ASIA_SEOUL,
     UPDATE_INTERVAL,
 )
-from .care_tuition import TuitionTier, tuition_for_age_months
+from .care_tuition import TuitionTier, tuition_for_birthdate
 from .growth import GrowthChart, age_months, format_summary_ko, rank_percent
 from .schedule import (
     project_checkup_events,
@@ -50,6 +50,12 @@ class BabyKitCoordinator(DataUpdateCoordinator):
         self.child_id: str = entry.data.get(CONF_CHILD_ID, entry.entry_id)
         self.child_sex: str = entry.data[CONF_CHILD_SEX]
         self.birthdate: date = date.fromisoformat(entry.data[CONF_CHILD_BIRTHDATE])
+        # The day the child was registered: windows that ended before it are
+        # not flagged as missed (nobody could have marked them yet).
+        created = getattr(entry, "created_at", None)
+        self.tracking_since: date | None = (
+            created.astimezone(TZ_ASIA_SEOUL).date() if created else None
+        )
         self.chart = chart
         self._nip_schedule = nip_schedule
         self._checkup_schedule = checkup_schedule
@@ -214,8 +220,9 @@ class BabyKitCoordinator(DataUpdateCoordinator):
             self.all_oral_checkups, today, UPCOMING_HORIZON_DAYS, completed
         )
 
-        tier: TuitionTier | None = tuition_for_age_months(
-            age_m, self._tuition_table
+        # Daycare classes follow birth year, not months of age (v0.9.1).
+        tier: TuitionTier | None = tuition_for_birthdate(
+            self.birthdate, today, self._tuition_table
         )
         care_tuition = None
         if tier is not None:
@@ -229,6 +236,10 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                 "data_year": tier.data_year,
                 "source_url": tier.source_url,
                 "is_placeholder": tier.is_placeholder,
+                "age_class_basis": (
+                    f"{today.year}년 보육료 지원 연령 기준 "
+                    f"(출생연도 {self.birthdate.year}년)"
+                ),
             }
 
         return {
@@ -244,6 +255,9 @@ class BabyKitCoordinator(DataUpdateCoordinator):
             "all_checkups": self.all_checkups,
             "all_oral_checkups": self.all_oral_checkups,
             "completed": completed,
+            "tracking_since": (
+                self.tracking_since.isoformat() if self.tracking_since else None
+            ),
             "care_tuition": care_tuition,
             "bmi_raw": bmi_raw,
             "bmi_measured_at": bmi_measured_at,

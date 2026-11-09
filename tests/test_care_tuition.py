@@ -4,7 +4,13 @@ from __future__ import annotations
 import json
 
 
+from datetime import date
+
+import pytest
+
 from custom_components.kr_baby_kit.care_tuition import (
+    age_class_for_birthdate,
+    tuition_for_birthdate,
     is_placeholder,
     load_tuition_table,
     tuition_for_age_months,
@@ -130,3 +136,35 @@ def test_float_age_floors_to_month(tmp_path):
     tier = tuition_for_age_months(12.0, src)
     assert tier is not None
     assert tier.age_class == 1
+
+
+
+@pytest.mark.parametrize(
+    ("birthdate", "expected"),
+    [
+        (date(2026, 3, 1), 0),   # born this year -> 만 0세반
+        (date(2025, 1, 1), 0),   # 2026: 2025.1.1 이후 출생 = 0세반
+        (date(2024, 12, 31), 1),
+        (date(2024, 1, 1), 1),
+        (date(2023, 12, 1), 2),  # 35 months in Nov 2026, still 만 2세반
+        (date(2023, 1, 10), 2),  # 46 months in Nov 2026 -> 만 2세반, not 3
+        (date(2022, 6, 1), 3),
+        (date(2020, 6, 1), 5),
+        (date(2019, 6, 1), 6),   # 취학유예
+        (date(2018, 6, 1), None),
+    ],
+)
+def test_age_class_follows_birth_year_2026(birthdate, expected):
+    assert age_class_for_birthdate(birthdate, date(2026, 11, 9)) == expected
+
+
+def test_age_class_none_before_birth():
+    assert age_class_for_birthdate(date(2026, 12, 1), date(2026, 11, 9)) is None
+
+
+def test_tuition_for_birthdate_uses_bundled_2026_rates():
+    tier = tuition_for_birthdate(date(2023, 8, 20), date(2026, 11, 9))
+    assert tier is not None
+    assert tier.age_class == 2
+    assert tier.standard_tuition == 426000
+    assert tuition_for_birthdate(date(2024, 2, 1), date(2026, 11, 9)).standard_tuition == 515000

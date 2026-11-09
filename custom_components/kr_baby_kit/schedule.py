@@ -255,15 +255,27 @@ STATUS_DONE = "done"
 STATUS_OPEN = "open"
 STATUS_UPCOMING = "upcoming"
 STATUS_MISSED = "missed"
+# Window ended before the child was registered in Home Assistant: nobody
+# could have marked it, so it is not flagged as missed (v0.9.1).
+STATUS_PAST = "past_before_tracking"
 
 
 def event_status(
-    event: ScheduleEvent, today: date, completed: Iterable[str] | dict | None = None
+    event: ScheduleEvent,
+    today: date,
+    completed: Iterable[str] | dict | None = None,
+    tracking_since: date | None = None,
 ) -> str:
-    """done / open (window includes today) / upcoming / missed (window passed)."""
+    """done / open / upcoming / missed / past_before_tracking.
+
+    ``tracking_since`` is the date the child was registered; windows that
+    ended before it are ``past_before_tracking`` rather than ``missed``.
+    """
     if completed and event.event_id in completed:
         return STATUS_DONE
     if event.end < today:
+        if tracking_since is not None and event.end < tracking_since:
+            return STATUS_PAST
         return STATUS_MISSED
     if event.start > today:
         return STATUS_UPCOMING
@@ -274,6 +286,7 @@ def event_to_dict(
     event: ScheduleEvent,
     today: date | None = None,
     completed: dict | None = None,
+    tracking_since: date | None = None,
 ) -> dict:
     """JSON-friendly view shared by services, LLM tools, and attributes."""
     out = {
@@ -293,7 +306,7 @@ def event_to_dict(
     if event.items:
         out["items_ko"] = list(event.items)
     if today is not None:
-        out["status"] = event_status(event, today, completed)
+        out["status"] = event_status(event, today, completed, tracking_since)
     if completed and event.event_id in completed:
         out["completed_date"] = (completed[event.event_id] or {}).get("date")
     return out

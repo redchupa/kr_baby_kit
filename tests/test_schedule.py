@@ -230,3 +230,14 @@ def test_single_dose_vaccines_carry_dose_count() -> None:
     assert events["BCG_1"].dose_count == 1
     assert events["VAR_1"].dose_count == 1
     assert events["DTaP_1"].dose_count == 5
+
+
+
+def test_event_before_tracking_is_not_missed() -> None:
+    from custom_components.kr_baby_kit.schedule import STATUS_PAST
+
+    ev = [e for e in project_checkup_events(BD) if e.dose == 2][0]
+    # Registered after the window closed -> past_before_tracking.
+    assert event_status(ev, date(2021, 1, 1), None, date(2020, 12, 1)) == STATUS_PAST
+    # Registered before it closed -> genuinely missed.
+    assert event_status(ev, date(2021, 1, 1), None, date(2020, 9, 1)) == STATUS_MISSED

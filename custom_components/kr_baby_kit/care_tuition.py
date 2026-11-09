@@ -9,13 +9,23 @@ with the latest 보건복지부 고시 before publishing — schema is stable.
 
 Public API:
     load_tuition_table(path=None) -> dict
-    tuition_for_age_months(age_months, table=None) -> TuitionTier | None
+    age_class_for_birthdate(birthdate, on) -> int | None
+    tuition_for_birthdate(birthdate, on, table=None) -> TuitionTier | None
+    tuition_for_age_months(age_months, table=None) -> TuitionTier | None  (legacy)
     is_placeholder(table) -> bool
+
+Age class rule (v0.9.1): 보육료 지원 연령반 is decided by **birth year**, not by
+months of age. In year Y, 만 0세반 covers children born on/after Y-1-01-01
+(including babies born in Y), 만 1세반 = born in Y-2, ..., 만 5세반 = born in
+Y-6, 만 6세반 (취학유예 only) = born in Y-7. I.e. class = max(0, Y - birth_year - 1).
+Source: 「2026년도 보육사업안내」 보육료 지원 기준 연령 산정 기준일자 (찾기쉬운
+생활법령정보 「어린이집 보육료 지원」).
 """
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +74,52 @@ def is_placeholder(table: dict[str, Any]) -> bool:
     )
 
 
+def age_class_for_birthdate(birthdate: date, on: date) -> int | None:
+    """Daycare age class (만 N세반) in the calendar year of ``on``.
+
+    Returns None before birth or once the child is past 만 6세반 (school age).
+    """
+    if birthdate > on:
+        return None
+    age_class = max(0, on.year - birthdate.year - 1)
+    if age_class > 6:
+        return None
+    return age_class
+
+
+def tuition_for_birthdate(
+    birthdate: date,
+    on: date,
+    table: dict[str, Any] | None = None,
+) -> TuitionTier | None:
+    """Tier for the child's birth-year based age class in the year of ``on``."""
+    age_class = age_class_for_birthdate(birthdate, on)
+    if age_class is None:
+        return None
+    src = table if table is not None else load_tuition_table()
+    for tier in src.get("tiers") or []:
+        if int(tier.get("age_class", -1)) == age_class:
+            return _tier_from(tier, src)
+    return None
+
+
+def _tier_from(tier: dict[str, Any], src: dict[str, Any]) -> TuitionTier:
+    meta = src.get("_meta") or {}
+    return TuitionTier(
+        age_class=int(tier.get("age_class", 0)),
+        label_ko=str(tier.get("label_ko", "")),
+        label_en=str(tier.get("label_en", "")),
+        age_months_min=int(tier.get("age_months_min", 0)),
+        age_months_max=int(tier.get("age_months_max", -1)),
+        standard_tuition=int(tier.get("standard_tuition") or 0),
+        government_subsidy=int(tier.get("government_subsidy") or 0),
+        parent_share=int(tier.get("parent_share") or 0),
+        data_year=int(meta.get("data_year") or 0),
+        source_url=str(meta.get("source_url") or ""),
+        is_placeholder=is_placeholder(src),
+    )
+
+
 def tuition_for_age_months(
     age_months: float,
     table: dict[str, Any] | None = None,
@@ -108,6 +164,8 @@ def tuition_for_age_months(
 
 __all__ = [
     "TuitionTier",
+    "age_class_for_birthdate",
+    "tuition_for_birthdate",
     "load_tuition_table",
     "async_load_tuition_table",
     "is_placeholder",

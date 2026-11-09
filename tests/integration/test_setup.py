@@ -259,7 +259,7 @@ async def test_unload_entry(hass: HomeAssistant) -> None:
 
 # ---------------------------------------------------------------- v0.9.0
 
-from datetime import datetime, timedelta  # noqa: E402
+from datetime import date, datetime, timedelta  # noqa: E402
 
 from homeassistant.exceptions import (  # noqa: E402
     HomeAssistantError,
@@ -461,7 +461,10 @@ async def test_calendar_lists_past_and_completed_events(hass: HomeAssistant) -> 
     events = resp[cal_id]["events"]
     assert len(events) == 4
     assert events[0]["summary"].startswith("✅")
-    assert events[1]["summary"].startswith("⚠️")
+    # oral_checkup_2 ended long before this entry was registered: it is not
+    # flagged as missed (v0.9.1), only described as "등록 전에 지난 일정".
+    assert not events[1]["summary"].startswith("⚠️")
+    assert "등록 전" in events[1]["description"]
 
 
 async def test_remove_entry_deletes_child_records(hass: HomeAssistant) -> None:
@@ -557,3 +560,37 @@ async def test_next_and_deadline_sensors_split_open_windows(hass: HomeAssistant)
     )
     assert oral_dl.state == "unknown"
     assert oral_dl.attributes["open_count"] == 0
+
+
+
+async def test_tuition_uses_birth_year_class(hass: HomeAssistant) -> None:
+    """Daycare class follows birth year: a child born in (Y-3) is 만 2세반 in
+    year Y even after turning 36 months."""
+    today = datetime.now(TZ_ASIA_SEOUL).date()
+    bd = date(today.year - 3, 1, 10)  # >= 34 months old all year, born Y-3
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title="Baby C",
+        data={
+            CONF_CHILD_ID: "synthetic_baby_c",
+            CONF_CHILD_NAME: "Baby C",
+            CONF_CHILD_BIRTHDATE: bd.isoformat(),
+            CONF_CHILD_SEX: "male",
+        },
+        unique_id="synthetic_baby_c",
+    )
+    await _setup(hass, entry)
+    state = hass.states.get(
+        _entity_id(hass, f"{DOMAIN}_synthetic_baby_c_standard_tuition")
+    )
+    assert state.attributes["age_class"] == 2
+    assert str(bd.year) in state.attributes["age_class_basis"]
+
+
+async def test_newborn_birth_day_doses_not_flagged_missed(hass: HomeAssistant) -> None:
+    await _setup(hass, _young_entry())
+    resp = await hass.services.async_call(
+        DOMAIN, "get_schedule", {}, blocking=True, return_response=True
+    )
+    status = {v["event_id"]: v["status"] for v in resp["vaccines"]}
+    assert status["HepB_1"] == "past_before_tracking"

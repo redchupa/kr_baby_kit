@@ -289,7 +289,7 @@ def format_summary_ko(kind: str, percentile: float | None) -> str | None:
             return f"{label}: 또래 평균 수준"
         rank = round(max(0.0, 100.0 - pct), 1)
         direction = high if pct > 55.0 else low
-        return f"{label}: 또래 상위 {rank}% ({direction} 편)"
+        return f"{label}: 또래 상위 {_pct_text(rank)} ({direction} 편)"
 
     # bi-directional metric — sensor value is the KDCA statistical percentile.
     if 45.0 <= pct <= 55.0:
@@ -298,6 +298,13 @@ def format_summary_ko(kind: str, percentile: float | None) -> str | None:
     suffix = ", 진료 참고" if clinical else ""
     if pct > 55.0:
         rank = round(max(0.0, 100.0 - pct), 1)
-        return f"{label}: 또래 상위 {rank}% ({high} 편{suffix})"
+        return f"{label}: 또래 상위 {_pct_text(rank)} ({high} 편{suffix})"
     rank = round(pct, 1)
-    return f"{label}: 또래 하위 {rank}% ({low} 편{suffix})"
+    return f"{label}: 또래 하위 {_pct_text(rank)} ({low} 편{suffix})"
+
+
+def _pct_text(rank: float) -> str:
+    """'5.3%', or '0.1% 미만' instead of the odd-looking '0.0%'."""
+    if rank < 0.1:
+        return "0.1% 미만"
+    return f"{rank}%"

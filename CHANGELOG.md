@@ -4,6 +4,16 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.9.1] - 2026-11-09
+
+Quality fixes found while verifying v0.9.0 on a test Home Assistant.
+
+### Fixed
+
+- **Daycare tuition used the wrong age class.** 보육료 지원 연령반 is decided by **birth year**, not months of age: in year Y, 만 0세반 = born on/after (Y-1)-01-01, 만 1세반 = born in Y-2, … 만 5세반 = born in Y-6, 만 6세반 (취학유예) = born in Y-7 (「2026년도 보육사업안내」 연령 산정 기준). The integration counted months, so e.g. a child born in Aug 2023 showed 만 3세반 (280,000원) in Nov 2026 instead of 만 2세반 (426,000원). New `age_class_for_birthdate` / `tuition_for_birthdate`; tuition sensors gain an `age_class_basis` attribute.
+- **Windows that ended before the child was registered are no longer flagged ⚠️ missed.** A newborn registered on day 2 immediately showed ⚠️ for 출생 직후 B형간염 1차 (and every earlier dose for an older child). Such events now have status `past_before_tracking`, appear without the ⚠️ prefix, and explain that they can still be marked done. Only windows that closed after registration count as missed.
+- Extreme percentiles read "또래 상위 **0.1% 미만**" instead of the odd "상위 0.0%".
+
 ## [0.9.0] - 2026-11-09
 
 ### Added

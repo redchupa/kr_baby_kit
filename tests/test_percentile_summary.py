@@ -81,3 +81,10 @@ def test_summary_bmi_and_weight_for_length_use_bidirectional_phrasing():
 def test_summary_none_when_no_percentile():
     assert format_summary_ko("height", None) is None
     assert format_summary_ko("head", None) is None
+
+
+
+def test_extreme_rank_reads_less_than_point_one_percent():
+    assert format_summary_ko("weight", 99.9999) == "몸무게: 또래 상위 0.1% 미만 (많이 나가는 편)"
+    assert format_summary_ko("bmi", 99.99) == "BMI: 또래 상위 0.1% 미만 (큰 편, 진료 참고)"
+    assert format_summary_ko("head", 0.01) == "머리둘레: 또래 하위 0.1% 미만 (작은 편, 진료 참고)"

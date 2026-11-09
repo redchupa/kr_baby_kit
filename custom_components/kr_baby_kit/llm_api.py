@@ -178,7 +178,10 @@ class GetCompletedEventsTool(_BabyKitTool):
             *coord.all_checkups,
             *coord.all_oral_checkups,
         ]
-        dumped = [event_to_dict(e, today, completed) for e in all_events]
+        dumped = [
+            event_to_dict(e, today, completed, coord.tracking_since)
+            for e in all_events
+        ]
         return {
             "child_name": coord.child_name,
             "today": coord.data["today"],

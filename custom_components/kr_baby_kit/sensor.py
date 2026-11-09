@@ -335,6 +335,7 @@ class CareTuitionSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
             "age_class": tier.get("age_class"),
             "age_class_label_ko": tier.get("label_ko"),
             "age_class_label_en": tier.get("label_en"),
+            "age_class_basis": tier.get("age_class_basis"),
             "data_year": tier.get("data_year"),
             "source_url": tier.get("source_url"),
             "raw_value": tier.get(self._field),
