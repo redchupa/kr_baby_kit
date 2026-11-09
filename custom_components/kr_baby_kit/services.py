@@ -289,10 +289,8 @@ def async_register_services(hass: HomeAssistant) -> None:
         today = date.fromisoformat(coordinator.data["today"])
         completed = coordinator.data.get("completed") or {}
 
-        since = coordinator.tracking_since
-
         def _dump(events):
-            return [event_to_dict(e, today, completed, since) for e in events]
+            return [event_to_dict(e, today, completed) for e in events]
 
         return {
             "child_id": child_id,

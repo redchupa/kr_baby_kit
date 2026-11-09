@@ -101,7 +101,7 @@ get_measurements:
 
 mark_event_done:
   name: 일정 완료 표시
-  description: 예방접종·영유아 검진·구강검진을 완료로 표시합니다. 완료된 일정은 다음 일정 센서와 이번 달 알림에서 빠지고, 캘린더에는 ✅ 로 표시됩니다.
+  description: 예방접종·영유아 검진·구강검진을 완료로 표시합니다. 완료된 일정은 다음 일정 센서와 이번 달 알림에서 빠지고, 캘린더에는 ✅ 로 표시됩니다. 표시하지 않아도 기간이 끝나면 자동으로 '기간 지남' 처리됩니다.
   fields:
     child_id:
       name: 자녀 ID
@@ -141,7 +141,7 @@ unmark_event_done:
 
 get_schedule:
   name: 전체 일정 조회
-  description: 예방접종·검진·구강검진 전체 일정과 event_id, 상태(done/open/upcoming/missed)를 돌려줍니다 (응답 전용).
+  description: 예방접종·검진·구강검진 전체 일정과 event_id, 상태(done/open/upcoming/past)를 돌려줍니다 (응답 전용).
   fields:
     child_id:
       name: 자녀 ID

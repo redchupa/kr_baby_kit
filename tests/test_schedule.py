@@ -7,7 +7,7 @@ import pytest
 
 from custom_components.kr_baby_kit.schedule import (
     STATUS_DONE,
-    STATUS_MISSED,
+    STATUS_PAST,
     STATUS_OPEN,
     STATUS_UPCOMING,
     add_calendar_months,
@@ -215,7 +215,7 @@ def test_event_status_and_dict() -> None:
     ev = [e for e in project_checkup_events(BD) if e.dose == 2][0]
     assert event_status(ev, date(2020, 6, 1)) == STATUS_UPCOMING
     assert event_status(ev, date(2020, 8, 1)) == STATUS_OPEN
-    assert event_status(ev, date(2021, 1, 1)) == STATUS_MISSED
+    assert event_status(ev, date(2021, 1, 1)) == STATUS_PAST
     done = {"checkup_2": {"date": "2020-08-01"}}
     assert event_status(ev, date(2021, 1, 1), done) == STATUS_DONE
     d = event_to_dict(ev, date(2021, 1, 1), done)
@@ -233,11 +233,9 @@ def test_single_dose_vaccines_carry_dose_count() -> None:
 
 
 
-def test_event_before_tracking_is_not_missed() -> None:
-    from custom_components.kr_baby_kit.schedule import STATUS_PAST
-
+def test_ended_window_is_simply_past() -> None:
+    """v0.9.2: an ended, unmarked window is just "past" (기간 지남), never a
+    warning state, whether or not the parent ever marks anything."""
     ev = [e for e in project_checkup_events(BD) if e.dose == 2][0]
-    # Registered after the window closed -> past_before_tracking.
-    assert event_status(ev, date(2021, 1, 1), None, date(2020, 12, 1)) == STATUS_PAST
-    # Registered before it closed -> genuinely missed.
-    assert event_status(ev, date(2021, 1, 1), None, date(2020, 9, 1)) == STATUS_MISSED
+    assert event_status(ev, date(2021, 1, 1)) == STATUS_PAST
+    assert event_status(ev, date(2021, 1, 1), {"checkup_2": {}}) == STATUS_DONE

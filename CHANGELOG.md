@@ -4,6 +4,13 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.9.2] - 2026-11-10
+
+### Changed
+
+- **Passed windows are simply "기간 지남" — no more ⚠️ warnings.** Marking every dose done was too much work in practice, so a window that has ended without a completion mark now gets status `past` (was `missed` / `past_before_tracking`), shows in the calendar without a ⚠️ prefix with "기간 지남" in the description, and is listed under `past_windows` (was `missed_without_mark`) in the `get_completed_events` LLM tool. `mark_event_done` still works for parents who want ✅ history. The v0.9.1 registration-date distinction is removed along with it.
+- Example automation "놓친 접종·검진 점검" removed (the concept no longer exists).
+
 ## [0.9.1] - 2026-11-09
 
 Quality fixes found while verifying v0.9.0 on a test Home Assistant.

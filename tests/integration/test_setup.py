@@ -461,10 +461,9 @@ async def test_calendar_lists_past_and_completed_events(hass: HomeAssistant) -> 
     events = resp[cal_id]["events"]
     assert len(events) == 4
     assert events[0]["summary"].startswith("✅")
-    # oral_checkup_2 ended long before this entry was registered: it is not
-    # flagged as missed (v0.9.1), only described as "등록 전에 지난 일정".
+    # v0.9.2: an ended, unmarked window is just "기간 지남" — no warning.
     assert not events[1]["summary"].startswith("⚠️")
-    assert "등록 전" in events[1]["description"]
+    assert "기간 지남" in events[1]["description"]
 
 
 async def test_remove_entry_deletes_child_records(hass: HomeAssistant) -> None:
@@ -587,10 +586,11 @@ async def test_tuition_uses_birth_year_class(hass: HomeAssistant) -> None:
     assert str(bd.year) in state.attributes["age_class_basis"]
 
 
-async def test_newborn_birth_day_doses_not_flagged_missed(hass: HomeAssistant) -> None:
+async def test_ended_windows_are_past_not_warnings(hass: HomeAssistant) -> None:
     await _setup(hass, _young_entry())
     resp = await hass.services.async_call(
         DOMAIN, "get_schedule", {}, blocking=True, return_response=True
     )
     status = {v["event_id"]: v["status"] for v in resp["vaccines"]}
-    assert status["HepB_1"] == "past_before_tracking"
+    assert status["HepB_1"] == "past"
+    assert "missed" not in status.values()

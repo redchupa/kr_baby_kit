@@ -50,12 +50,6 @@ class BabyKitCoordinator(DataUpdateCoordinator):
         self.child_id: str = entry.data.get(CONF_CHILD_ID, entry.entry_id)
         self.child_sex: str = entry.data[CONF_CHILD_SEX]
         self.birthdate: date = date.fromisoformat(entry.data[CONF_CHILD_BIRTHDATE])
-        # The day the child was registered: windows that ended before it are
-        # not flagged as missed (nobody could have marked them yet).
-        created = getattr(entry, "created_at", None)
-        self.tracking_since: date | None = (
-            created.astimezone(TZ_ASIA_SEOUL).date() if created else None
-        )
         self.chart = chart
         self._nip_schedule = nip_schedule
         self._checkup_schedule = checkup_schedule
@@ -255,9 +249,6 @@ class BabyKitCoordinator(DataUpdateCoordinator):
             "all_checkups": self.all_checkups,
             "all_oral_checkups": self.all_oral_checkups,
             "completed": completed,
-            "tracking_since": (
-                self.tracking_since.isoformat() if self.tracking_since else None
-            ),
             "care_tuition": care_tuition,
             "bmi_raw": bmi_raw,
             "bmi_measured_at": bmi_measured_at,

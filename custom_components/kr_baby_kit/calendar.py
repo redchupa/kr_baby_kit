@@ -28,7 +28,6 @@ from .device import child_device
 from .schedule import (
     KIND_VACCINE,
     STATUS_DONE,
-    STATUS_MISSED,
     STATUS_PAST,
     ScheduleEvent,
     event_status,
@@ -67,7 +66,6 @@ def _to_calendar_event(
     child_id: str,
     today: date | None = None,
     completed: dict | None = None,
-    tracking_since: date | None = None,
 ) -> CalendarEvent:
     summary = event.name_ko
     if (
@@ -77,21 +75,14 @@ def _to_calendar_event(
     ):
         summary = f"{event.name_ko} ({event.dose}차)"
 
-    status = (
-        event_status(event, today, completed, tracking_since) if today else None
-    )
+    status = event_status(event, today, completed) if today else None
     description_lines: list[str] = []
     if status == STATUS_DONE:
         summary = f"✅ {summary}"
         done_date = ((completed or {}).get(event.event_id) or {}).get("date")
         description_lines.append(f"완료: {done_date}" if done_date else "완료")
-    elif status == STATUS_MISSED:
-        summary = f"⚠️ {summary}"
-        description_lines.append("기간 경과 — 완료 표시가 없습니다.")
     elif status == STATUS_PAST:
-        description_lines.append(
-            "등록 전에 지난 일정입니다. 이미 했다면 mark_event_done 으로 표시할 수 있어요."
-        )
+        description_lines.append("기간 지남")
 
     if event.window_note:
         description_lines.append(f"검진 시기: {event.window_note}")
@@ -149,7 +140,6 @@ class BabyKitCalendar(CoordinatorEntity[BabyKitCoordinator], CalendarEntity):
             child_id=self.coordinator.child_id,
             today=today,
             completed=completed,
-            tracking_since=self.coordinator.tracking_since,
         )
 
     @property

@@ -158,7 +158,7 @@ class GetCompletedEventsTool(_BabyKitTool):
     description = (
         "Return the vaccine doses and checkups the parent has marked as done "
         "for this child (event_id, name, completed date), plus windows that "
-        "already passed without a completion mark."
+        "have already ended (기간 지남)."
     )
     parameters = vol.Schema({})
 
@@ -178,15 +178,12 @@ class GetCompletedEventsTool(_BabyKitTool):
             *coord.all_checkups,
             *coord.all_oral_checkups,
         ]
-        dumped = [
-            event_to_dict(e, today, completed, coord.tracking_since)
-            for e in all_events
-        ]
+        dumped = [event_to_dict(e, today, completed) for e in all_events]
         return {
             "child_name": coord.child_name,
             "today": coord.data["today"],
             "completed": [d for d in dumped if d["status"] == "done"],
-            "missed_without_mark": [d for d in dumped if d["status"] == "missed"],
+            "past_windows": [d for d in dumped if d["status"] == "past"],
             "disclaimer": MEDICAL_DISCLAIMER,
         }
 

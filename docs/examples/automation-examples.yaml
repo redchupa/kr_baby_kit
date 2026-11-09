@@ -159,27 +159,3 @@
       data:
         event_id: >-
           {{ state_attr('sensor.kr_baby_kit_baby_a_예방접종_지금_맞을_수_있는_마감일', 'open_event_ids') | join(',') }}
-
-# 10. (v0.9.0) 매주 일요일 밤, 기간이 지났는데 완료 표시가 없는 일정 점검
-- alias: 놓친 접종·검진 점검
-  trigger:
-    - platform: time
-      at: "21:00:00"
-  condition:
-    - condition: time
-      weekday: [sun]
-  action:
-    - service: kr_baby_kit.get_schedule
-      response_variable: schedule
-    - variables:
-        missed: >-
-          {{ (schedule.vaccines + schedule.checkups + schedule.oral_checkups)
-             | selectattr('status', 'eq', 'missed') | map(attribute='name_ko') | list }}
-    - condition: template
-      value_template: "{{ missed | count > 0 }}"
-    - service: notify.mobile_app
-      data:
-        title: "완료 표시가 없는 지난 일정"
-        message: >-
-          {{ missed[:5] | join(', ') }}{% if missed | count > 5 %} 외 {{ missed | count - 5 }}건{% endif %}.
-          이미 했다면 mark_event_done 으로 표시해 주세요.
