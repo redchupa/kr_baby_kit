@@ -19,18 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-DATA ATTRIBUTION
-
-This software bundles derivative public datasets from:
-- 질병관리청 (KDCA) 2017 소아청소년 성장도표 — 공공누리 제1유형
-- 질병관리청 (KDCA) 표준 예방접종 일정 — 공공누리 제1유형
-- 보건복지부·국민건강보험공단 영유아 건강검진 일정 — 공공누리 제1유형
-
-See docs/data-sources.md for the original URLs and license terms.
-
-The growth/immunization/checkup information is intended for general reference
-only and does not constitute medical advice. Always consult a pediatrician
-for clinical decisions.
