@@ -29,6 +29,8 @@ from .schedule import (
 )
 from .storage import async_get_child_completions, async_load_records, latest
 
+UPCOMING_HORIZON_DAYS = 365 * 20
+
 
 class BabyKitCoordinator(DataUpdateCoordinator):
     """Refreshes derived state for a single registered child."""
@@ -198,9 +200,19 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                     ),
                 }
 
-        vaccines = upcoming(self.all_vaccines, today, completed=completed)
-        checkups = upcoming(self.all_checkups, today, completed=completed)
-        oral_checkups = upcoming(self.all_oral_checkups, today, completed=completed)
+        # No practical horizon: the next-event sensors must show the next
+        # window even when it is more than a year out (e.g. the first oral
+        # checkup at 18 months for a newborn). "This month" sensors and the
+        # LLM list filter by their own date range.
+        vaccines = upcoming(
+            self.all_vaccines, today, UPCOMING_HORIZON_DAYS, completed
+        )
+        checkups = upcoming(
+            self.all_checkups, today, UPCOMING_HORIZON_DAYS, completed
+        )
+        oral_checkups = upcoming(
+            self.all_oral_checkups, today, UPCOMING_HORIZON_DAYS, completed
+        )
 
         tier: TuitionTier | None = tuition_for_age_months(
             age_m, self._tuition_table

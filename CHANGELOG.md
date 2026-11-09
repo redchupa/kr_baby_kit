@@ -34,6 +34,11 @@ versions follow [SemVer](https://semver.org/).
 - **Lost updates on quick successive inputs**: each storage call built a new `Store` with no lock, so setting height and weight back-to-back could drop one value. One cached store per key plus an `asyncio.Lock` now serialise writes.
 - **Entry reload failed on HA versions whose `llm.async_register_api` returns `None`** ("API … is already registered"), which broke reloading and the new options flow. A fallback unregister is installed.
 - Number inputs out of range now raise a clean `ServiceValidationError` instead of an unhandled `ValueError`.
+- Found while verifying on a live Home Assistant 2026.11:
+  - `binary_sensor.<child>_bmi_concern` went unavailable for a child now over 24 months whose last measurement was before 24 months; the under-24 advisory now follows the age at measurement (`bmi_age_months`).
+  - Next-event sensors showed `unknown` when the next window was more than a year away (a newborn's first oral checkup at 18 months); the 365-day horizon is gone.
+  - Single-dose vaccines (BCG, 수두, Tdap) no longer get a "(1차)" suffix in calendars.
+  - Percentile sensors expose `age_months_at_measurement`.
 - Concern / tuition entities respect coordinator availability (they used to stay "available" when the coordinator failed).
 - CI: `test_validation.py` is part of the unit job; the integration job installs conversation deps pinned from HA's own manifests, so the integration suite actually runs (it was always skipped before).
 

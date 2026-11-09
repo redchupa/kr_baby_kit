@@ -223,3 +223,10 @@ def test_event_status_and_dict() -> None:
     assert d["status"] == STATUS_DONE
     assert d["completed_date"] == "2020-08-01"
     assert d["window_note_ko"] == "생후 4~6개월"
+
+
+def test_single_dose_vaccines_carry_dose_count() -> None:
+    events = {e.event_id: e for e in project_vaccine_events(BD)}
+    assert events["BCG_1"].dose_count == 1
+    assert events["VAR_1"].dose_count == 1
+    assert events["DTaP_1"].dose_count == 5

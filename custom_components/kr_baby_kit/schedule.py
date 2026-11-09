@@ -47,6 +47,7 @@ class ScheduleEvent:
     items: tuple[str, ...] = field(default_factory=tuple)
     window_note: str = ""
     season: int | None = None  # annual vaccines: season start year
+    dose_count: int | None = None  # total doses of this vaccine (1 = single shot)
 
     @property
     def event_id(self) -> str:
@@ -104,6 +105,7 @@ def project_vaccine_events(
     src = schedule or load_nip_schedule()
     events: list[ScheduleEvent] = []
     for vaccine in src.get("vaccines", []):
+        dose_count = len(vaccine.get("doses", []))
         for dose in vaccine.get("doses", []):
             wmin = float(dose.get("window_min", dose.get("recommended_month", 0)))
             wmax = float(dose.get("window_max", wmin))
@@ -120,6 +122,7 @@ def project_vaccine_events(
                     start=_add_months(birthdate, wmin),
                     end=_add_months(birthdate, wmax),
                     note=dose.get("note", ""),
+                    dose_count=dose_count,
                 )
             )
     return sort_events(events)

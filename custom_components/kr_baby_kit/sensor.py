@@ -120,6 +120,7 @@ class PercentileSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
             "statistical_percentile": info.get("statistical_percentile"),
             "top_percent": info.get("top_percent"),
             "summary_ko": info.get("summary_ko"),
+            "age_months_at_measurement": info.get("age_months_at_measurement"),
             "age_months": data.get("age_months"),
             "disclaimer": MEDICAL_DISCLAIMER,
         }

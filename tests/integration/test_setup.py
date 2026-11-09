@@ -494,3 +494,35 @@ async def test_bmi_concern_advisory_uses_age_at_measurement(hass: HomeAssistant)
     assert "측정 당시" in state.attributes["summary_ko"]
     raw = hass.states.get(_entity_id(hass, f"{DOMAIN}_{CHILD_ID}_bmi_raw"))
     assert "측정 당시" in raw.attributes["summary_ko"]
+
+
+async def test_next_oral_checkup_shown_beyond_one_year(hass: HomeAssistant) -> None:
+    """A 2-month-old's first oral checkup (18 months) is >1 year out; the
+    next-event sensor must still show it instead of unknown."""
+    await _setup(hass, _young_entry())
+    state = hass.states.get(
+        _entity_id(hass, f"{DOMAIN}_{YOUNG_ID}_next_oral_checkup")
+    )
+    assert state.state not in ("unknown", "unavailable")
+    assert state.attributes["event_id"] == "oral_checkup_1"
+
+
+async def test_single_dose_vaccine_has_no_dose_suffix(hass: HomeAssistant) -> None:
+    await _setup(hass, _young_entry())
+    cal_id = _entity_id(hass, f"{DOMAIN}_{YOUNG_ID}_immunization_calendar")
+    today = datetime.now(TZ_ASIA_SEOUL)
+    resp = await hass.services.async_call(
+        "calendar",
+        "get_events",
+        {
+            "entity_id": cal_id,
+            "start_date_time": (today - timedelta(days=120)).isoformat(),
+            "end_date_time": today.isoformat(),
+        },
+        blocking=True,
+        return_response=True,
+    )
+    summaries = [e["summary"] for e in resp[cal_id]["events"]]
+    bcg = [s for s in summaries if "BCG" in s]
+    assert bcg and all("차)" not in s for s in bcg)
+    assert any("B형간염 (1차)" in s for s in summaries)

@@ -68,7 +68,11 @@ def _to_calendar_event(
     completed: dict | None = None,
 ) -> CalendarEvent:
     summary = event.name_ko
-    if event.dose is not None and event.kind == KIND_VACCINE:
+    if (
+        event.dose is not None
+        and event.kind == KIND_VACCINE
+        and (event.dose_count or 0) != 1  # single-shot vaccines: no "(1차)"
+    ):
         summary = f"{event.name_ko} ({event.dose}차)"
 
     status = event_status(event, today, completed) if today else None
