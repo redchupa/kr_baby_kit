@@ -1,6 +1,6 @@
 # Handover Document — Baby Kit (`kr_baby_kit`)
 
-> Last updated: 2026-11-25 (Latest released tag: `v0.17.0`)
+> Last updated: 2026-11-25 (Latest released tag: `v0.17.1`)
 
 ## 1. Project Overview
 

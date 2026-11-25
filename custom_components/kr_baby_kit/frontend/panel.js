@@ -1,16 +1,16 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.17.0";
+import { THEMES, getThemeCss } from "./themes.js?v=0.17.1";
 import {
   CARD_STYLES,
   ICONS,
   cardStyleCss,
   renderPercentileGauge,
   renderSparkline,
-} from "./cards.js?v=0.17.0";
+} from "./cards.js?v=0.17.1";
 import {
   renderGrowthCurveChart,
   renderWeeklyCareChart,
-} from "./charts.js?v=0.17.0";
+} from "./charts.js?v=0.17.1";
 
 const PREFS_KEY = "kr_baby_kit_panel_prefs_v4";
 
@@ -80,6 +80,8 @@ const STRINGS = {
     todayDiaper: "기저귀",
     todayTummy: "터미타임",
     todayTemp: "최근 체온",
+    todayPhotos: "사진 일기",
+    photoUnit: "장",
     countUnit: "회",
     wet: "소변",
     solid: "대변",
@@ -222,6 +224,8 @@ const STRINGS = {
     todayDiaper: "Diapers",
     todayTummy: "Tummy time",
     todayTemp: "Last temp",
+    todayPhotos: "Photos",
+    photoUnit: "",
     countUnit: "x",
     wet: "Wet",
     solid: "Solid",
@@ -464,12 +468,26 @@ class KrBabyKitPanel extends HTMLElement {
     if (!this._tickHandle) {
       this._tickHandle = window.setInterval(() => this._tickTimers(), 1000);
     }
+    if (!this._onResize) {
+      this._onResize = () => {
+        const isMobile = Boolean(window.matchMedia?.("(max-width: 920px)")?.matches);
+        if (this._lastMobileMatch !== isMobile) {
+          this._lastMobileMatch = isMobile;
+          this._render();
+        }
+      };
+      window.addEventListener?.("resize", this._onResize);
+    }
   }
 
   disconnectedCallback() {
     if (this._tickHandle) {
       window.clearInterval(this._tickHandle);
       this._tickHandle = null;
+    }
+    if (this._onResize) {
+      window.removeEventListener?.("resize", this._onResize);
+      this._onResize = null;
     }
   }
 
@@ -947,12 +965,12 @@ class KrBabyKitPanel extends HTMLElement {
           <div class="sched-item">
             <div class="sched-left">
               <div class="icon-well tone-${e.status === "open" ? "amber" : e.status === "done" ? "green" : "blue"}">${icon}</div>
-              <div>
+              <div class="sched-meta">
                 <div class="sched-title">
                   <strong>${esc(name + dose)}</strong>
                   <span class="badge status-${esc(e.status)}">${esc(statusLabel)}</span>
                 </div>
-                <div class="muted small">${esc(e.window_start)} ~ ${esc(e.window_end)}${e.completed_date ? ` (${esc(e.completed_date)})` : ""}</div>
+                <div class="sched-date">${esc(e.window_start)} ~ ${esc(e.window_end)}${e.completed_date ? ` (${esc(e.completed_date)})` : ""}</div>
               </div>
             </div>
             <button class="btn-outline small" data-toggle-done="${esc(e.event_id)}" data-is-done="${isDone ? "1" : "0"}" ${this._busy ? "disabled" : ""}>${esc(isDone ? t.unmarkDone : t.markDone)}</button>
@@ -1089,37 +1107,44 @@ class KrBabyKitPanel extends HTMLElement {
           <div class="kpi-grid">
             <div class="kpi-card">
               <div class="icon-well tone-indigo">${ICONS.sleep}</div>
-              <div>
-                <div class="muted small">${esc(t.todaySleep)}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.todaySleep)}</div>
                 <div class="kpi-val">${esc(fmtMinutes(sum.sleep_min, ko))}</div>
               </div>
             </div>
             <div class="kpi-card">
               <div class="icon-well tone-sky">${ICONS.feeding}</div>
-              <div>
-                <div class="muted small">${esc(t.todayFeed)}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.todayFeed)}</div>
                 <div class="kpi-val">${sum.feeding_count || 0}${esc(t.countUnit)}${sum.feeding_ml ? ` · ${sum.feeding_ml}ml` : ""}</div>
               </div>
             </div>
             <div class="kpi-card">
               <div class="icon-well tone-amber">${ICONS.diaper}</div>
-              <div>
-                <div class="muted small">${esc(t.todayDiaper)}</div>
-                <div class="kpi-val">${esc(t.wet)} ${sum.diaper_wet || 0} / ${esc(t.solid)} ${sum.diaper_solid || 0}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.todayDiaper)}</div>
+                <div class="kpi-val">${esc(t.wet)} ${sum.diaper_wet || 0} · ${esc(t.solid)} ${sum.diaper_solid || 0}</div>
               </div>
             </div>
             <div class="kpi-card">
               <div class="icon-well tone-green">${ICONS.tummy_time}</div>
-              <div>
-                <div class="muted small">${esc(t.todayTummy)}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.todayTummy)}</div>
                 <div class="kpi-val">${esc(fmtMinutes(sum.tummy_min, ko))}</div>
               </div>
             </div>
             <div class="kpi-card">
               <div class="icon-well tone-rose">${ICONS.temperature}</div>
-              <div>
-                <div class="muted small">${esc(t.todayTemp)}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.todayTemp)}</div>
                 <div class="kpi-val">${sum.last_temp_c != null ? `${sum.last_temp_c}°C` : "-"}</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="icon-well tone-teal">${ICONS.camera}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.todayPhotos)}</div>
+                <div class="kpi-val">${sum.photo_count || 0}${esc(t.photoUnit)}</div>
               </div>
             </div>
           </div>
@@ -1128,8 +1153,8 @@ class KrBabyKitPanel extends HTMLElement {
 
           <div class="care-launcher-box">
             <div class="care-launcher-head">
-              <strong>${esc(t.logDetailTitle)}</strong>
-              <span class="muted small">${esc(t.logDetailSub)}</span>
+              <strong class="launcher-title">${esc(t.logDetailTitle)}</strong>
+              <span class="launcher-sub">${esc(t.logDetailSub)}</span>
             </div>
             <div class="care-launcher-grid">
               ${logKinds
@@ -1198,7 +1223,7 @@ class KrBabyKitPanel extends HTMLElement {
                     <div class="tl-head">
                       <strong>${esc(this._kindLabel(a.kind))}</strong>
                       ${details.length ? `<span class="badge neutral">${esc(details.join(" · "))}</span>` : ""}
-                      <span class="muted small">${esc(fmtTimestamp(a.timestamp))}</span>
+                      <span class="tl-time">${esc(fmtTimestamp(a.timestamp))}</span>
                     </div>
                     ${a.note ? `<div class="tl-note">${esc(a.note)}</div>` : ""}
                     ${a.photo_url ? `<img src="${esc(a.photo_url)}" class="tl-photo" data-lightbox="${esc(a.photo_url)}" alt="photo" loading="lazy" />` : ""}
@@ -1280,8 +1305,8 @@ class KrBabyKitPanel extends HTMLElement {
         <div class="gauge-card">
           <div class="gauge-top">
             <div class="icon-well tone-${tone}">${icon}</div>
-            <div class="gauge-meta">
-              <div class="muted small">${esc(title)}</div>
+            <div class="kpi-body gauge-meta">
+              <div class="kpi-label">${esc(title)}</div>
               <div class="kpi-val">${esc(valText)}</div>
             </div>
             ${
@@ -1291,7 +1316,7 @@ class KrBabyKitPanel extends HTMLElement {
             }
           </div>
           ${renderPercentileGauge(pct, { warnBand })}
-          <div class="muted small">${esc(summary || "")}</div>
+          ${summary ? `<div class="gauge-summary">${esc(summary)}</div>` : ""}
         </div>`;
 
       return `
@@ -1333,23 +1358,29 @@ class KrBabyKitPanel extends HTMLElement {
       if (child.profile !== "kr" || !child.care_tuition) return "";
       return `
         <div class="card section-card ${wideClass}" data-section="tuition">
-          <h3>${esc(t.tuition)} <span class="muted small">(${esc(ko ? child.care_tuition.label_ko : child.care_tuition.label_en)})</span></h3>
-          <div class="kpi-grid">
+          <div class="card-head">
+            <h3>${esc(t.tuition)}</h3>
+            <span class="sub-badge">${esc(ko ? child.care_tuition.label_ko : child.care_tuition.label_en)}</span>
+          </div>
+          <div class="kpi-grid tuition-grid">
             <div class="kpi-card">
-              <div>
-                <div class="muted small">${esc(t.tuitionStd)}</div>
+              <div class="icon-well tone-blue">${ICONS.wallet}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.tuitionStd)}</div>
                 <div class="kpi-val">${Number(child.care_tuition.standard_tuition || 0).toLocaleString()} ${esc(t.won)}</div>
               </div>
             </div>
             <div class="kpi-card">
-              <div>
-                <div class="muted small">${esc(t.tuitionSub)}</div>
+              <div class="icon-well tone-teal">${ICONS.shield}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.tuitionSub)}</div>
                 <div class="kpi-val">${Number(child.care_tuition.government_subsidy || 0).toLocaleString()} ${esc(t.won)}</div>
               </div>
             </div>
             <div class="kpi-card">
-              <div>
-                <div class="muted small">${esc(t.tuitionShare)}</div>
+              <div class="icon-well tone-green">${ICONS.home}</div>
+              <div class="kpi-body">
+                <div class="kpi-label">${esc(t.tuitionShare)}</div>
                 <div class="kpi-val">${Number(child.care_tuition.parent_share || 0).toLocaleString()} ${esc(t.won)}</div>
               </div>
             </div>
@@ -1642,11 +1673,82 @@ class KrBabyKitPanel extends HTMLElement {
     return null;
   }
 
+  _sectionWeight(secId, child) {
+    if (secId === "care") return 3.3;
+    if (secId === "growth") {
+      const pcts = child.percentiles || {};
+      return pcts.height || pcts.weight || pcts.head ? 3.5 : 2.3;
+    }
+    if (secId === "measurements") return 1.9;
+    if (secId === "timeline") {
+      const n = (child.activities || []).length;
+      return 1.3 + Math.min(2.2, n * 0.35);
+    }
+    if (secId === "schedules") return 3.1;
+    if (secId === "tuition") return 1.1;
+    return 1.5;
+  }
+
+  _renderSectionsContainer(child) {
+    const layoutClass = `layout-${this._prefs.layout}`;
+    const mFilter = this._mobileVisibleSections();
+    const activeIds = this._prefs.order.filter((secId) => !mFilter || mFilter.has(secId));
+
+    const isNarrowViewport =
+      this._narrow || Boolean(window.matchMedia?.("(max-width: 920px)")?.matches);
+    if (this._prefs.layout !== "bento" || isNarrowViewport) {
+      const html = activeIds.map((secId) => this._renderSection(secId, child)).join("");
+      return `<div class="sections-wrap ${layoutClass}">${html}</div>`;
+    }
+
+    // Balanced 2-column Bento layout: each card wraps its natural content height
+    // with zero dead bottom space, while full-width cards span across cleanly.
+    const blocks = [];
+    let leftCol = [];
+    let rightCol = [];
+    let leftW = 0;
+    let rightW = 0;
+
+    const flushCols = () => {
+      if (!leftCol.length && !rightCol.length) return;
+      if (!rightCol.length) {
+        blocks.push(`<div class="bento-single">${leftCol.join("")}</div>`);
+      } else {
+        blocks.push(
+          `<div class="bento-columns"><div class="bento-col">${leftCol.join("")}</div><div class="bento-col">${rightCol.join("")}</div></div>`
+        );
+      }
+      leftCol = [];
+      rightCol = [];
+      leftW = 0;
+      rightW = 0;
+    };
+
+    for (const secId of activeIds) {
+      const rendered = this._renderSection(secId, child);
+      if (!rendered) continue;
+      if (this._prefs.wide[secId]) {
+        flushCols();
+        blocks.push(`<div class="bento-wide">${rendered}</div>`);
+      } else {
+        const w = this._sectionWeight(secId, child);
+        if (leftW <= rightW) {
+          leftCol.push(rendered);
+          leftW += w;
+        } else {
+          rightCol.push(rendered);
+          rightW += w;
+        }
+      }
+    }
+    flushCols();
+    return `<div class="sections-wrap layout-bento">${blocks.join("")}</div>`;
+  }
+
   _render() {
     const t = this._t();
     const children = this._data?.children || [];
     const child = this._currentChild();
-    const layoutClass = `layout-${this._prefs.layout}`;
     const themeStyle = getThemeCss(this._prefs.theme);
     const cStyle = cardStyleCss(this._prefs.cardStyle);
 
@@ -1657,11 +1759,7 @@ class KrBabyKitPanel extends HTMLElement {
       const sexLabel = child.sex === "male" ? t.male : t.female;
       const initial = (child.name || "?").trim().slice(0, 1).toUpperCase();
       const livedDays = daysBetween(child.birthdate, child.today);
-      const mFilter = this._mobileVisibleSections();
-      const sectionsHtml = this._prefs.order
-        .filter((secId) => !mFilter || mFilter.has(secId))
-        .map((secId) => this._renderSection(secId, child))
-        .join("");
+      const sectionsContainerHtml = this._renderSectionsContainer(child);
 
       bodyHtml = `
         <div class="hero-card card">
@@ -1695,9 +1793,7 @@ class KrBabyKitPanel extends HTMLElement {
           ${this._renderStatusChips(child)}
         </div>
 
-        <div class="sections-wrap ${layoutClass}">
-          ${sectionsHtml}
-        </div>
+        ${sectionsContainerHtml}
 
         ${
           this._prefs.visible.footer
@@ -1714,7 +1810,13 @@ class KrBabyKitPanel extends HTMLElement {
           display: block; min-height: 100vh;
           background-color: var(--bk-bg); background-image: var(--bk-bg-image, none);
           background-size: var(--bk-bg-size, auto); color: var(--bk-text);
-          font-family: var(--bk-font-body); transition: background-color 0.2s ease, color 0.2s ease;
+          font-family: var(--bk-font-body);
+          line-height: 1.45;
+          word-break: keep-all;
+          overflow-wrap: break-word;
+          -webkit-font-smoothing: antialiased;
+          text-rendering: optimizeLegibility;
+          transition: background-color 0.2s ease, color 0.2s ease;
         }
         * { box-sizing: border-box; }
         .topbar {
@@ -1733,7 +1835,7 @@ class KrBabyKitPanel extends HTMLElement {
           background: rgba(128, 128, 128, 0.16); color: inherit;
           border: 1px solid rgba(128, 128, 128, 0.25); cursor: pointer;
         }
-        .topbar h1 { margin: 0; font-size: 20px; font-weight: 600; font-family: var(--bk-font-head); }
+        .topbar h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.025em; font-family: var(--bk-font-head); }
         .container {
           max-width: ${this._prefs.layout === "bento" ? "1380px" : "880px"};
           margin: 0 auto;
@@ -1745,8 +1847,10 @@ class KrBabyKitPanel extends HTMLElement {
         }
         .hero-top {
           display: flex; align-items: center; justify-content: space-between;
-          gap: 12px; flex-wrap: wrap;
+          gap: 12px; flex-wrap: nowrap;
         }
+        .child-id-wrap { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
+        #btn-edit-child { flex-shrink: 0; white-space: nowrap; }
         .hero-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .hero-name-row h2 { margin: 0; }
         .day-pill {
@@ -1785,17 +1889,21 @@ class KrBabyKitPanel extends HTMLElement {
           display: inline-flex; align-items: center; justify-content: center;
         }
         .sections-wrap.layout-bento {
-          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px; align-items: stretch;
+          display: flex; flex-direction: column; gap: 18px;
         }
-        .sections-wrap.layout-bento > .card { height: 100%; display: flex; flex-direction: column; }
-        .sections-wrap.layout-bento .span-full { grid-column: 1 / -1; }
-        @media (max-width: 900px) { .sections-wrap.layout-bento { grid-template-columns: 1fr; } }
+        .bento-columns {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 18px; align-items: start;
+        }
+        .bento-col, .bento-single, .bento-wide {
+          display: flex; flex-direction: column; gap: 18px; min-width: 0;
+        }
+        @media (max-width: 920px) { .bento-columns { grid-template-columns: 1fr; } }
         .card {
           background: var(--bk-card); backdrop-filter: var(--bk-card-backdrop);
           -webkit-backdrop-filter: var(--bk-card-backdrop);
           border-radius: var(--bk-card-radius);
-          padding: ${this._prefs.layout === "compact" ? "12px 14px" : "18px 20px"};
+          padding: ${this._prefs.layout === "compact" ? "14px 16px" : "20px 22px"};
           margin-bottom: ${this._prefs.layout === "bento" ? "0" : this._prefs.layout === "compact" ? "10px" : "16px"};
           box-shadow: var(--bk-card-shadow); border: var(--bk-card-border);
         }
@@ -1819,9 +1927,15 @@ class KrBabyKitPanel extends HTMLElement {
           opacity: 0; transition: opacity 0.15s ease;
         }
         .avatar-btn:hover .avatar-cam { opacity: 1; }
-        h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; font-family: var(--bk-font-head); }
-        h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; font-family: var(--bk-font-head); }
-        .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--bk-muted); font-size: 14px; }
+        h2 { margin: 0; font-size: 21px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.25; font-family: var(--bk-font-head); }
+        h3 { margin: 0 0 14px; font-size: 16.5px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.35; font-family: var(--bk-font-head); }
+        .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; color: var(--bk-muted); font-size: 13.5px; line-height: 1.4; }
+        .sub-badge {
+          display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px;
+          font-size: 12px; font-weight: 600; line-height: 1.2;
+          background: var(--bk-surface); color: var(--bk-muted);
+          border: 1px solid rgba(128, 128, 128, 0.14);
+        }
         .quick-bar { display: flex; flex-wrap: wrap; gap: 6px; }
         .quick-pill {
           padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 600;
@@ -1835,9 +1949,12 @@ class KrBabyKitPanel extends HTMLElement {
           padding: 12px 14px; border-radius: 18px; background: var(--bk-surface);
           border: 1px solid rgba(128, 128, 128, 0.14); display: flex; flex-direction: column; gap: 10px;
         }
-        .care-launcher-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .care-launcher-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .launcher-title { font-size: 13.5px; font-weight: 700; letter-spacing: -0.01em; color: var(--bk-text); }
+        .launcher-sub { font-size: 12px; color: var(--bk-muted); line-height: 1.35; }
+        .weekly-title { font-size: 12.5px; font-weight: 600; color: var(--bk-muted); }
         .care-launcher-grid {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px;
+          display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px;
         }
         .care-launch-btn {
           display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
@@ -1867,15 +1984,31 @@ class KrBabyKitPanel extends HTMLElement {
         .lg-sleep { width: 9px; height: 9px; border-radius: 3px; background: #6366f1; display: inline-block; }
         .lg-feed { width: 9px; height: 9px; border-radius: 3px; background: #0ea5e9; display: inline-block; }
         .kpi-grid {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
           gap: 10px; margin-bottom: 14px;
         }
-        .kpi-card {
-          display: flex; align-items: center; gap: 11px;
-          padding: 11px 13px; border-radius: 16px;
-          background: var(--bk-surface); border: 1px solid rgba(128, 128, 128, 0.12);
+        .tuition-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          margin-bottom: 0;
         }
-        .kpi-val { font-size: 17px; font-weight: 700; font-family: var(--bk-font-num); line-height: 1.2; }
+        .kpi-card {
+          display: flex; align-items: center; gap: 12px;
+          padding: 13px 15px; border-radius: 18px;
+          background: var(--bk-surface); border: 1px solid rgba(128, 128, 128, 0.12);
+          min-width: 0;
+        }
+        .kpi-body {
+          display: flex; flex-direction: column; gap: 3px; min-width: 0;
+        }
+        .kpi-label {
+          font-size: 12.5px; font-weight: 500; color: var(--bk-muted);
+          line-height: 1.3; margin: 0; padding: 0;
+        }
+        .kpi-val {
+          font-size: 17px; font-weight: 700; color: var(--bk-text);
+          font-family: var(--bk-font-num); font-variant-numeric: tabular-nums;
+          letter-spacing: -0.02em; line-height: 1.25; margin: 0; padding: 0;
+        }
         .timer-grid {
           display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
           gap: 10px; margin-bottom: 14px;
@@ -1903,11 +2036,13 @@ class KrBabyKitPanel extends HTMLElement {
         @keyframes bk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
         .gauge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
         .gauge-card {
-          padding: 12px 14px; border-radius: 16px; background: var(--bk-surface);
-          display: flex; flex-direction: column; gap: 8px;
+          padding: 14px 16px; border-radius: 18px; background: var(--bk-surface);
+          border: 1px solid rgba(128, 128, 128, 0.12);
+          display: flex; flex-direction: column; gap: 9px;
         }
-        .gauge-top { display: flex; align-items: center; gap: 10px; }
+        .gauge-top { display: flex; align-items: center; gap: 11px; }
         .gauge-meta { flex: 1; }
+        .gauge-summary { font-size: 12.5px; color: var(--bk-muted); line-height: 1.45; margin: 0; padding: 0; }
         .pct-gauge { display: flex; flex-direction: column; gap: 4px; }
         .pct-track { position: relative; height: 8px; border-radius: 999px; background: rgba(128, 128, 128, 0.16); overflow: visible; }
         .pct-safe { position: absolute; left: 5%; right: 5%; top: 0; bottom: 0; background: rgba(34, 197, 94, 0.16); border-radius: 999px; }
@@ -1933,10 +2068,11 @@ class KrBabyKitPanel extends HTMLElement {
         }
         .tl-body { display: flex; flex-direction: column; gap: 6px; flex: 1; }
         .tl-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .tl-time { font-size: 12px; color: var(--bk-muted); font-variant-numeric: tabular-nums; }
         .tl-note { font-size: 14px; white-space: pre-wrap; line-height: 1.45; }
         .tl-photo { max-width: 240px; max-height: 180px; border-radius: 12px; object-fit: cover; cursor: zoom-in; border: 1px solid var(--bk-input-border); }
         .lightbox-img { max-width: 92vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
-        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
         .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
         label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--bk-muted); }
         input, select, textarea {
@@ -1956,9 +2092,16 @@ class KrBabyKitPanel extends HTMLElement {
         .btn-outline { background: transparent; color: var(--bk-text); border-color: var(--bk-input-border); }
         .btn-danger { background: transparent; color: var(--error-color, #db4437); border-color: var(--error-color, #db4437); }
         button:disabled { opacity: 0.45; cursor: not-allowed; }
-        .small { font-size: 12px; padding: 5px 10px; }
+        .small { font-size: 12.5px; line-height: 1.4; }
+        button.small, .btn-outline.small, .btn-primary.small, label.small {
+          font-size: 12.5px; font-weight: 600; padding: 6px 12px; line-height: 1.2;
+        }
         .muted { color: var(--bk-muted); }
-        .badge { display: inline-block; padding: 2px 8px; border-radius: var(--bk-pill-radius); font-size: 12px; font-weight: 500; }
+        .badge {
+          display: inline-flex; align-items: center; padding: 3px 9px;
+          border-radius: var(--bk-pill-radius); font-size: 11.5px; font-weight: 600;
+          line-height: 1.2; font-variant-numeric: tabular-nums;
+        }
         .badge.neutral { background: rgba(128, 128, 128, 0.16); }
         .badge.ok, .badge.status-done { background: rgba(76, 175, 80, 0.18); color: #2e7d32; }
         .badge.warn, .badge.status-open { background: rgba(255, 152, 0, 0.22); color: #d97706; }
@@ -1975,11 +2118,14 @@ class KrBabyKitPanel extends HTMLElement {
         .tab.active { background: var(--bk-accent); color: var(--bk-accent-text); }
         .sched-list { display: flex; flex-direction: column; gap: 8px; }
         .sched-item {
-          display: flex; align-items: center; justify-content: space-between; gap: 10px;
-          padding: 10px 14px; border-radius: 16px; background: var(--bk-surface);
+          display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          padding: 12px 15px; border-radius: 18px; background: var(--bk-surface);
+          border: 1px solid rgba(128, 128, 128, 0.1);
         }
-        .sched-left { display: flex; align-items: center; gap: 10px; }
-        .sched-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .sched-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+        .sched-meta { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .sched-title { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 14.5px; line-height: 1.35; }
+        .sched-date { font-size: 12.5px; color: var(--bk-muted); line-height: 1.35; font-variant-numeric: tabular-nums; }
         .banner { padding: 10px 14px; border-radius: var(--bk-btn-radius); margin-bottom: 12px; font-size: 14px; }
         .banner.error { background: rgba(219, 68, 55, 0.15); color: var(--error-color, #c62828); }
         .banner.notice { background: rgba(76, 175, 80, 0.15); color: #2e7d32; }
@@ -2055,6 +2201,7 @@ class KrBabyKitPanel extends HTMLElement {
           .tabs::-webkit-scrollbar { display: none; }
           .pill, .chip, .quick-pill, .tab { flex-shrink: 0; white-space: nowrap; }
           .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+          .tuition-grid { grid-template-columns: 1fr; }
           .timer-grid { grid-template-columns: 1fr; }
           .gauge-grid, .spark-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
           input, select, textarea { font-size: 16px; min-height: 44px; }

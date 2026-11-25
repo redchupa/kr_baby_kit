@@ -23,6 +23,7 @@ export const ICONS = {
   play: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 4 20 12 6 20 6 4"/></svg>`,
   stop: `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>`,
   home: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  wallet: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>`,
 };
 
 export const CARD_STYLES = [
@@ -36,14 +37,11 @@ export function cardStyleCss(styleId) {
   if (styleId === "bubble") {
     return `
       .card {
-        border-radius: 28px !important;
+        border-radius: 26px !important;
       }
-      .kpi-card, .timer-tile, .tl-item, .sched-item {
-        border-radius: 999px !important;
-        padding: 10px 16px !important;
-      }
-      .tl-item:has(.tl-photo), .tl-item:has(.tl-note) {
-        border-radius: 24px !important;
+      .kpi-card, .timer-tile, .sched-item, .tl-item, .gauge-card {
+        border-radius: 20px !important;
+        padding: 13px 16px !important;
       }
       .icon-well {
         border-radius: 50% !important;
@@ -54,14 +52,14 @@ export function cardStyleCss(styleId) {
         border-radius: 999px !important;
         padding: 7px 14px !important;
       }
-      .btn-primary, .btn-outline, .btn-top, .tab, .pill {
+      .btn-primary, .btn-outline, .btn-top, .tab, .pill, .sub-badge {
         border-radius: 999px !important;
       }
       @media (max-width: 720px) {
         .card { border-radius: 22px !important; }
-        .kpi-card, .timer-tile, .sched-item, .tl-item {
-          border-radius: 20px !important;
-          padding: 10px 12px !important;
+        .kpi-card, .timer-tile, .sched-item, .tl-item, .gauge-card {
+          border-radius: 18px !important;
+          padding: 12px 14px !important;
         }
       }
     `;

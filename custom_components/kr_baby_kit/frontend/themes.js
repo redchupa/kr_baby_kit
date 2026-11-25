@@ -62,8 +62,8 @@ export const THEMES = [
         --bk-header-bg: #fffdf9;
         --bk-header-text: #3a342c;
         --bk-header-border: 1px solid #e7dfd3;
-        --bk-font-body: "Pretendard", "Nunito", system-ui, -apple-system, sans-serif;
-        --bk-font-head: Georgia, "Times New Roman", serif;
+        --bk-font-body: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+        --bk-font-head: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
         --bk-font-num: inherit;
         --bk-btn-radius: 14px;
         --bk-pill-radius: 999px;
@@ -99,8 +99,8 @@ export const THEMES = [
         --bk-header-bg: #fffef9;
         --bk-header-text: #24211c;
         --bk-header-border: 2px double #b8ab96;
-        --bk-font-body: Georgia, "Noto Serif KR", serif;
-        --bk-font-head: Georgia, "Noto Serif KR", serif;
+        --bk-font-body: "Noto Serif KR", "AppleMyungjo", Georgia, serif;
+        --bk-font-head: "Noto Serif KR", "AppleMyungjo", Georgia, serif;
         --bk-font-num: ui-monospace, SFMono-Regular, Menlo, monospace;
         --bk-btn-radius: 3px;
         --bk-pill-radius: 3px;
@@ -284,8 +284,8 @@ export const THEMES = [
         --bk-header-bg: #3f6a54;
         --bk-header-text: #f7faf6;
         --bk-header-border: none;
-        --bk-font-body: system-ui, -apple-system, sans-serif;
-        --bk-font-head: Georgia, serif;
+        --bk-font-body: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+        --bk-font-head: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
         --bk-font-num: inherit;
         --bk-btn-radius: 12px;
         --bk-pill-radius: 999px;
@@ -389,8 +389,8 @@ export const THEMES = [
         --bk-header-bg: #3b261d;
         --bk-header-text: #fffaf5;
         --bk-header-border: none;
-        --bk-font-body: system-ui, -apple-system, sans-serif;
-        --bk-font-head: Georgia, serif;
+        --bk-font-body: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+        --bk-font-head: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
         --bk-font-num: inherit;
         --bk-btn-radius: 6px;
         --bk-pill-radius: 6px;

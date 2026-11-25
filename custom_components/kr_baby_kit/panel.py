@@ -10,7 +10,7 @@ from .const import DOMAIN, LOGGER
 PANEL_URL_PATH = "kr_baby_kit"
 STATIC_URL_PATH = "/kr_baby_kit_static"
 FRONTEND_DIR = Path(__file__).parent / "frontend"
-PANEL_VERSION = "0.17.0"
+PANEL_VERSION = "0.17.1"
 
 
 async def async_register_panel(hass: HomeAssistant) -> None:

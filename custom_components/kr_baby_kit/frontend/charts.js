@@ -204,7 +204,7 @@ export function renderWeeklyCareChart(weeklyCare, opts = {}) {
   return `
     <div class="weekly-chart-box">
       <div class="weekly-head">
-        <span class="muted small">${ko ? "최근 7일 돌봄 추이" : "Last 7 days"}</span>
+        <span class="weekly-title">${ko ? "최근 7일 돌봄 추이" : "Last 7 days"}</span>
         <div class="curve-legend">
           <span><i class="lg-sleep"></i>${ko ? "수면" : "Sleep"}</span>
           <span><i class="lg-feed"></i>${ko ? "수유량(ml)" : "Feeding(ml)"}</span>

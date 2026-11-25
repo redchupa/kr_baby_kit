@@ -4,6 +4,15 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.17.1] - 2026-11-25
+
+### Fixed
+
+- **Typography & text-alignment overhaul (`frontend/panel.js`, `frontend/cards.js`, `frontend/themes.js`)**:
+  - Fixed a CSS class collision where `.small { padding: 5px 10px; }` indented non-button text labels (`표준보육료`, `(만 1세반)`, KPI captions, schedule dates, and gauge summaries) relative to their numeric values.
+  - Replaced row-stretching 2-column CSS Grid (`height: 100%`) with balanced 2-column vertical flex stacks (`.bento-columns` / `.bento-col`) so compact cards like Childcare Tuition hug their content cleanly without giant empty bottom space.
+  - Updated Korean + Latin heading/body font stacks (`Pretendard`, `Apple SD Gothic Neo`, `Noto Sans KR`, `Malgun Gothic`) with `word-break: keep-all`, `tabular-nums`, and squircle Bubble card geometry (`20px` tile radius) so text never falls back to legacy serif or collides with pill arcs.
+
 ## [0.17.0] - 2026-11-25
 
 ### Security
