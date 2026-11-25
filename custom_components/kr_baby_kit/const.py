@@ -26,6 +26,7 @@ PROFILE_OPTIONS = [PROFILE_KR, PROFILE_GLOBAL]
 SEX_MALE = "male"
 SEX_FEMALE = "female"
 SEX_OPTIONS = [SEX_MALE, SEX_FEMALE]
+DEFAULT_BIRTHDATE = "2024-07-01"
 
 # Measurement record storage
 STORAGE_KEY_RECORDS = "kr_baby_kit_records"

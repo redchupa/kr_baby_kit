@@ -31,6 +31,7 @@ from .const import (
     CONF_CHILD_NAME,
     CONF_CHILD_SEX,
     CONF_PROFILE,
+    DEFAULT_BIRTHDATE,
     DOMAIN,
     PROFILE_GLOBAL,
     PROFILE_KR,
@@ -132,6 +133,8 @@ class BabyKitConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
         defaults = user_input or {
+            CONF_CHILD_BIRTHDATE: DEFAULT_BIRTHDATE,
+            CONF_CHILD_SEX: SEX_MALE,
             CONF_PROFILE: PROFILE_KR if is_korean(self.hass) else PROFILE_GLOBAL,
         }
         return self.async_show_form(

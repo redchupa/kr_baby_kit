@@ -144,3 +144,38 @@ def test_number_entity_defaults_to_age_median_when_no_records():
         assert ent_h.native_value == 91.5
         assert ent_h.extra_state_attributes["is_default_median"] is False
         assert ent_h.extra_state_attributes["measured_at"] == "2026-11-25"
+
+
+def test_default_birthdate_and_panel_assets():
+    from types import SimpleNamespace
+    from custom_components.kr_baby_kit.const import DEFAULT_BIRTHDATE
+    from custom_components.kr_baby_kit.panel import FRONTEND_DIR
+    from custom_components.kr_baby_kit.websocket_api import _serialize_child
+
+    assert DEFAULT_BIRTHDATE == "2024-07-01"
+    panel_js = FRONTEND_DIR / "panel.js"
+    assert panel_js.is_file()
+    js_text = panel_js.read_text(encoding="utf-8")
+    assert "kr-baby-kit-panel" in js_text
+    assert "kr_baby_kit/get_overview" in js_text
+    assert "kr_baby_kit/add_child" in js_text
+    assert "kr_baby_kit/update_child" in js_text
+
+    chart = GrowthChart.from_profile(PROFILE_KR)
+    coord = SimpleNamespace(
+        child_id="c1",
+        child_name="Child A",
+        child_sex="female",
+        birthdate=date(2024, 7, 1),
+        profile=PROFILE_KR,
+        chart=chart,
+        all_vaccines=[],
+        all_checkups=[],
+        all_oral_checkups=[],
+        data={"age_months": 28.8, "today": "2026-11-25", "records": [], "completed": {}},
+    )
+    hass = SimpleNamespace(config=SimpleNamespace(language="ko"))
+    serialized = _serialize_child(hass, "entry_1", coord)
+    assert serialized["birthdate"] == "2024-07-01"
+    assert serialized["inputs"]["height"]["is_default_median"] is True
+    assert serialized["inputs"]["height"]["value"] is not None

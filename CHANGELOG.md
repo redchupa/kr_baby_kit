@@ -4,6 +4,14 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.11.0] - 2026-11-25
+
+### Added
+
+- **Home Assistant sidebar panel (`영유아 키트` / `Baby Kit`)**: View child overview, percentiles, and schedules directly from the HA sidebar; edit child name, birthdate, sex, and regional profile; add or delete children; record measurements; and toggle vaccine/checkup completion marks.
+- **WebSocket API**: Added `kr_baby_kit/get_overview`, `kr_baby_kit/add_child`, `kr_baby_kit/update_child`, and `kr_baby_kit/delete_child` commands for the sidebar panel.
+- **Default birthdate**: Pre-fills `2024-07-01` in both the Config Flow and the sidebar "Add child" dialog.
+
 ## [0.10.3] - 2026-11-25
 
 ### Added

@@ -143,7 +143,11 @@ _GET_SCHEDULE_SCHEMA = vol.Schema({vol.Optional(CONF_CHILD_ID): str})
 
 
 def _entries(hass: HomeAssistant) -> dict[str, dict]:
-    return hass.data.get(DOMAIN, {})
+    return {
+        k: v
+        for k, v in (hass.data.get(DOMAIN) or {}).items()
+        if isinstance(v, dict) and "coordinator" in v
+    }
 
 
 def _resolve_child_id(hass: HomeAssistant, requested: str | None) -> str:
