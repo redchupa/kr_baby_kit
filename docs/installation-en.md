@@ -9,7 +9,7 @@
 ## 2. Install via HACS
 
 1. HACS → Integrations → top-right ⋮ → **Custom repositories**
-2. URL: `https://github.com/your-github-username/kr_baby_kit`
+2. URL: `https://github.com/redchupa/kr_baby_kit`
 3. Category: **Integration**
 4. **Add** → search for *Korean Baby Kit* → download
 5. Restart Home Assistant

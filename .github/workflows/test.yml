@@ -60,7 +60,7 @@ jobs:
       - name: Block leaks of personal child data
         run: |
           set -e
-          PATTERNS='하린|우하린|WooRin|redchupa|jerry|예린|제리|192\.168\.|10\.0\.|ha\.redchupa'
+          PATTERNS='하린|우하린|WooRin|jerry|예린|제리|192\.168\.|10\.0\.|ha\.redchupa'
           if grep -rE "$PATTERNS" . \
               --exclude-dir=.git \
               --exclude-dir=.github \

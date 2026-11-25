@@ -9,7 +9,7 @@
 ## 2. HACS 통해 설치
 
 1. HACS → 통합 → 우상단 ⋮ → **사용자 지정 저장소 (Custom repositories)**
-2. URL: `https://github.com/your-github-username/kr_baby_kit`
+2. URL: `https://github.com/redchupa/kr_baby_kit`
 3. 카테고리: **Integration**
 4. **추가** → 목록에서 *한국 영유아 키트* 검색 → 다운로드
 5. Home Assistant 재시작

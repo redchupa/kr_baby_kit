@@ -4,6 +4,12 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.10.1] - 2026-11-25
+
+### Fixed
+
+- Replaced leftover `your-github-username` placeholder in `manifest.json` (`codeowners`, `documentation`, `issue_tracker`) and installation docs with `redchupa` so Home Assistant displays the real maintainer handle and links.
+
 ## [0.10.0] - 2026-11-25
 
 ### Added
