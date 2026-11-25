@@ -4,6 +4,16 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.14.0] - 2026-11-25
+
+### Added
+
+- **4 selectable card styles (`frontend/cards.js`)**: Switch between **Bubble Card** (pill capsules with circular icon wells & sub-buttons), **Template Card** (Mushroom-style icon badges & status chips), **Bento Pro** (large KPI typography & visual gauges), and **Classic** right from the Gear drawer.
+- **Top Status Chips Bar**: Glanceable Mushroom-style chips showing next vaccine/checkup D-day (or open-window alerts), today's sleep & feeding summary, and growth concern status.
+- **Visual LMS Percentile Gauges & Growth Trend Sparklines**: 0–100% horizontal percentile meters with 5–95% safe band highlighting and SVG height/weight trend sparklines.
+- **One-Tap Quick Action Bubbles** (`+ Wet`, `+ Solid`, `+ Formula 140ml`, `+ Tummy 10m`) and a **Horizontal Photo Gallery Strip** in the timeline.
+- **Per-card width control (`Full` / `1/2`)** in 2-column Bento layout mode via the Gear drawer.
+
 ## [0.13.0] - 2026-11-25
 
 ### Added

@@ -1,20 +1,37 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.13.0";
+import { THEMES, getThemeCss } from "./themes.js?v=0.14.0";
+import {
+  CARD_STYLES,
+  ICONS,
+  cardStyleCss,
+  renderPercentileGauge,
+  renderSparkline,
+} from "./cards.js?v=0.14.0";
 
-const PREFS_KEY = "kr_baby_kit_panel_prefs_v2";
+const PREFS_KEY = "kr_baby_kit_panel_prefs_v3";
 
 const DEFAULT_PREFS = {
   theme: "ha-native",
-  layout: "single", // "single" | "bento" | "compact"
-  order: ["care", "timeline", "measurements", "growth", "tuition", "schedules"],
+  cardStyle: "bubble", // "bubble" | "mushroom" | "bento-pro" | "classic"
+  layout: "bento", // "single" | "bento" | "compact"
+  order: ["care", "growth", "measurements", "timeline", "tuition", "schedules"],
   visible: {
+    chips: true,
     care: true,
-    timeline: true,
-    measurements: true,
     growth: true,
+    measurements: true,
+    timeline: true,
     tuition: true,
     schedules: true,
     footer: true,
+  },
+  wide: {
+    care: true,
+    growth: false,
+    measurements: false,
+    timeline: true,
+    tuition: false,
+    schedules: true,
   },
   defaultScheduleTab: "vaccines",
 };
@@ -43,19 +60,27 @@ const STRINGS = {
     saved: "저장되었습니다.",
     changePhoto: "프로필 사진 변경",
     ageMonths: (m) => `생후 ${m}개월`,
+    chipOpenVac: "접종 가능",
+    chipNextVac: (d) => `접종 D-${d}`,
+    chipOpenChk: "검진 가능",
+    chipNextChk: (d) => `검진 D-${d}`,
     careTitle: "오늘의 돌봄 · 타이머",
+    quickOneTap: "원탭 빠른 기록",
+    quickWet: "+ 소변",
+    quickSolid: "+ 대변",
+    quickFeed: "+ 분유 140ml",
+    quickTummy: "+ 터미타임 10분",
     todaySleep: "수면",
     todayFeed: "수유",
     todayDiaper: "기저귀",
     todayTummy: "터미타임",
     todayTemp: "최근 체온",
-    minUnit: "분",
     countUnit: "회",
     wet: "소변",
     solid: "대변",
     both: "소변+대변",
     timerStart: "시작",
-    timerStop: "종료·저장",
+    timerStop: "저장",
     timerCancel: "취소",
     kindNote: "메모·사진",
     kindFeeding: "수유",
@@ -83,7 +108,7 @@ const STRINGS = {
     timelineTitle: "타임라인 · 사진 일기",
     filterAll: "전체",
     filterPhotos: "사진만",
-    noActivities: "아직 기록이 없습니다. 위에서 수유·수면·기저귀 또는 사진 일기를 남겨보세요.",
+    noActivities: "아직 기록이 없습니다. 위에서 원탭 기록이나 사진 일기를 남겨보세요.",
     measurements: "성장 측정 입력",
     height: "키 (cm)",
     weight: "몸무게 (kg)",
@@ -92,8 +117,8 @@ const STRINGS = {
     saveMeasurement: "측정값 저장",
     defaultMedian: "평균 기본값",
     recordedAt: (d) => `최근 기록: ${d}`,
-    growthSummary: "성장 백분위",
-    noMeasureYet: "아직 측정 기록이 없습니다. 위에서 키·몸무게·머리둘레를 저장하면 백분위가 계산됩니다.",
+    growthSummary: "성장 백분위 · 추이",
+    noMeasureYet: "아직 측정 기록이 없습니다. 키·몸무게·머리둘레를 저장하면 백분위 게이지가 표시됩니다.",
     bmi: "BMI",
     concernOk: "정상 범위",
     concernWarn: "주의 필요",
@@ -101,7 +126,7 @@ const STRINGS = {
     concernBmi: "BMI",
     concernWfl: "신장별 몸무게",
     under24Note: "만 24개월 미만은 신장별 몸무게를 참고합니다.",
-    schedules: "일정 관리",
+    schedules: "예방접종 · 검진 일정",
     tabVaccines: "예방접종",
     tabCheckups: "건강검진",
     tabOral: "구강검진",
@@ -109,30 +134,34 @@ const STRINGS = {
     statusUpcoming: "예정",
     statusDone: "완료",
     statusPast: "기간 지남",
-    markDone: "완료 표시",
-    unmarkDone: "완료 취소",
+    markDone: "완료",
+    unmarkDone: "취소",
     showPast: "지난 일정 보기",
     tuition: "어린이집 보육료",
-    tuitionStd: "월 표준보육료",
-    tuitionSub: "월 정부지원금",
-    tuitionShare: "월 본인부담금",
+    tuitionStd: "표준보육료",
+    tuitionSub: "정부지원금",
+    tuitionShare: "본인부담금",
     won: "원",
     modalAddTitle: "아이 추가",
     modalEditTitle: "아이 정보 수정",
-    settingsTitle: "화면 및 테마 설정",
+    settingsTitle: "카드 · 테마 · 레이아웃 설정",
+    settingsCardStyle: "카드 스타일",
     settingsTheme: "테마 선택 (12종)",
     settingsLayout: "레이아웃 구성",
     layoutSingle: "1열 표준",
-    layoutBento: "2열 대시보드",
+    layoutBento: "2열 벤토",
     layoutCompact: "컴팩트",
-    settingsSections: "섹션 표시 및 순서",
+    settingsSections: "카드 표시 · 순서 · 너비",
+    secChips: "상단 상태 칩 바",
     secCare: "오늘의 돌봄 · 타이머",
     secTimeline: "타임라인 · 사진 일기",
     secMeasurements: "성장 측정 입력",
-    secGrowth: "성장 백분위",
+    secGrowth: "성장 백분위 · 추이",
     secTuition: "어린이집 보육료 (KR)",
-    secSchedules: "일정 관리",
+    secSchedules: "예방접종 · 검진 일정",
     secFooter: "하단 면책·출처 표시",
+    widthFull: "전체",
+    widthHalf: "1/2",
     settingsDefaultTab: "기본 일정 탭",
     resetPrefs: "기본값으로 초기화",
   },
@@ -159,19 +188,27 @@ const STRINGS = {
     saved: "Saved.",
     changePhoto: "Change profile photo",
     ageMonths: (m) => `${m} mo`,
+    chipOpenVac: "Vaccine open",
+    chipNextVac: (d) => `Vaccine D-${d}`,
+    chipOpenChk: "Checkup open",
+    chipNextChk: (d) => `Checkup D-${d}`,
     careTitle: "Daily Care & Timers",
+    quickOneTap: "One-tap log",
+    quickWet: "+ Wet",
+    quickSolid: "+ Solid",
+    quickFeed: "+ Formula 140ml",
+    quickTummy: "+ Tummy 10m",
     todaySleep: "Sleep",
     todayFeed: "Feeding",
     todayDiaper: "Diapers",
     todayTummy: "Tummy time",
     todayTemp: "Last temp",
-    minUnit: "m",
     countUnit: "x",
     wet: "Wet",
     solid: "Solid",
     both: "Wet + Solid",
     timerStart: "Start",
-    timerStop: "Stop & save",
+    timerStop: "Save",
     timerCancel: "Cancel",
     kindNote: "Note & Photo",
     kindFeeding: "Feeding",
@@ -199,7 +236,7 @@ const STRINGS = {
     timelineTitle: "Timeline & Photo Diary",
     filterAll: "All",
     filterPhotos: "Photos",
-    noActivities: "No care logs yet. Record a feeding, sleep, diaper change, or photo note above.",
+    noActivities: "No care logs yet. Use one-tap actions or add a photo note above.",
     measurements: "Growth measurements",
     height: "Height (cm)",
     weight: "Weight (kg)",
@@ -208,16 +245,16 @@ const STRINGS = {
     saveMeasurement: "Save measurement",
     defaultMedian: "Age median",
     recordedAt: (d) => `Last recorded: ${d}`,
-    growthSummary: "Growth percentiles",
-    noMeasureYet: "No measurements recorded yet. Save height, weight, or head circumference above to compute percentiles.",
+    growthSummary: "Growth percentiles & trends",
+    noMeasureYet: "No measurements recorded yet. Save measurements to view percentile gauges.",
     bmi: "BMI",
-    concernOk: "Normal range",
-    concernWarn: "Needs attention",
+    concernOk: "Normal",
+    concernWarn: "Attention",
     concernHead: "Head circumference",
     concernBmi: "BMI",
     concernWfl: "Weight-for-length",
     under24Note: "Under 24 months: check weight-for-length instead of BMI percentile.",
-    schedules: "Schedules",
+    schedules: "Immunizations & Checkups",
     tabVaccines: "Immunizations",
     tabCheckups: "Health checkups",
     tabOral: "Dental checkups",
@@ -225,37 +262,38 @@ const STRINGS = {
     statusUpcoming: "Upcoming",
     statusDone: "Done",
     statusPast: "Passed",
-    markDone: "Mark done",
+    markDone: "Done",
     unmarkDone: "Undo",
     showPast: "Show past windows",
     tuition: "Childcare tuition (KR)",
-    tuitionStd: "Standard tuition",
-    tuitionSub: "Government subsidy",
+    tuitionStd: "Standard",
+    tuitionSub: "Subsidy",
     tuitionShare: "Parent share",
     won: "KRW",
     modalAddTitle: "Add child",
     modalEditTitle: "Edit child",
-    settingsTitle: "Appearance & Layout",
+    settingsTitle: "Cards, Theme & Layout",
+    settingsCardStyle: "Card style",
     settingsTheme: "Theme (12 styles)",
     settingsLayout: "Layout mode",
     layoutSingle: "Single column",
-    layoutBento: "2-column bento",
+    layoutBento: "2-col Bento",
     layoutCompact: "Compact",
-    settingsSections: "Sections & order",
+    settingsSections: "Cards, order & width",
+    secChips: "Top status chips bar",
     secCare: "Daily Care & Timers",
     secTimeline: "Timeline & Photo Diary",
     secMeasurements: "Growth measurements",
-    secGrowth: "Growth percentiles",
+    secGrowth: "Growth percentiles & trends",
     secTuition: "Childcare tuition (KR)",
-    secSchedules: "Schedules",
+    secSchedules: "Immunizations & Checkups",
     secFooter: "Footer disclaimer & attribution",
+    widthFull: "Full",
+    widthHalf: "1/2",
     settingsDefaultTab: "Default schedule tab",
     resetPrefs: "Reset to defaults",
   },
 };
-
-const GEAR_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
-const CAM_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>`;
 
 function esc(val) {
   return String(val ?? "")
@@ -286,6 +324,14 @@ function fmtMinutes(min, ko) {
 function fmtTimestamp(iso) {
   if (!iso) return "";
   return String(iso).replace("T", " ").slice(0, 16);
+}
+
+function daysBetween(fromIso, toIso) {
+  if (!fromIso || !toIso) return null;
+  const a = Date.parse(fromIso);
+  const b = Date.parse(toIso);
+  if (Number.isNaN(a) || Number.isNaN(b)) return null;
+  return Math.round((b - a) / 86400000);
 }
 
 function compressImage(file, maxEdge = 1280, quality = 0.82) {
@@ -325,9 +371,15 @@ function loadPrefs() {
     }
     return {
       theme: THEMES.some((t) => t.id === parsed.theme) ? parsed.theme : DEFAULT_PREFS.theme,
-      layout: ["single", "bento", "compact"].includes(parsed.layout) ? parsed.layout : DEFAULT_PREFS.layout,
+      cardStyle: CARD_STYLES.some((c) => c.id === parsed.cardStyle)
+        ? parsed.cardStyle
+        : DEFAULT_PREFS.cardStyle,
+      layout: ["single", "bento", "compact"].includes(parsed.layout)
+        ? parsed.layout
+        : DEFAULT_PREFS.layout,
       order: validOrder,
       visible: { ...DEFAULT_PREFS.visible, ...(parsed.visible || {}) },
+      wide: { ...DEFAULT_PREFS.wide, ...(parsed.wide || {}) },
       defaultScheduleTab: ["vaccines", "checkups", "oral"].includes(parsed.defaultScheduleTab)
         ? parsed.defaultScheduleTab
         : DEFAULT_PREFS.defaultScheduleTab,
@@ -384,9 +436,7 @@ class KrBabyKitPanel extends HTMLElement {
   set hass(hass) {
     const first = !this._hass;
     this._hass = hass;
-    if (first) {
-      this._load();
-    }
+    if (first) this._load();
   }
 
   set narrow(val) {
@@ -452,7 +502,7 @@ class KrBabyKitPanel extends HTMLElement {
         this._notice = null;
         this._render();
       }
-    }, 2500);
+    }, 2200);
   }
 
   async _uploadAvatar(file) {
@@ -467,6 +517,29 @@ class KrBabyKitPanel extends HTMLElement {
         type: "kr_baby_kit/set_avatar",
         child_id: child.child_id,
         photo_data_url: dataUrl,
+      });
+      await this._load();
+      this._flash(this._t().saved);
+    } catch (err) {
+      this._error = err?.message || String(err);
+    } finally {
+      this._busy = false;
+      this._render();
+    }
+  }
+
+  async _quickLog(kind, extra = {}) {
+    const child = this._currentChild();
+    if (!child || this._busy) return;
+    this._busy = true;
+    this._error = null;
+    this._render();
+    try {
+      await this._hass.callWS({
+        type: "kr_baby_kit/add_activity",
+        child_id: child.child_id,
+        kind,
+        ...extra,
       });
       await this._load();
       this._flash(this._t().saved);
@@ -744,22 +817,43 @@ class KrBabyKitPanel extends HTMLElement {
     return d;
   }
 
-  _renderConcernBadge(label, pct, summary) {
+  _renderStatusChips(child) {
+    if (!this._prefs.visible.chips) return "";
     const t = this._t();
-    if (pct == null) {
-      return `
-        <div class="concern-row">
-          <span class="concern-label">${esc(label)}</span>
-          <span class="muted">${esc(summary || "-")}</span>
-        </div>`;
+    const ko = this._isKo();
+    const sum = child.today_summary || {};
+    const vacs = child.vaccines || [];
+    const chks = child.checkups || [];
+    const openVac = vacs.find((e) => e.status === "open");
+    const nextVac = vacs.find((e) => e.status === "upcoming");
+    const openChk = chks.find((e) => e.status === "open");
+    const nextChk = chks.find((e) => e.status === "upcoming");
+
+    const pcts = child.percentiles || {};
+    const anyWarn = [
+      pcts.head?.statistical_percentile,
+      pcts.bmi?.statistical_percentile,
+      child.weight_for_length?.statistical_percentile,
+    ].some((v) => v != null && (v < 5 || v > 95));
+
+    const chips = [];
+    if (openVac) {
+      chips.push(`<span class="chip tone-amber">${ICONS.vaccine}<span>${esc(t.chipOpenVac)}</span></span>`);
+    } else if (nextVac) {
+      const d = daysBetween(child.today, nextVac.window_start);
+      if (d != null) chips.push(`<span class="chip tone-blue">${ICONS.vaccine}<span>${esc(t.chipNextVac(d))}</span></span>`);
     }
-    const warn = pct < 5 || pct > 95;
-    return `
-      <div class="concern-row">
-        <span class="concern-label">${esc(label)}</span>
-        <span class="badge ${warn ? "warn" : "ok"}">${esc(warn ? t.concernWarn : t.concernOk)}</span>
-        <span class="muted">${esc(summary || "")}</span>
-      </div>`;
+    if (openChk) {
+      chips.push(`<span class="chip tone-amber">${ICONS.checkup}<span>${esc(t.chipOpenChk)}</span></span>`);
+    } else if (nextChk) {
+      const d = daysBetween(child.today, nextChk.window_start);
+      if (d != null) chips.push(`<span class="chip tone-teal">${ICONS.checkup}<span>${esc(t.chipNextChk(d))}</span></span>`);
+    }
+    chips.push(`<span class="chip tone-indigo">${ICONS.sleep}<span>${esc(fmtMinutes(sum.sleep_min, ko))}</span></span>`);
+    chips.push(`<span class="chip tone-sky">${ICONS.feeding}<span>${sum.feeding_count || 0}${esc(t.countUnit)}${sum.feeding_ml ? ` · ${sum.feeding_ml}ml` : ""}</span></span>`);
+    chips.push(`<span class="chip ${anyWarn ? "tone-rose" : "tone-green"}">${ICONS.shield}<span>${esc(anyWarn ? t.concernWarn : t.concernOk)}</span></span>`);
+
+    return `<div class="chips-bar">${chips.join("")}</div>`;
   }
 
   _renderScheduleList(child) {
@@ -776,9 +870,7 @@ class KrBabyKitPanel extends HTMLElement {
       ? list
       : list.filter((e) => e.status === "open" || e.status === "upcoming" || e.status === "done");
 
-    if (!filtered.length) {
-      return `<p class="muted">-</p>`;
-    }
+    if (!filtered.length) return `<p class="muted">-</p>`;
     return filtered
       .slice(0, 25)
       .map((e) => {
@@ -793,17 +885,20 @@ class KrBabyKitPanel extends HTMLElement {
             ? t.statusDone
             : t.statusPast;
         const isDone = e.status === "done";
-        const btnText = isDone ? t.unmarkDone : t.markDone;
+        const icon = this._scheduleTab === "vaccines" ? ICONS.vaccine : ICONS.checkup;
         return `
           <div class="sched-item">
-            <div class="sched-main">
-              <div class="sched-title">
-                <span class="badge status-${esc(e.status)}">${esc(statusLabel)}</span>
-                <strong>${esc(name + dose)}</strong>
+            <div class="sched-left">
+              <div class="icon-well tone-${e.status === "open" ? "amber" : e.status === "done" ? "green" : "blue"}">${icon}</div>
+              <div>
+                <div class="sched-title">
+                  <strong>${esc(name + dose)}</strong>
+                  <span class="badge status-${esc(e.status)}">${esc(statusLabel)}</span>
+                </div>
+                <div class="muted small">${esc(e.window_start)} ~ ${esc(e.window_end)}${e.completed_date ? ` (${esc(e.completed_date)})` : ""}</div>
               </div>
-              <div class="muted small">${esc(e.window_start)} ~ ${esc(e.window_end)}${e.completed_date ? ` (${esc(e.completed_date)})` : ""}</div>
             </div>
-            <button class="btn-outline small" data-toggle-done="${esc(e.event_id)}" data-is-done="${isDone ? "1" : "0"}" ${this._busy ? "disabled" : ""}>${esc(btnText)}</button>
+            <button class="btn-outline small" data-toggle-done="${esc(e.event_id)}" data-is-done="${isDone ? "1" : "0"}" ${this._busy ? "disabled" : ""}>${esc(isDone ? t.unmarkDone : t.markDone)}</button>
           </div>`;
       })
       .join("");
@@ -879,28 +974,37 @@ class KrBabyKitPanel extends HTMLElement {
     const t = this._t();
     const ko = this._isKo();
     if (!this._prefs.visible[secId]) return "";
+    const wideClass = this._prefs.wide[secId] ? "span-full" : "";
 
     if (secId === "care") {
       const sum = child.today_summary || {};
       const timers = child.timers || {};
-      const timerKinds = ["sleep", "feeding", "tummy_time", "pumping"];
+      const timerDefs = [
+        { k: "sleep", tone: "indigo" },
+        { k: "feeding", tone: "sky" },
+        { k: "tummy_time", tone: "green" },
+        { k: "pumping", tone: "rose" },
+      ];
       const logKinds = ["note", "feeding", "sleep", "diaper", "tummy_time", "pumping", "temperature"];
 
-      const timerCards = timerKinds
-        .map((tk) => {
-          const active = Boolean(timers[tk]?.started_at);
+      const timerCards = timerDefs
+        .map(({ k, tone }) => {
+          const active = Boolean(timers[k]?.started_at);
           return `
             <div class="timer-tile ${active ? "running" : ""}">
-              <div class="timer-top">
-                <span class="timer-name">${esc(this._kindLabel(tk))}</span>
-                <span class="timer-clock" data-timer-clock="${esc(tk)}">${active ? esc(fmtElapsed(timers[tk].started_at)) : "00:00:00"}</span>
+              <div class="timer-left">
+                <div class="icon-well tone-${tone}">${ICONS[k]}</div>
+                <div>
+                  <div class="timer-name">${active ? `<span class="pulse-dot"></span>` : ""}${esc(this._kindLabel(k))}</div>
+                  <div class="timer-clock" data-timer-clock="${esc(k)}">${active ? esc(fmtElapsed(timers[k].started_at)) : "00:00:00"}</div>
+                </div>
               </div>
               <div class="timer-btns">
                 ${
                   active
-                    ? `<button type="button" class="btn-primary small" data-stop-timer="${esc(tk)}" ${this._busy ? "disabled" : ""}>${esc(t.timerStop)}</button>
-                       <button type="button" class="btn-outline small" data-cancel-timer="${esc(tk)}" ${this._busy ? "disabled" : ""}>${esc(t.timerCancel)}</button>`
-                    : `<button type="button" class="btn-outline small" data-start-timer="${esc(tk)}" ${this._busy ? "disabled" : ""}>${esc(t.timerStart)}</button>`
+                    ? `<button type="button" class="sub-btn primary" data-stop-timer="${esc(k)}" title="${esc(t.timerStop)}" ${this._busy ? "disabled" : ""}>${ICONS.stop}</button>
+                       <button type="button" class="btn-outline small" data-cancel-timer="${esc(k)}" ${this._busy ? "disabled" : ""}>${esc(t.timerCancel)}</button>`
+                    : `<button type="button" class="sub-btn" data-start-timer="${esc(k)}" title="${esc(t.timerStart)}" ${this._busy ? "disabled" : ""}>${ICONS.play}</button>`
                 }
               </div>
             </div>`;
@@ -908,28 +1012,52 @@ class KrBabyKitPanel extends HTMLElement {
         .join("");
 
       return `
-        <div class="card section-card span-full" data-section="care">
-          <h3>${esc(t.careTitle)}</h3>
-          <div class="summary-strip">
-            <div class="stat">
-              <div class="muted small">${esc(t.todaySleep)}</div>
-              <div class="stat-val">${esc(fmtMinutes(sum.sleep_min, ko))}</div>
+        <div class="card section-card ${wideClass}" data-section="care">
+          <div class="card-head">
+            <h3>${esc(t.careTitle)}</h3>
+            <div class="quick-bar">
+              <button type="button" class="quick-pill" data-quick-log="wet" ${this._busy ? "disabled" : ""}>${esc(t.quickWet)}</button>
+              <button type="button" class="quick-pill" data-quick-log="solid" ${this._busy ? "disabled" : ""}>${esc(t.quickSolid)}</button>
+              <button type="button" class="quick-pill" data-quick-log="feed140" ${this._busy ? "disabled" : ""}>${esc(t.quickFeed)}</button>
+              <button type="button" class="quick-pill" data-quick-log="tummy10" ${this._busy ? "disabled" : ""}>${esc(t.quickTummy)}</button>
             </div>
-            <div class="stat">
-              <div class="muted small">${esc(t.todayFeed)}</div>
-              <div class="stat-val">${sum.feeding_count || 0}${esc(t.countUnit)}${sum.feeding_ml ? ` · ${sum.feeding_ml}ml` : ""}</div>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="icon-well tone-indigo">${ICONS.sleep}</div>
+              <div>
+                <div class="muted small">${esc(t.todaySleep)}</div>
+                <div class="kpi-val">${esc(fmtMinutes(sum.sleep_min, ko))}</div>
+              </div>
             </div>
-            <div class="stat">
-              <div class="muted small">${esc(t.todayDiaper)}</div>
-              <div class="stat-val">${esc(t.wet)} ${sum.diaper_wet || 0} / ${esc(t.solid)} ${sum.diaper_solid || 0}</div>
+            <div class="kpi-card">
+              <div class="icon-well tone-sky">${ICONS.feeding}</div>
+              <div>
+                <div class="muted small">${esc(t.todayFeed)}</div>
+                <div class="kpi-val">${sum.feeding_count || 0}${esc(t.countUnit)}${sum.feeding_ml ? ` · ${sum.feeding_ml}ml` : ""}</div>
+              </div>
             </div>
-            <div class="stat">
-              <div class="muted small">${esc(t.todayTummy)}</div>
-              <div class="stat-val">${esc(fmtMinutes(sum.tummy_min, ko))}</div>
+            <div class="kpi-card">
+              <div class="icon-well tone-amber">${ICONS.diaper}</div>
+              <div>
+                <div class="muted small">${esc(t.todayDiaper)}</div>
+                <div class="kpi-val">${esc(t.wet)} ${sum.diaper_wet || 0} / ${esc(t.solid)} ${sum.diaper_solid || 0}</div>
+              </div>
             </div>
-            <div class="stat">
-              <div class="muted small">${esc(t.todayTemp)}</div>
-              <div class="stat-val">${sum.last_temp_c != null ? `${sum.last_temp_c}°C` : "-"}</div>
+            <div class="kpi-card">
+              <div class="icon-well tone-green">${ICONS.tummy_time}</div>
+              <div>
+                <div class="muted small">${esc(t.todayTummy)}</div>
+                <div class="kpi-val">${esc(fmtMinutes(sum.tummy_min, ko))}</div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="icon-well tone-rose">${ICONS.temperature}</div>
+              <div>
+                <div class="muted small">${esc(t.todayTemp)}</div>
+                <div class="kpi-val">${sum.last_temp_c != null ? `${sum.last_temp_c}°C` : "-"}</div>
+              </div>
             </div>
           </div>
 
@@ -951,7 +1079,7 @@ class KrBabyKitPanel extends HTMLElement {
             </label>
             <div class="photo-row">
               <label class="btn-outline small photo-upload-btn">
-                ${CAM_SVG} <span>${esc(t.attachPhoto)}</span>
+                ${ICONS.camera} <span>${esc(t.attachPhoto)}</span>
                 <input type="file" id="care-photo-input" accept="image/*" hidden />
               </label>
               ${
@@ -970,12 +1098,22 @@ class KrBabyKitPanel extends HTMLElement {
 
     if (secId === "timeline") {
       const items = child.activities || [];
+      const photos = items.filter((a) => a.photo_url).slice(0, 12);
       const filters = ["all", "photos", "feeding", "sleep", "diaper", "tummy_time", "temperature", "note"];
       const filtered = items.filter((a) => {
         if (this._timelineFilter === "all") return true;
         if (this._timelineFilter === "photos") return Boolean(a.photo_url);
         return a.kind === this._timelineFilter;
       });
+
+      const galleryHtml = photos.length
+        ? `<div class="photo-strip">${photos
+            .map(
+              (p) =>
+                `<img src="${esc(p.photo_url)}" class="strip-thumb" data-lightbox="${esc(p.photo_url)}" alt="photo" loading="lazy" />`
+            )
+            .join("")}</div>`
+        : "";
 
       const listHtml = !filtered.length
         ? `<p class="muted">${esc(t.noActivities)}</p>`
@@ -988,12 +1126,17 @@ class KrBabyKitPanel extends HTMLElement {
               if (a.duration_min != null) details.push(fmtMinutes(a.duration_min, ko));
               if (a.diaper_type) details.push(this._diaperLabel(a.diaper_type));
               if (a.temperature_c != null) details.push(`${a.temperature_c}°C`);
+              const toneMap = {
+                sleep: "indigo", feeding: "sky", diaper: "amber",
+                tummy_time: "green", pumping: "rose", temperature: "rose", note: "teal",
+              };
               return `
                 <div class="tl-item">
+                  <div class="icon-well tone-${toneMap[a.kind] || "blue"}">${ICONS[a.kind] || ICONS.note}</div>
                   <div class="tl-body">
                     <div class="tl-head">
-                      <span class="badge status-upcoming">${esc(this._kindLabel(a.kind))}</span>
-                      ${details.length ? `<strong>${esc(details.join(" · "))}</strong>` : ""}
+                      <strong>${esc(this._kindLabel(a.kind))}</strong>
+                      ${details.length ? `<span class="badge neutral">${esc(details.join(" · "))}</span>` : ""}
                       <span class="muted small">${esc(fmtTimestamp(a.timestamp))}</span>
                     </div>
                     ${a.note ? `<div class="tl-note">${esc(a.note)}</div>` : ""}
@@ -1005,8 +1148,9 @@ class KrBabyKitPanel extends HTMLElement {
             .join("");
 
       return `
-        <div class="card section-card span-full" data-section="timeline">
+        <div class="card section-card ${wideClass}" data-section="timeline">
           <h3>${esc(t.timelineTitle)}</h3>
+          ${galleryHtml}
           <div class="tabs">
             ${filters
               .map((f) => {
@@ -1021,10 +1165,10 @@ class KrBabyKitPanel extends HTMLElement {
 
     if (secId === "measurements") {
       return `
-        <div class="card section-card" data-section="measurements">
+        <div class="card section-card ${wideClass}" data-section="measurements">
           <h3>${esc(t.measurements)}</h3>
           <form id="measure-form">
-            <div class="grid-4">
+            <div class="grid-2">
               <label>${esc(t.height)}
                 <input name="height" type="number" step="0.1" min="30" max="200" value="${esc(child.inputs?.height?.value ?? "")}" />
                 <span class="hint">${esc(child.inputs?.height?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.height?.measured_at || ""))}</span>
@@ -1057,35 +1201,51 @@ class KrBabyKitPanel extends HTMLElement {
       const bmiInfo = pcts.bmi;
       const wfl = child.weight_for_length;
       const sumKey = ko ? "summary_ko" : "summary_en";
+      const hSpark = renderSparkline(child.records, "height", "cm");
+      const wSpark = renderSparkline(child.records, "weight", "kg");
+
+      const gaugeItem = (icon, tone, title, valText, pct, summary, warnBand = false) => `
+        <div class="gauge-card">
+          <div class="gauge-top">
+            <div class="icon-well tone-${tone}">${icon}</div>
+            <div class="gauge-meta">
+              <div class="muted small">${esc(title)}</div>
+              <div class="kpi-val">${esc(valText)}</div>
+            </div>
+            ${
+              pct != null
+                ? `<span class="badge ${warnBand && (pct < 5 || pct > 95) ? "warn" : "ok"}">${pct.toFixed(1)}%</span>`
+                : ""
+            }
+          </div>
+          ${renderPercentileGauge(pct, { warnBand })}
+          <div class="muted small">${esc(summary || "")}</div>
+        </div>`;
+
       return `
-        <div class="card section-card" data-section="growth">
+        <div class="card section-card ${wideClass}" data-section="growth">
           <h3>${esc(t.growthSummary)}</h3>
           ${
             !hInfo && !wInfo && !headInfo
               ? `<p class="muted">${esc(t.noMeasureYet)}</p>`
               : `
-                <div class="grid-3">
-                  <div class="stat">
-                    <div class="muted small">${esc(t.height)}</div>
-                    <div class="stat-val">${hInfo ? `${hInfo.value} cm` : "-"}</div>
-                    <div class="muted small">${esc(hInfo?.[sumKey] || "")}</div>
-                  </div>
-                  <div class="stat">
-                    <div class="muted small">${esc(t.weight)}</div>
-                    <div class="stat-val">${wInfo ? `${wInfo.value} kg` : "-"}</div>
-                    <div class="muted small">${esc(wInfo?.[sumKey] || "")}</div>
-                  </div>
-                  <div class="stat">
-                    <div class="muted small">${esc(t.bmi)}</div>
-                    <div class="stat-val">${child.bmi_raw != null ? `${child.bmi_raw} kg/m²` : "-"}</div>
-                    <div class="muted small">${esc(bmiInfo?.[sumKey] || (child.bmi_age_months != null && child.bmi_age_months < 24 ? t.under24Note : ""))}</div>
-                  </div>
+                <div class="gauge-grid">
+                  ${gaugeItem(ICONS.ruler, "blue", t.height, hInfo ? `${hInfo.value} cm` : "-", hInfo?.statistical_percentile, hInfo?.[sumKey])}
+                  ${gaugeItem(ICONS.scale, "teal", t.weight, wInfo ? `${wInfo.value} kg` : "-", wInfo?.statistical_percentile, wInfo?.[sumKey])}
+                  ${gaugeItem(ICONS.shield, "indigo", t.concernHead, headInfo ? `${headInfo.value} cm` : "-", headInfo?.statistical_percentile, headInfo?.[sumKey], true)}
+                  ${gaugeItem(
+                    ICONS.checkup,
+                    "amber",
+                    child.age_months < 24 ? t.concernWfl : t.bmi,
+                    child.age_months < 24
+                      ? (wfl ? `${wfl.weight_kg} kg` : "-")
+                      : (child.bmi_raw != null ? `${child.bmi_raw} kg/m²` : "-"),
+                    child.age_months < 24 ? wfl?.statistical_percentile : bmiInfo?.statistical_percentile,
+                    child.age_months < 24 ? wfl?.[sumKey] : (bmiInfo?.[sumKey] || t.under24Note),
+                    true
+                  )}
                 </div>
-                <div class="concerns">
-                  ${this._renderConcernBadge(t.concernHead, headInfo?.statistical_percentile, headInfo?.[sumKey])}
-                  ${this._renderConcernBadge(t.concernBmi, bmiInfo?.statistical_percentile, bmiInfo?.[sumKey] || (child.age_months < 24 ? t.under24Note : ""))}
-                  ${this._renderConcernBadge(t.concernWfl, wfl?.statistical_percentile, wfl?.[sumKey])}
-                </div>`
+                ${hSpark || wSpark ? `<div class="spark-grid">${hSpark}${wSpark}</div>` : ""}`
           }
         </div>`;
     }
@@ -1093,20 +1253,26 @@ class KrBabyKitPanel extends HTMLElement {
     if (secId === "tuition") {
       if (child.profile !== "kr" || !child.care_tuition) return "";
       return `
-        <div class="card section-card" data-section="tuition">
+        <div class="card section-card ${wideClass}" data-section="tuition">
           <h3>${esc(t.tuition)} <span class="muted small">(${esc(ko ? child.care_tuition.label_ko : child.care_tuition.label_en)})</span></h3>
-          <div class="grid-3">
-            <div class="stat">
-              <div class="muted small">${esc(t.tuitionStd)}</div>
-              <div class="stat-val">${Number(child.care_tuition.standard_tuition || 0).toLocaleString()} ${esc(t.won)}</div>
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div>
+                <div class="muted small">${esc(t.tuitionStd)}</div>
+                <div class="kpi-val">${Number(child.care_tuition.standard_tuition || 0).toLocaleString()} ${esc(t.won)}</div>
+              </div>
             </div>
-            <div class="stat">
-              <div class="muted small">${esc(t.tuitionSub)}</div>
-              <div class="stat-val">${Number(child.care_tuition.government_subsidy || 0).toLocaleString()} ${esc(t.won)}</div>
+            <div class="kpi-card">
+              <div>
+                <div class="muted small">${esc(t.tuitionSub)}</div>
+                <div class="kpi-val">${Number(child.care_tuition.government_subsidy || 0).toLocaleString()} ${esc(t.won)}</div>
+              </div>
             </div>
-            <div class="stat">
-              <div class="muted small">${esc(t.tuitionShare)}</div>
-              <div class="stat-val">${Number(child.care_tuition.parent_share || 0).toLocaleString()} ${esc(t.won)}</div>
+            <div class="kpi-card">
+              <div>
+                <div class="muted small">${esc(t.tuitionShare)}</div>
+                <div class="kpi-val">${Number(child.care_tuition.parent_share || 0).toLocaleString()} ${esc(t.won)}</div>
+              </div>
             </div>
           </div>
         </div>`;
@@ -1114,7 +1280,7 @@ class KrBabyKitPanel extends HTMLElement {
 
     if (secId === "schedules") {
       return `
-        <div class="card section-card span-full" data-section="schedules">
+        <div class="card section-card ${wideClass}" data-section="schedules">
           <div class="card-head">
             <h3>${esc(t.schedules)}</h3>
             <label class="checkbox-label">
@@ -1148,6 +1314,14 @@ class KrBabyKitPanel extends HTMLElement {
       schedules: t.secSchedules,
     };
 
+    const cardStyleBtns = CARD_STYLES.map(
+      (cs) => `
+        <button type="button" class="style-card ${this._prefs.cardStyle === cs.id ? "active" : ""}" data-select-cardstyle="${esc(cs.id)}">
+          <div class="theme-name">${esc(ko ? cs.nameKo : cs.nameEn)}</div>
+          <div class="theme-desc">${esc(cs.descKo)}</div>
+        </button>`
+    ).join("");
+
     const themeCards = THEMES.map((th) => {
       const active = this._prefs.theme === th.id;
       return `
@@ -1166,6 +1340,7 @@ class KrBabyKitPanel extends HTMLElement {
     const sectionRows = this._prefs.order
       .map((secId, idx) => {
         const checked = this._prefs.visible[secId] ? "checked" : "";
+        const isWide = Boolean(this._prefs.wide[secId]);
         return `
           <div class="order-row">
             <label class="checkbox-label">
@@ -1173,6 +1348,11 @@ class KrBabyKitPanel extends HTMLElement {
               <span>${esc(secLabels[secId] || secId)}</span>
             </label>
             <div class="order-btns">
+              ${
+                this._prefs.layout === "bento"
+                  ? `<button type="button" class="btn-outline small" data-toggle-wide="${esc(secId)}">${esc(isWide ? t.widthFull : t.widthHalf)}</button>`
+                  : ""
+              }
               <button type="button" class="btn-outline small" data-move-sec="${esc(secId)}" data-dir="-1" ${idx === 0 ? "disabled" : ""}>&#8593;</button>
               <button type="button" class="btn-outline small" data-move-sec="${esc(secId)}" data-dir="1" ${idx === this._prefs.order.length - 1 ? "disabled" : ""}>&#8595;</button>
             </div>
@@ -1189,8 +1369,8 @@ class KrBabyKitPanel extends HTMLElement {
           </div>
           <div class="drawer-body">
             <div class="drawer-sec">
-              <div class="drawer-label">${esc(t.settingsTheme)}</div>
-              <div class="theme-grid">${themeCards}</div>
+              <div class="drawer-label">${esc(t.settingsCardStyle)}</div>
+              <div class="theme-grid">${cardStyleBtns}</div>
             </div>
 
             <div class="drawer-sec">
@@ -1205,6 +1385,12 @@ class KrBabyKitPanel extends HTMLElement {
             <div class="drawer-sec">
               <div class="drawer-label">${esc(t.settingsSections)}</div>
               <div class="order-list">
+                <div class="order-row">
+                  <label class="checkbox-label">
+                    <input type="checkbox" data-toggle-section="chips" ${this._prefs.visible.chips ? "checked" : ""} />
+                    <span>${esc(t.secChips)}</span>
+                  </label>
+                </div>
                 ${sectionRows}
                 <div class="order-row">
                   <label class="checkbox-label">
@@ -1213,6 +1399,11 @@ class KrBabyKitPanel extends HTMLElement {
                   </label>
                 </div>
               </div>
+            </div>
+
+            <div class="drawer-sec">
+              <div class="drawer-label">${esc(t.settingsTheme)}</div>
+              <div class="theme-grid">${themeCards}</div>
             </div>
 
             <div class="drawer-sec">
@@ -1293,6 +1484,7 @@ class KrBabyKitPanel extends HTMLElement {
     const child = this._currentChild();
     const layoutClass = `layout-${this._prefs.layout}`;
     const themeStyle = getThemeCss(this._prefs.theme);
+    const cStyle = cardStyleCss(this._prefs.cardStyle);
 
     let bodyHtml = "";
     if (!child) {
@@ -1314,7 +1506,7 @@ class KrBabyKitPanel extends HTMLElement {
                   ? `<img src="${esc(child.avatar_url)}" class="avatar-img" alt="${esc(child.name)}" />`
                   : `<span class="avatar-fallback">${esc(initial)}</span>`
               }
-              <span class="avatar-cam">${CAM_SVG}</span>
+              <span class="avatar-cam">${ICONS.camera}</span>
               <input type="file" id="avatar-input" accept="image/*" hidden />
             </label>
             <div>
@@ -1332,6 +1524,8 @@ class KrBabyKitPanel extends HTMLElement {
           <button class="btn-outline" id="btn-edit-child">${esc(t.editChild)}</button>
         </div>
 
+        ${this._renderStatusChips(child)}
+
         <div class="sections-wrap ${layoutClass}">
           ${sectionsHtml}
         </div>
@@ -1348,28 +1542,16 @@ class KrBabyKitPanel extends HTMLElement {
       <style>
         ${themeStyle}
         :host {
-          display: block;
-          min-height: 100vh;
-          background-color: var(--bk-bg);
-          background-image: var(--bk-bg-image, none);
-          background-size: var(--bk-bg-size, auto);
-          color: var(--bk-text);
-          font-family: var(--bk-font-body);
-          transition: background-color 0.2s ease, color 0.2s ease;
+          display: block; min-height: 100vh;
+          background-color: var(--bk-bg); background-image: var(--bk-bg-image, none);
+          background-size: var(--bk-bg-size, auto); color: var(--bk-text);
+          font-family: var(--bk-font-body); transition: background-color 0.2s ease, color 0.2s ease;
         }
         * { box-sizing: border-box; }
         .topbar {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 12px;
-          padding: 12px 20px;
-          background: var(--bk-header-bg);
-          color: var(--bk-header-text);
-          border-bottom: var(--bk-header-border);
-          position: sticky;
-          top: 0;
-          z-index: 5;
+          display: flex; align-items: center; justify-content: space-between; gap: 12px;
+          padding: 12px 20px; background: var(--bk-header-bg); color: var(--bk-header-text);
+          border-bottom: var(--bk-header-border); position: sticky; top: 0; z-index: 5;
         }
         .topbar-left, .topbar-right { display: flex; align-items: center; gap: 10px; }
         .menu-btn {
@@ -1388,17 +1570,36 @@ class KrBabyKitPanel extends HTMLElement {
           margin: 0 auto;
           padding: ${this._prefs.layout === "compact" ? "10px 12px" : "18px 16px"};
         }
-        .child-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .child-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
         .pill {
           padding: 7px 14px; border-radius: var(--bk-pill-radius); border: var(--bk-card-border);
           background: var(--bk-card); color: var(--bk-text); cursor: pointer; font-size: 14px;
         }
         .pill.active { background: var(--bk-accent); color: var(--bk-accent-text); border-color: transparent; }
+        .chips-bar {
+          display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;
+        }
+        .chip {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 6px 12px; border-radius: 16px; font-size: 13px; font-weight: 500;
+          border: 1px solid transparent;
+        }
+        .tone-indigo { background: rgba(99, 102, 241, 0.14); color: #4f46e5; }
+        .tone-sky { background: rgba(14, 165, 233, 0.14); color: #0284c7; }
+        .tone-blue { background: rgba(59, 130, 246, 0.14); color: #2563eb; }
+        .tone-teal { background: rgba(20, 184, 166, 0.15); color: #0f766e; }
+        .tone-green { background: rgba(34, 197, 94, 0.15); color: #15803d; }
+        .tone-amber { background: rgba(245, 158, 11, 0.17); color: #b45309; }
+        .tone-rose { background: rgba(244, 63, 94, 0.15); color: #be123c; }
+        .icon-well {
+          width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
+          display: inline-flex; align-items: center; justify-content: center;
+        }
         .sections-wrap.layout-bento {
           display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start;
         }
         .sections-wrap.layout-bento .span-full { grid-column: 1 / -1; }
-        @media (max-width: 820px) { .sections-wrap.layout-bento { grid-template-columns: 1fr; } }
+        @media (max-width: 860px) { .sections-wrap.layout-bento { grid-template-columns: 1fr; } }
         .card {
           background: var(--bk-card); backdrop-filter: var(--bk-card-backdrop);
           -webkit-backdrop-filter: var(--bk-card-backdrop);
@@ -1409,7 +1610,7 @@ class KrBabyKitPanel extends HTMLElement {
         }
         .child-header {
           display: flex; align-items: center; justify-content: space-between;
-          gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+          gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
         }
         .child-id-wrap { display: flex; align-items: center; gap: 14px; }
         .avatar-btn {
@@ -1430,44 +1631,85 @@ class KrBabyKitPanel extends HTMLElement {
         h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; font-family: var(--bk-font-head); }
         h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; font-family: var(--bk-font-head); }
         .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--bk-muted); font-size: 14px; }
-        .summary-strip {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
-          gap: 8px; margin-bottom: 14px;
+        .quick-bar { display: flex; flex-wrap: wrap; gap: 6px; }
+        .quick-pill {
+          padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 600;
+          background: var(--bk-surface); color: var(--bk-text);
+          border: 1px solid var(--bk-input-border); cursor: pointer;
         }
+        .quick-pill:hover { border-color: var(--bk-accent); color: var(--bk-accent); }
+        .kpi-grid {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 10px; margin-bottom: 14px;
+        }
+        .kpi-card {
+          display: flex; align-items: center; gap: 11px;
+          padding: 11px 13px; border-radius: 16px;
+          background: var(--bk-surface); border: 1px solid rgba(128, 128, 128, 0.12);
+        }
+        .kpi-val { font-size: 17px; font-weight: 700; font-family: var(--bk-font-num); line-height: 1.2; }
         .timer-grid {
-          display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
           gap: 10px; margin-bottom: 14px;
         }
         .timer-tile {
-          padding: 10px 12px; border-radius: var(--bk-btn-radius);
-          background: var(--bk-surface); border: 1px solid var(--bk-input-border);
+          padding: 10px 14px; border-radius: 18px;
+          background: var(--bk-surface); border: 1px solid rgba(128, 128, 128, 0.15);
+          display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        }
+        .timer-tile.running { border-color: var(--bk-accent); box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.22); }
+        .timer-left { display: flex; align-items: center; gap: 10px; }
+        .timer-name { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .timer-clock { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; font-weight: 700; color: var(--bk-accent); }
+        .timer-btns { display: flex; align-items: center; gap: 6px; }
+        .sub-btn {
+          width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--bk-input-border);
+          background: var(--bk-card); color: var(--bk-text); cursor: pointer;
+          display: inline-flex; align-items: center; justify-content: center;
+        }
+        .sub-btn.primary { background: var(--bk-accent); color: var(--bk-accent-text); border-color: transparent; }
+        .pulse-dot {
+          width: 8px; height: 8px; border-radius: 50%; background: #ef4444;
+          display: inline-block; animation: bk-pulse 1.2s infinite;
+        }
+        @keyframes bk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+        .gauge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .gauge-card {
+          padding: 12px 14px; border-radius: 16px; background: var(--bk-surface);
           display: flex; flex-direction: column; gap: 8px;
         }
-        .timer-tile.running { border-color: var(--bk-accent); box-shadow: 0 0 0 1px var(--bk-accent); }
-        .timer-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-        .timer-name { font-size: 13px; font-weight: 600; }
-        .timer-clock { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; font-weight: 600; color: var(--bk-accent); }
-        .timer-btns { display: flex; gap: 6px; }
+        .gauge-top { display: flex; align-items: center; gap: 10px; }
+        .gauge-meta { flex: 1; }
+        .pct-gauge { display: flex; flex-direction: column; gap: 4px; }
+        .pct-track { position: relative; height: 8px; border-radius: 999px; background: rgba(128, 128, 128, 0.16); overflow: visible; }
+        .pct-safe { position: absolute; left: 5%; right: 5%; top: 0; bottom: 0; background: rgba(34, 197, 94, 0.16); border-radius: 999px; }
+        .pct-mid { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1.5px; background: rgba(128, 128, 128, 0.45); }
+        .pct-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; opacity: 0.35; }
+        .pct-dot { position: absolute; top: 50%; width: 14px; height: 14px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid var(--bk-card); box-shadow: 0 1px 4px rgba(0,0,0,0.25); }
+        .pct-axis { display: flex; justify-content: space-between; font-size: 10px; color: var(--bk-muted); }
+        .spark-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 12px; }
+        .spark-wrap { padding: 10px 12px; border-radius: 14px; background: var(--bk-surface); }
+        .spark-svg { width: 100%; height: 48px; display: block; }
+        .spark-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--bk-muted); margin-top: 4px; font-family: var(--bk-font-num); }
+        .photo-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 10px; }
+        .strip-thumb { width: 72px; height: 72px; border-radius: 12px; object-fit: cover; cursor: zoom-in; flex-shrink: 0; border: 1px solid var(--bk-input-border); }
         .care-form { display: flex; flex-direction: column; gap: 10px; }
         .photo-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .photo-upload-btn { display: inline-flex; flex-direction: row; align-items: center; gap: 6px; cursor: pointer; }
         .photo-preview-wrap { display: flex; align-items: center; gap: 8px; }
-        .photo-preview { width: 52px; height: 52px; object-fit: cover; border-radius: 6px; border: 1px solid var(--bk-input-border); }
+        .photo-preview { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; border: 1px solid var(--bk-input-border); }
         .tl-list { display: flex; flex-direction: column; gap: 10px; }
         .tl-item {
-          display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
-          padding: 10px 12px; border-radius: var(--bk-btn-radius); background: var(--bk-surface);
+          display: flex; align-items: flex-start; gap: 12px;
+          padding: 11px 14px; border-radius: 16px; background: var(--bk-surface);
         }
         .tl-body { display: flex; flex-direction: column; gap: 6px; flex: 1; }
         .tl-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .tl-note { font-size: 14px; white-space: pre-wrap; line-height: 1.45; }
-        .tl-photo {
-          max-width: 240px; max-height: 180px; border-radius: 8px; object-fit: cover;
-          cursor: zoom-in; border: 1px solid var(--bk-input-border);
-        }
-        .lightbox-img { max-width: 92vw; max-height: 90vh; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+        .tl-photo { max-width: 240px; max-height: 180px; border-radius: 12px; object-fit: cover; cursor: zoom-in; border: 1px solid var(--bk-input-border); }
+        .lightbox-img { max-width: 92vw; max-height: 90vh; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.5); }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
         .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 10px; }
         label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--bk-muted); }
         input, select, textarea {
           padding: ${this._prefs.layout === "compact" ? "6px 8px" : "9px 10px"};
@@ -1488,24 +1730,13 @@ class KrBabyKitPanel extends HTMLElement {
         button:disabled { opacity: 0.45; cursor: not-allowed; }
         .small { font-size: 12px; padding: 5px 10px; }
         .muted { color: var(--bk-muted); }
-        .stat {
-          padding: ${this._prefs.layout === "compact" ? "8px 10px" : "11px 13px"};
-          border-radius: var(--bk-btn-radius); background: var(--bk-surface);
-        }
-        .stat-val {
-          font-size: ${this._prefs.layout === "compact" ? "15px" : "18px"};
-          font-weight: 600; margin: 4px 0; font-family: var(--bk-font-num);
-        }
-        .concerns { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
-        .concern-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 14px; }
-        .concern-label { font-weight: 500; min-width: 105px; }
         .badge { display: inline-block; padding: 2px 8px; border-radius: var(--bk-pill-radius); font-size: 12px; font-weight: 500; }
         .badge.neutral { background: rgba(128, 128, 128, 0.16); }
         .badge.ok, .badge.status-done { background: rgba(76, 175, 80, 0.18); color: #2e7d32; }
         .badge.warn, .badge.status-open { background: rgba(255, 152, 0, 0.22); color: #d97706; }
         .badge.status-upcoming { background: rgba(3, 169, 244, 0.18); color: var(--bk-accent); }
         .badge.status-past { background: rgba(128, 128, 128, 0.16); color: var(--bk-muted); }
-        .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+        .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
         .card-head h3 { margin: 0; }
         .checkbox-label { flex-direction: row; align-items: center; gap: 6px; cursor: pointer; color: var(--bk-text); }
         .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; border-bottom: 1px solid var(--bk-input-border); padding-bottom: 8px; }
@@ -1517,9 +1748,9 @@ class KrBabyKitPanel extends HTMLElement {
         .sched-list { display: flex; flex-direction: column; gap: 8px; }
         .sched-item {
           display: flex; align-items: center; justify-content: space-between; gap: 10px;
-          padding: ${this._prefs.layout === "compact" ? "7px 10px" : "10px 12px"};
-          border-radius: var(--bk-btn-radius); background: var(--bk-surface);
+          padding: 10px 14px; border-radius: 16px; background: var(--bk-surface);
         }
+        .sched-left { display: flex; align-items: center; gap: 10px; }
         .sched-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .banner { padding: 10px 14px; border-radius: var(--bk-btn-radius); margin-bottom: 12px; font-size: 14px; }
         .banner.error { background: rgba(219, 68, 55, 0.15); color: var(--error-color, #c62828); }
@@ -1540,12 +1771,12 @@ class KrBabyKitPanel extends HTMLElement {
         .drawer-body { flex: 1; overflow-y: auto; padding: 16px 20px 32px; display: flex; flex-direction: column; gap: 20px; }
         .drawer-label { font-size: 13px; font-weight: 600; color: var(--secondary-text-color, #555); margin-bottom: 8px; }
         .theme-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-        .theme-card {
-          text-align: left; padding: 8px; border-radius: 10px; border: 1.5px solid var(--divider-color, #ddd);
+        .theme-card, .style-card {
+          text-align: left; padding: 9px; border-radius: 10px; border: 1.5px solid var(--divider-color, #ddd);
           background: var(--primary-background-color, #fafafa); color: var(--primary-text-color, #212121);
           cursor: pointer; display: flex; flex-direction: column; gap: 5px;
         }
-        .theme-card.active { border-color: var(--primary-color, #03a9f4); box-shadow: 0 0 0 2px rgba(3, 169, 244, 0.22); }
+        .theme-card.active, .style-card.active { border-color: var(--primary-color, #03a9f4); box-shadow: 0 0 0 2px rgba(3, 169, 244, 0.22); }
         .swatch { height: 44px; border-radius: 6px; border: 1px solid #ddd; padding: 6px; display: flex; align-items: center; }
         .swatch-card { width: 100%; height: 100%; padding: 5px 7px; display: flex; flex-direction: column; justify-content: center; gap: 4px; }
         .swatch-bar { display: block; width: 45%; height: 5px; border-radius: 3px; }
@@ -1573,6 +1804,7 @@ class KrBabyKitPanel extends HTMLElement {
         .modal form { display: flex; flex-direction: column; gap: 12px; }
         .modal-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
         .right-actions { display: flex; gap: 8px; }
+        ${cStyle}
       </style>
 
       <div class="topbar">
@@ -1582,7 +1814,7 @@ class KrBabyKitPanel extends HTMLElement {
         </div>
         <div class="topbar-right">
           <button class="btn-top" id="btn-add-child">+ ${esc(t.addChild)}</button>
-          <button class="icon-btn" id="btn-open-settings" title="${esc(t.settingsTitle)}" aria-label="${esc(t.settingsTitle)}">${GEAR_SVG}</button>
+          <button class="icon-btn" id="btn-open-settings" title="${esc(t.settingsTitle)}" aria-label="${esc(t.settingsTitle)}">${ICONS.gear}</button>
         </div>
       </div>
 
@@ -1623,6 +1855,15 @@ class KrBabyKitPanel extends HTMLElement {
     root.getElementById("avatar-input")?.addEventListener("change", (e) => {
       const f = e.target.files?.[0];
       if (f) this._uploadAvatar(f);
+    });
+    root.querySelectorAll("[data-quick-log]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const mode = btn.getAttribute("data-quick-log");
+        if (mode === "wet") this._quickLog("diaper", { diaper_type: "wet" });
+        else if (mode === "solid") this._quickLog("diaper", { diaper_type: "solid" });
+        else if (mode === "feed140") this._quickLog("feeding", { method: "formula", amount_ml: 140 });
+        else if (mode === "tummy10") this._quickLog("tummy_time", { duration_min: 10 });
+      });
     });
     root.querySelectorAll("[data-start-timer]").forEach((btn) => {
       btn.addEventListener("click", () => this._startTimer(btn.getAttribute("data-start-timer")));
@@ -1688,6 +1929,12 @@ class KrBabyKitPanel extends HTMLElement {
         this._render();
       }
     });
+    root.querySelectorAll("[data-select-cardstyle]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-select-cardstyle");
+        this._updatePrefs((p) => { p.cardStyle = id; });
+      });
+    });
     root.querySelectorAll("[data-select-theme]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-select-theme");
@@ -1704,6 +1951,12 @@ class KrBabyKitPanel extends HTMLElement {
       chk.addEventListener("change", () => {
         const sec = chk.getAttribute("data-toggle-section");
         this._updatePrefs((p) => { p.visible[sec] = chk.checked; });
+      });
+    });
+    root.querySelectorAll("[data-toggle-wide]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sec = btn.getAttribute("data-toggle-wide");
+        this._updatePrefs((p) => { p.wide[sec] = !p.wide[sec]; });
       });
     });
     root.querySelectorAll("[data-move-sec]").forEach((btn) => {

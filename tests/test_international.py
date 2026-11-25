@@ -155,16 +155,21 @@ def test_default_birthdate_and_panel_assets():
     assert DEFAULT_BIRTHDATE == "2024-07-01"
     panel_js = FRONTEND_DIR / "panel.js"
     themes_js = FRONTEND_DIR / "themes.js"
+    cards_js = FRONTEND_DIR / "cards.js"
     assert panel_js.is_file()
     assert themes_js.is_file()
+    assert cards_js.is_file()
     js_text = panel_js.read_text(encoding="utf-8")
     themes_text = themes_js.read_text(encoding="utf-8")
+    cards_text = cards_js.read_text(encoding="utf-8")
     assert "kr-baby-kit-panel" in js_text
     assert "kr_baby_kit/get_overview" in js_text
     assert "kr_baby_kit/add_child" in js_text
     assert "kr_baby_kit/update_child" in js_text
     assert "btn-open-settings" in js_text
+    assert "data-select-cardstyle" in js_text
     assert themes_text.count('id: "') >= 12
+    assert cards_text.count('id: "') >= 4
 
     chart = GrowthChart.from_profile(PROFILE_KR)
     coord = SimpleNamespace(
