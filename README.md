@@ -29,6 +29,12 @@ Home Assistant 2024.11 이상과 HACS가 필요합니다. (Home Assistant를 처
 
 ### 1. HACS에 저장소 추가
 
+아래 버튼을 누르면 내 Home Assistant의 HACS에서 이 저장소가 바로 열립니다. URL을 복사해 붙여넣을 필요가 없어요.
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=redchupa&repository=kr_baby_kit&category=integration)
+
+버튼이 동작하지 않으면 아래 방법으로 직접 등록하세요.
+
 1. Home Assistant에서 **HACS** → **Integrations** → 우측 상단 메뉴(⋮) → **사용자 지정 저장소**로 이동합니다.
 2. 저장소 URL에 `https://github.com/redchupa/kr_baby_kit` 을 입력하고 카테고리는 **Integration**을 선택해 추가합니다.
 3. HACS에서 **Baby Kit**을 검색해 다운로드한 뒤 Home Assistant를 재시작합니다.

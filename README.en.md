@@ -29,6 +29,12 @@ Requires Home Assistant 2024.11 or later and HACS.
 
 ### 1. Add custom repository in HACS
 
+Click the button to open this repository in HACS on your own Home Assistant — no URL copy-paste needed.
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=redchupa&repository=kr_baby_kit&category=integration)
+
+If the button doesn't work, add it manually:
+
 1. Open **HACS** → **Integrations** → top-right menu (⋮) → **Custom repositories**.
 2. Add `https://github.com/redchupa/kr_baby_kit` with category **Integration**.
 3. Search for **Baby Kit**, download it, and restart Home Assistant.
