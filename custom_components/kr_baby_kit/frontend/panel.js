@@ -1,4 +1,21 @@
-/* Home Assistant Sidebar Panel for Korean Baby Kit (kr_baby_kit) */
+/* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
+import { THEMES, getThemeCss } from "./themes.js?v=0.12.0";
+
+const PREFS_KEY = "kr_baby_kit_panel_prefs_v1";
+
+const DEFAULT_PREFS = {
+  theme: "ha-native",
+  layout: "single", // "single" | "bento" | "compact"
+  order: ["measurements", "growth", "tuition", "schedules"],
+  visible: {
+    measurements: true,
+    growth: true,
+    tuition: true,
+    schedules: true,
+    footer: true,
+  },
+  defaultScheduleTab: "vaccines",
+};
 
 const STRINGS = {
   ko: {
@@ -19,6 +36,7 @@ const STRINGS = {
     profileGlobal: "해외 (WHO 성장 표준)",
     save: "저장",
     cancel: "취소",
+    close: "닫기",
     saving: "저장 중...",
     saved: "저장되었습니다.",
     ageMonths: (m) => `생후 ${m}개월`,
@@ -57,6 +75,20 @@ const STRINGS = {
     won: "원",
     modalAddTitle: "아이 추가",
     modalEditTitle: "아이 정보 수정",
+    settingsTitle: "화면 및 테마 설정",
+    settingsTheme: "테마 선택 (12종)",
+    settingsLayout: "레이아웃 구성",
+    layoutSingle: "1열 표준",
+    layoutBento: "2열 대시보드",
+    layoutCompact: "컴팩트",
+    settingsSections: "섹션 표시 및 순서",
+    secMeasurements: "성장 측정 입력",
+    secGrowth: "성장 백분위",
+    secTuition: "어린이집 보육료 (KR)",
+    secSchedules: "일정 관리",
+    secFooter: "하단 면책·출처 표시",
+    settingsDefaultTab: "기본 일정 탭",
+    resetPrefs: "기본값으로 초기화",
   },
   en: {
     title: "Baby Kit",
@@ -76,6 +108,7 @@ const STRINGS = {
     profileGlobal: "International (WHO Growth Standards)",
     save: "Save",
     cancel: "Cancel",
+    close: "Close",
     saving: "Saving...",
     saved: "Saved.",
     ageMonths: (m) => `${m} mo`,
@@ -114,8 +147,24 @@ const STRINGS = {
     won: "KRW",
     modalAddTitle: "Add child",
     modalEditTitle: "Edit child",
+    settingsTitle: "Appearance & Layout",
+    settingsTheme: "Theme (12 styles)",
+    settingsLayout: "Layout mode",
+    layoutSingle: "Single column",
+    layoutBento: "2-column bento",
+    layoutCompact: "Compact",
+    settingsSections: "Sections & order",
+    secMeasurements: "Growth measurements",
+    secGrowth: "Growth percentiles",
+    secTuition: "Childcare tuition (KR)",
+    secSchedules: "Schedules",
+    secFooter: "Footer disclaimer & attribution",
+    settingsDefaultTab: "Default schedule tab",
+    resetPrefs: "Reset to defaults",
   },
 };
+
+const GEAR_SVG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>`;
 
 function esc(val) {
   return String(val ?? "")
@@ -123,6 +172,39 @@ function esc(val) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function loadPrefs() {
+  try {
+    const raw = window.localStorage.getItem(PREFS_KEY);
+    if (!raw) return structuredClone(DEFAULT_PREFS);
+    const parsed = JSON.parse(raw);
+    const validOrder = Array.isArray(parsed.order)
+      ? parsed.order.filter((k) => DEFAULT_PREFS.order.includes(k))
+      : [];
+    for (const k of DEFAULT_PREFS.order) {
+      if (!validOrder.includes(k)) validOrder.push(k);
+    }
+    return {
+      theme: THEMES.some((t) => t.id === parsed.theme) ? parsed.theme : DEFAULT_PREFS.theme,
+      layout: ["single", "bento", "compact"].includes(parsed.layout) ? parsed.layout : DEFAULT_PREFS.layout,
+      order: validOrder,
+      visible: { ...DEFAULT_PREFS.visible, ...(parsed.visible || {}) },
+      defaultScheduleTab: ["vaccines", "checkups", "oral"].includes(parsed.defaultScheduleTab)
+        ? parsed.defaultScheduleTab
+        : DEFAULT_PREFS.defaultScheduleTab,
+    };
+  } catch {
+    return structuredClone(DEFAULT_PREFS);
+  }
+}
+
+function savePrefs(prefs) {
+  try {
+    window.localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    // Ignore storage quota / private mode errors.
+  }
 }
 
 class KrBabyKitPanel extends HTMLElement {
@@ -133,9 +215,11 @@ class KrBabyKitPanel extends HTMLElement {
     this._narrow = false;
     this._data = null;
     this._selectedId = null;
-    this._scheduleTab = "vaccines";
+    this._prefs = loadPrefs();
+    this._scheduleTab = this._prefs.defaultScheduleTab;
     this._showPast = false;
     this._modal = null; // null | { mode: "add" | "edit", child?: object }
+    this._settingsOpen = false;
     this._busy = false;
     this._notice = null;
     this._error = null;
@@ -161,6 +245,14 @@ class KrBabyKitPanel extends HTMLElement {
 
   _t() {
     return this._isKo() ? STRINGS.ko : STRINGS.en;
+  }
+
+  _updatePrefs(mutator) {
+    const next = structuredClone(this._prefs);
+    mutator(next);
+    this._prefs = next;
+    savePrefs(next);
+    this._render();
   }
 
   async _load() {
@@ -380,6 +472,222 @@ class KrBabyKitPanel extends HTMLElement {
       .join("");
   }
 
+  _renderSection(secId, child) {
+    const t = this._t();
+    const ko = this._isKo();
+    if (!this._prefs.visible[secId]) return "";
+
+    if (secId === "measurements") {
+      return `
+        <div class="card section-card" data-section="measurements">
+          <h3>${esc(t.measurements)}</h3>
+          <form id="measure-form">
+            <div class="grid-4">
+              <label>${esc(t.height)}
+                <input name="height" type="number" step="0.1" min="30" max="200" value="${esc(child.inputs?.height?.value ?? "")}" />
+                <span class="hint">${esc(child.inputs?.height?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.height?.measured_at || ""))}</span>
+              </label>
+              <label>${esc(t.weight)}
+                <input name="weight" type="number" step="0.05" min="1" max="100" value="${esc(child.inputs?.weight?.value ?? "")}" />
+                <span class="hint">${esc(child.inputs?.weight?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.weight?.measured_at || ""))}</span>
+              </label>
+              <label>${esc(t.head)}
+                <input name="head" type="number" step="0.1" min="25" max="65" value="${esc(child.inputs?.head?.value ?? "")}" />
+                <span class="hint">${esc(child.inputs?.head?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.head?.measured_at || ""))}</span>
+              </label>
+              <label>${esc(t.measureDate)}
+                <input name="date" type="date" value="${esc(child.today || "")}" />
+                <span class="hint">&nbsp;</span>
+              </label>
+            </div>
+            <div class="form-footer">
+              <button type="submit" class="btn-primary" ${this._busy ? "disabled" : ""}>${esc(this._busy ? t.saving : t.saveMeasurement)}</button>
+            </div>
+          </form>
+        </div>`;
+    }
+
+    if (secId === "growth") {
+      const pcts = child.percentiles || {};
+      const hInfo = pcts.height;
+      const wInfo = pcts.weight;
+      const headInfo = pcts.head;
+      const bmiInfo = pcts.bmi;
+      const wfl = child.weight_for_length;
+      const sumKey = ko ? "summary_ko" : "summary_en";
+      return `
+        <div class="card section-card" data-section="growth">
+          <h3>${esc(t.growthSummary)}</h3>
+          ${
+            !hInfo && !wInfo && !headInfo
+              ? `<p class="muted">${esc(t.noMeasureYet)}</p>`
+              : `
+                <div class="grid-3">
+                  <div class="stat">
+                    <div class="muted small">${esc(t.height)}</div>
+                    <div class="stat-val">${hInfo ? `${hInfo.value} cm` : "-"}</div>
+                    <div class="muted small">${esc(hInfo?.[sumKey] || "")}</div>
+                  </div>
+                  <div class="stat">
+                    <div class="muted small">${esc(t.weight)}</div>
+                    <div class="stat-val">${wInfo ? `${wInfo.value} kg` : "-"}</div>
+                    <div class="muted small">${esc(wInfo?.[sumKey] || "")}</div>
+                  </div>
+                  <div class="stat">
+                    <div class="muted small">${esc(t.bmi)}</div>
+                    <div class="stat-val">${child.bmi_raw != null ? `${child.bmi_raw} kg/m²` : "-"}</div>
+                    <div class="muted small">${esc(bmiInfo?.[sumKey] || (child.bmi_age_months != null && child.bmi_age_months < 24 ? t.under24Note : ""))}</div>
+                  </div>
+                </div>
+                <div class="concerns">
+                  ${this._renderConcernBadge(t.concernHead, headInfo?.statistical_percentile, headInfo?.[sumKey])}
+                  ${this._renderConcernBadge(t.concernBmi, bmiInfo?.statistical_percentile, bmiInfo?.[sumKey] || (child.age_months < 24 ? t.under24Note : ""))}
+                  ${this._renderConcernBadge(t.concernWfl, wfl?.statistical_percentile, wfl?.[sumKey])}
+                </div>`
+          }
+        </div>`;
+    }
+
+    if (secId === "tuition") {
+      if (child.profile !== "kr" || !child.care_tuition) return "";
+      return `
+        <div class="card section-card" data-section="tuition">
+          <h3>${esc(t.tuition)} <span class="muted small">(${esc(ko ? child.care_tuition.label_ko : child.care_tuition.label_en)})</span></h3>
+          <div class="grid-3">
+            <div class="stat">
+              <div class="muted small">${esc(t.tuitionStd)}</div>
+              <div class="stat-val">${Number(child.care_tuition.standard_tuition || 0).toLocaleString()} ${esc(t.won)}</div>
+            </div>
+            <div class="stat">
+              <div class="muted small">${esc(t.tuitionSub)}</div>
+              <div class="stat-val">${Number(child.care_tuition.government_subsidy || 0).toLocaleString()} ${esc(t.won)}</div>
+            </div>
+            <div class="stat">
+              <div class="muted small">${esc(t.tuitionShare)}</div>
+              <div class="stat-val">${Number(child.care_tuition.parent_share || 0).toLocaleString()} ${esc(t.won)}</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    if (secId === "schedules") {
+      return `
+        <div class="card section-card span-full" data-section="schedules">
+          <div class="card-head">
+            <h3>${esc(t.schedules)}</h3>
+            <label class="checkbox-label">
+              <input type="checkbox" id="chk-show-past" ${this._showPast ? "checked" : ""} />
+              ${esc(t.showPast)}
+            </label>
+          </div>
+          <div class="tabs">
+            <button class="tab ${this._scheduleTab === "vaccines" ? "active" : ""}" data-tab="vaccines">${esc(t.tabVaccines)}</button>
+            <button class="tab ${this._scheduleTab === "checkups" ? "active" : ""}" data-tab="checkups">${esc(t.tabCheckups)}</button>
+            <button class="tab ${this._scheduleTab === "oral" ? "active" : ""}" data-tab="oral">${esc(t.tabOral)}</button>
+          </div>
+          <div class="sched-list">
+            ${this._renderScheduleList(child)}
+          </div>
+        </div>`;
+    }
+    return "";
+  }
+
+  _renderSettingsDrawer() {
+    if (!this._settingsOpen) return "";
+    const t = this._t();
+    const ko = this._isKo();
+    const secLabels = {
+      measurements: t.secMeasurements,
+      growth: t.secGrowth,
+      tuition: t.secTuition,
+      schedules: t.secSchedules,
+    };
+
+    const themeCards = THEMES.map((th) => {
+      const active = this._prefs.theme === th.id;
+      return `
+        <button type="button" class="theme-card ${active ? "active" : ""}" data-select-theme="${esc(th.id)}">
+          <div class="swatch" style="background:${esc(th.swatch.bg)};border-color:${esc(th.swatch.border)};">
+            <div class="swatch-card" style="background:${esc(th.swatch.card)};border:1.5px solid ${esc(th.swatch.border)};border-radius:${esc(th.swatch.radius)};">
+              <span class="swatch-bar" style="background:${esc(th.swatch.accent)};"></span>
+              <span class="swatch-line"></span>
+            </div>
+          </div>
+          <div class="theme-name">${esc(ko ? th.nameKo : th.nameEn)}</div>
+          <div class="theme-desc">${esc(ko ? th.descKo : th.descEn)}</div>
+        </button>`;
+    }).join("");
+
+    const sectionRows = this._prefs.order
+      .map((secId, idx) => {
+        const checked = this._prefs.visible[secId] ? "checked" : "";
+        return `
+          <div class="order-row">
+            <label class="checkbox-label">
+              <input type="checkbox" data-toggle-section="${esc(secId)}" ${checked} />
+              <span>${esc(secLabels[secId] || secId)}</span>
+            </label>
+            <div class="order-btns">
+              <button type="button" class="btn-outline small" data-move-sec="${esc(secId)}" data-dir="-1" ${idx === 0 ? "disabled" : ""}>&#8593;</button>
+              <button type="button" class="btn-outline small" data-move-sec="${esc(secId)}" data-dir="1" ${idx === this._prefs.order.length - 1 ? "disabled" : ""}>&#8595;</button>
+            </div>
+          </div>`;
+      })
+      .join("");
+
+    return `
+      <div class="backdrop drawer-backdrop" id="settings-backdrop">
+        <div class="drawer" role="dialog" aria-modal="true">
+          <div class="drawer-head">
+            <h3>${esc(t.settingsTitle)}</h3>
+            <button type="button" class="btn-outline small" id="btn-close-settings">${esc(t.close)}</button>
+          </div>
+          <div class="drawer-body">
+            <div class="drawer-sec">
+              <div class="drawer-label">${esc(t.settingsTheme)}</div>
+              <div class="theme-grid">${themeCards}</div>
+            </div>
+
+            <div class="drawer-sec">
+              <div class="drawer-label">${esc(t.settingsLayout)}</div>
+              <div class="seg-group">
+                <button type="button" class="seg ${this._prefs.layout === "single" ? "active" : ""}" data-select-layout="single">${esc(t.layoutSingle)}</button>
+                <button type="button" class="seg ${this._prefs.layout === "bento" ? "active" : ""}" data-select-layout="bento">${esc(t.layoutBento)}</button>
+                <button type="button" class="seg ${this._prefs.layout === "compact" ? "active" : ""}" data-select-layout="compact">${esc(t.layoutCompact)}</button>
+              </div>
+            </div>
+
+            <div class="drawer-sec">
+              <div class="drawer-label">${esc(t.settingsSections)}</div>
+              <div class="order-list">
+                ${sectionRows}
+                <div class="order-row">
+                  <label class="checkbox-label">
+                    <input type="checkbox" data-toggle-section="footer" ${this._prefs.visible.footer ? "checked" : ""} />
+                    <span>${esc(t.secFooter)}</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="drawer-sec">
+              <div class="drawer-label">${esc(t.settingsDefaultTab)}</div>
+              <div class="seg-group">
+                <button type="button" class="seg ${this._prefs.defaultScheduleTab === "vaccines" ? "active" : ""}" data-default-tab="vaccines">${esc(t.tabVaccines)}</button>
+                <button type="button" class="seg ${this._prefs.defaultScheduleTab === "checkups" ? "active" : ""}" data-default-tab="checkups">${esc(t.tabCheckups)}</button>
+                <button type="button" class="seg ${this._prefs.defaultScheduleTab === "oral" ? "active" : ""}" data-default-tab="oral">${esc(t.tabOral)}</button>
+              </div>
+            </div>
+
+            <div class="drawer-footer">
+              <button type="button" class="btn-outline" id="btn-reset-prefs">${esc(t.resetPrefs)}</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
   _renderModal() {
     if (!this._modal) return "";
     const t = this._t();
@@ -429,45 +737,20 @@ class KrBabyKitPanel extends HTMLElement {
 
   _render() {
     const t = this._t();
-    const ko = this._isKo();
     const children = this._data?.children || [];
     const child = this._currentChild();
+    const layoutClass = `layout-${this._prefs.layout}`;
+    const themeStyle = getThemeCss(this._prefs.theme);
 
     let bodyHtml = "";
     if (!child) {
       bodyHtml = `<div class="card"><p class="muted">${esc(t.noChildren)}</p></div>`;
     } else {
-      const pcts = child.percentiles || {};
-      const hInfo = pcts.height;
-      const wInfo = pcts.weight;
-      const headInfo = pcts.head;
-      const bmiInfo = pcts.bmi;
-      const wfl = child.weight_for_length;
-      const sumKey = ko ? "summary_ko" : "summary_en";
       const sexLabel = child.sex === "male" ? t.male : t.female;
       const profLabel = child.profile === "kr" ? "KR · KDCA" : "WHO";
-
-      const tuitionHtml =
-        child.profile === "kr" && child.care_tuition
-          ? `
-            <div class="card">
-              <h3>${esc(t.tuition)} <span class="muted small">(${esc(ko ? child.care_tuition.label_ko : child.care_tuition.label_en)})</span></h3>
-              <div class="grid-3">
-                <div class="stat">
-                  <div class="muted small">${esc(t.tuitionStd)}</div>
-                  <div class="stat-val">${Number(child.care_tuition.standard_tuition || 0).toLocaleString()} ${esc(t.won)}</div>
-                </div>
-                <div class="stat">
-                  <div class="muted small">${esc(t.tuitionSub)}</div>
-                  <div class="stat-val">${Number(child.care_tuition.government_subsidy || 0).toLocaleString()} ${esc(t.won)}</div>
-                </div>
-                <div class="stat">
-                  <div class="muted small">${esc(t.tuitionShare)}</div>
-                  <div class="stat-val">${Number(child.care_tuition.parent_share || 0).toLocaleString()} ${esc(t.won)}</div>
-                </div>
-              </div>
-            </div>`
-          : "";
+      const sectionsHtml = this._prefs.order
+        .map((secId) => this._renderSection(secId, child))
+        .join("");
 
       bodyHtml = `
         <div class="card child-header">
@@ -485,113 +768,49 @@ class KrBabyKitPanel extends HTMLElement {
           <button class="btn-outline" id="btn-edit-child">${esc(t.editChild)}</button>
         </div>
 
-        <div class="card">
-          <h3>${esc(t.measurements)}</h3>
-          <form id="measure-form">
-            <div class="grid-4">
-              <label>${esc(t.height)}
-                <input name="height" type="number" step="0.1" min="30" max="200" value="${esc(child.inputs?.height?.value ?? "")}" />
-                <span class="hint">${esc(child.inputs?.height?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.height?.measured_at || ""))}</span>
-              </label>
-              <label>${esc(t.weight)}
-                <input name="weight" type="number" step="0.05" min="1" max="100" value="${esc(child.inputs?.weight?.value ?? "")}" />
-                <span class="hint">${esc(child.inputs?.weight?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.weight?.measured_at || ""))}</span>
-              </label>
-              <label>${esc(t.head)}
-                <input name="head" type="number" step="0.1" min="25" max="65" value="${esc(child.inputs?.head?.value ?? "")}" />
-                <span class="hint">${esc(child.inputs?.head?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.head?.measured_at || ""))}</span>
-              </label>
-              <label>${esc(t.measureDate)}
-                <input name="date" type="date" value="${esc(child.today || "")}" />
-                <span class="hint">&nbsp;</span>
-              </label>
-            </div>
-            <div class="form-footer">
-              <button type="submit" class="btn-primary" ${this._busy ? "disabled" : ""}>${esc(this._busy ? t.saving : t.saveMeasurement)}</button>
-            </div>
-          </form>
+        <div class="sections-wrap ${layoutClass}">
+          ${sectionsHtml}
         </div>
 
-        <div class="card">
-          <h3>${esc(t.growthSummary)}</h3>
-          ${
-            !hInfo && !wInfo && !headInfo
-              ? `<p class="muted">${esc(t.noMeasureYet)}</p>`
-              : `
-                <div class="grid-3">
-                  <div class="stat">
-                    <div class="muted small">${esc(t.height)}</div>
-                    <div class="stat-val">${hInfo ? `${hInfo.value} cm` : "-"}</div>
-                    <div class="muted small">${esc(hInfo?.[sumKey] || "")}</div>
-                  </div>
-                  <div class="stat">
-                    <div class="muted small">${esc(t.weight)}</div>
-                    <div class="stat-val">${wInfo ? `${wInfo.value} kg` : "-"}</div>
-                    <div class="muted small">${esc(wInfo?.[sumKey] || "")}</div>
-                  </div>
-                  <div class="stat">
-                    <div class="muted small">${esc(t.bmi)}</div>
-                    <div class="stat-val">${child.bmi_raw != null ? `${child.bmi_raw} kg/m²` : "-"}</div>
-                    <div class="muted small">${esc(bmiInfo?.[sumKey] || (child.bmi_age_months != null && child.bmi_age_months < 24 ? t.under24Note : ""))}</div>
-                  </div>
-                </div>
-                <div class="concerns">
-                  ${this._renderConcernBadge(t.concernHead, headInfo?.statistical_percentile, headInfo?.[sumKey])}
-                  ${this._renderConcernBadge(t.concernBmi, bmiInfo?.statistical_percentile, bmiInfo?.[sumKey] || (child.age_months < 24 ? t.under24Note : ""))}
-                  ${this._renderConcernBadge(t.concernWfl, wfl?.statistical_percentile, wfl?.[sumKey])}
-                </div>`
-          }
-        </div>
-
-        ${tuitionHtml}
-
-        <div class="card">
-          <div class="card-head">
-            <h3>${esc(t.schedules)}</h3>
-            <label class="checkbox-label">
-              <input type="checkbox" id="chk-show-past" ${this._showPast ? "checked" : ""} />
-              ${esc(t.showPast)}
-            </label>
-          </div>
-          <div class="tabs">
-            <button class="tab ${this._scheduleTab === "vaccines" ? "active" : ""}" data-tab="vaccines">${esc(t.tabVaccines)}</button>
-            <button class="tab ${this._scheduleTab === "checkups" ? "active" : ""}" data-tab="checkups">${esc(t.tabCheckups)}</button>
-            <button class="tab ${this._scheduleTab === "oral" ? "active" : ""}" data-tab="oral">${esc(t.tabOral)}</button>
-          </div>
-          <div class="sched-list">
-            ${this._renderScheduleList(child)}
-          </div>
-        </div>
-
-        <p class="disclaimer">${esc(child.disclaimer || "")}<br/>${esc(child.attribution || "")}</p>
+        ${
+          this._prefs.visible.footer
+            ? `<p class="disclaimer">${esc(child.disclaimer || "")}<br/>${esc(child.attribution || "")}</p>`
+            : ""
+        }
       `;
     }
 
     this.shadowRoot.innerHTML = `
       <style>
+        ${themeStyle}
         :host {
           display: block;
           min-height: 100vh;
-          background: var(--primary-background-color, #fafafa);
-          color: var(--primary-text-color, #212121);
-          font-family: var(--paper-font-body1_-_font-family, system-ui, -apple-system, sans-serif);
+          background-color: var(--bk-bg);
+          background-image: var(--bk-bg-image, none);
+          background-size: var(--bk-bg-size, auto);
+          color: var(--bk-text);
+          font-family: var(--bk-font-body);
+          transition: background-color 0.2s ease, color 0.2s ease;
         }
+        * { box-sizing: border-box; }
         .topbar {
           display: flex;
           align-items: center;
           justify-content: space-between;
           gap: 12px;
           padding: 12px 20px;
-          background: var(--app-header-background-color, var(--primary-color, #03a9f4));
-          color: var(--app-header-text-color, #fff);
+          background: var(--bk-header-bg);
+          color: var(--bk-header-text);
+          border-bottom: var(--bk-header-border);
           position: sticky;
           top: 0;
           z-index: 5;
         }
-        .topbar-left {
+        .topbar-left, .topbar-right {
           display: flex;
           align-items: center;
-          gap: 12px;
+          gap: 10px;
         }
         .menu-btn {
           background: transparent;
@@ -602,15 +821,28 @@ class KrBabyKitPanel extends HTMLElement {
           padding: 4px 8px;
           display: ${this._narrow ? "inline-flex" : "none"};
         }
+        .icon-btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
+          border-radius: var(--bk-btn-radius);
+          background: rgba(128, 128, 128, 0.16);
+          color: inherit;
+          border: 1px solid rgba(128, 128, 128, 0.25);
+          cursor: pointer;
+        }
         .topbar h1 {
           margin: 0;
           font-size: 20px;
-          font-weight: 500;
+          font-weight: 600;
+          font-family: var(--bk-font-head);
         }
         .container {
-          max-width: 960px;
+          max-width: ${this._prefs.layout === "bento" ? "1180px" : "960px"};
           margin: 0 auto;
-          padding: 16px;
+          padding: ${this._prefs.layout === "compact" ? "10px 12px" : "18px 16px"};
         }
         .child-pills {
           display: flex;
@@ -619,26 +851,42 @@ class KrBabyKitPanel extends HTMLElement {
           margin-bottom: 16px;
         }
         .pill {
-          padding: 8px 14px;
-          border-radius: 18px;
-          border: 1px solid var(--divider-color, #ddd);
-          background: var(--card-background-color, #fff);
-          color: var(--primary-text-color, #212121);
+          padding: 7px 14px;
+          border-radius: var(--bk-pill-radius);
+          border: var(--bk-card-border);
+          background: var(--bk-card);
+          color: var(--bk-text);
           cursor: pointer;
           font-size: 14px;
         }
         .pill.active {
-          background: var(--primary-color, #03a9f4);
-          color: #fff;
+          background: var(--bk-accent);
+          color: var(--bk-accent-text);
           border-color: transparent;
         }
+        .sections-wrap.layout-bento {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px;
+          align-items: start;
+        }
+        .sections-wrap.layout-bento .span-full {
+          grid-column: 1 / -1;
+        }
+        @media (max-width: 820px) {
+          .sections-wrap.layout-bento {
+            grid-template-columns: 1fr;
+          }
+        }
         .card {
-          background: var(--card-background-color, #fff);
-          border-radius: 12px;
-          padding: 16px 20px;
-          margin-bottom: 16px;
-          box-shadow: var(--ha-card-box-shadow, 0 1px 3px rgba(0, 0, 0, 0.08));
-          border: 1px solid var(--divider-color, rgba(0, 0, 0, 0.08));
+          background: var(--bk-card);
+          backdrop-filter: var(--bk-card-backdrop);
+          -webkit-backdrop-filter: var(--bk-card-backdrop);
+          border-radius: var(--bk-card-radius);
+          padding: ${this._prefs.layout === "compact" ? "12px 14px" : "18px 20px"};
+          margin-bottom: ${this._prefs.layout === "bento" ? "0" : this._prefs.layout === "compact" ? "10px" : "16px"};
+          box-shadow: var(--bk-card-shadow);
+          border: var(--bk-card-border);
         }
         .child-header {
           display: flex;
@@ -646,43 +894,45 @@ class KrBabyKitPanel extends HTMLElement {
           justify-content: space-between;
           gap: 12px;
           flex-wrap: wrap;
+          margin-bottom: 16px;
         }
-        h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; }
-        h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+        h2 { margin: 0 0 6px; font-size: 20px; font-weight: 600; font-family: var(--bk-font-head); }
+        h3 { margin: 0 0 12px; font-size: 16px; font-weight: 600; font-family: var(--bk-font-head); }
         .meta {
           display: flex;
           flex-wrap: wrap;
           align-items: center;
           gap: 8px;
-          color: var(--secondary-text-color, #666);
+          color: var(--bk-muted);
           font-size: 14px;
         }
         .grid-3 {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-          gap: 12px;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 10px;
         }
         .grid-4 {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-          gap: 12px;
+          grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+          gap: 10px;
         }
         label {
           display: flex;
           flex-direction: column;
           gap: 4px;
           font-size: 13px;
-          color: var(--secondary-text-color, #555);
+          color: var(--bk-muted);
         }
         input, select {
-          padding: 9px 10px;
-          border-radius: 8px;
-          border: 1px solid var(--divider-color, #ccc);
-          background: var(--primary-background-color, #fafafa);
-          color: var(--primary-text-color, #212121);
+          padding: ${this._prefs.layout === "compact" ? "6px 8px" : "9px 10px"};
+          border-radius: var(--bk-btn-radius);
+          border: 1px solid var(--bk-input-border);
+          background: var(--bk-input-bg);
+          color: var(--bk-text);
           font-size: 14px;
+          font-family: inherit;
         }
-        .hint { font-size: 12px; color: var(--secondary-text-color, #777); }
+        .hint { font-size: 11px; color: var(--bk-muted); }
         .form-footer {
           display: flex;
           justify-content: flex-end;
@@ -690,39 +940,45 @@ class KrBabyKitPanel extends HTMLElement {
         }
         .btn-primary, .btn-outline, .btn-danger, .btn-top {
           padding: 8px 14px;
-          border-radius: 8px;
+          border-radius: var(--bk-btn-radius);
           font-size: 14px;
           cursor: pointer;
           border: 1px solid transparent;
+          font-family: inherit;
         }
         .btn-primary {
-          background: var(--primary-color, #03a9f4);
-          color: #fff;
+          background: var(--bk-accent);
+          color: var(--bk-accent-text);
         }
         .btn-top {
           background: rgba(255, 255, 255, 0.18);
-          color: #fff;
+          color: inherit;
           border-color: rgba(255, 255, 255, 0.35);
         }
         .btn-outline {
           background: transparent;
-          color: var(--primary-text-color, #212121);
-          border-color: var(--divider-color, #ccc);
+          color: var(--bk-text);
+          border-color: var(--bk-input-border);
         }
         .btn-danger {
           background: transparent;
           color: var(--error-color, #db4437);
           border-color: var(--error-color, #db4437);
         }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
         .small { font-size: 12px; padding: 5px 10px; }
-        .muted { color: var(--secondary-text-color, #666); }
+        .muted { color: var(--bk-muted); }
         .stat {
-          padding: 10px 12px;
-          border-radius: 8px;
-          background: var(--primary-background-color, #f5f5f5);
+          padding: ${this._prefs.layout === "compact" ? "8px 10px" : "11px 13px"};
+          border-radius: var(--bk-btn-radius);
+          background: var(--bk-surface);
         }
-        .stat-val { font-size: 18px; font-weight: 600; margin: 4px 0; }
+        .stat-val {
+          font-size: ${this._prefs.layout === "compact" ? "16px" : "19px"};
+          font-weight: 600;
+          margin: 4px 0;
+          font-family: var(--bk-font-num);
+        }
         .concerns {
           margin-top: 12px;
           display: flex;
@@ -736,19 +992,19 @@ class KrBabyKitPanel extends HTMLElement {
           gap: 8px;
           font-size: 14px;
         }
-        .concern-label { font-weight: 500; min-width: 110px; }
+        .concern-label { font-weight: 500; min-width: 105px; }
         .badge {
           display: inline-block;
           padding: 2px 8px;
-          border-radius: 10px;
+          border-radius: var(--bk-pill-radius);
           font-size: 12px;
           font-weight: 500;
         }
-        .badge.neutral { background: rgba(128, 128, 128, 0.15); }
-        .badge.ok, .badge.status-done { background: rgba(76, 175, 80, 0.18); color: var(--success-color, #2e7d32); }
-        .badge.warn, .badge.status-open { background: rgba(255, 152, 0, 0.2); color: var(--warning-color, #e65100); }
-        .badge.status-upcoming { background: rgba(3, 169, 244, 0.16); color: var(--primary-color, #0277bd); }
-        .badge.status-past { background: rgba(128, 128, 128, 0.16); color: var(--secondary-text-color, #666); }
+        .badge.neutral { background: rgba(128, 128, 128, 0.16); }
+        .badge.ok, .badge.status-done { background: rgba(76, 175, 80, 0.18); color: #2e7d32; }
+        .badge.warn, .badge.status-open { background: rgba(255, 152, 0, 0.22); color: #d97706; }
+        .badge.status-upcoming { background: rgba(3, 169, 244, 0.18); color: var(--bk-accent); }
+        .badge.status-past { background: rgba(128, 128, 128, 0.16); color: var(--bk-muted); }
         .card-head {
           display: flex;
           align-items: center;
@@ -762,26 +1018,28 @@ class KrBabyKitPanel extends HTMLElement {
           align-items: center;
           gap: 6px;
           cursor: pointer;
+          color: var(--bk-text);
         }
         .tabs {
           display: flex;
           gap: 8px;
           margin-bottom: 12px;
-          border-bottom: 1px solid var(--divider-color, #e0e0e0);
+          border-bottom: 1px solid var(--bk-input-border);
           padding-bottom: 8px;
         }
         .tab {
           background: transparent;
           border: none;
           padding: 6px 12px;
-          border-radius: 6px;
+          border-radius: var(--bk-btn-radius);
           cursor: pointer;
-          color: var(--secondary-text-color, #666);
+          color: var(--bk-muted);
           font-size: 14px;
+          font-family: inherit;
         }
         .tab.active {
-          background: var(--primary-color, #03a9f4);
-          color: #fff;
+          background: var(--bk-accent);
+          color: var(--bk-accent-text);
         }
         .sched-list { display: flex; flex-direction: column; gap: 8px; }
         .sched-item {
@@ -789,24 +1047,24 @@ class KrBabyKitPanel extends HTMLElement {
           align-items: center;
           justify-content: space-between;
           gap: 10px;
-          padding: 10px 12px;
-          border-radius: 8px;
-          background: var(--primary-background-color, #f5f5f5);
+          padding: ${this._prefs.layout === "compact" ? "7px 10px" : "10px 12px"};
+          border-radius: var(--bk-btn-radius);
+          background: var(--bk-surface);
         }
         .sched-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .banner {
           padding: 10px 14px;
-          border-radius: 8px;
+          border-radius: var(--bk-btn-radius);
           margin-bottom: 12px;
           font-size: 14px;
         }
         .banner.error { background: rgba(219, 68, 55, 0.15); color: var(--error-color, #c62828); }
-        .banner.notice { background: rgba(76, 175, 80, 0.15); color: var(--success-color, #2e7d32); }
+        .banner.notice { background: rgba(76, 175, 80, 0.15); color: #2e7d32; }
         .disclaimer {
           font-size: 12px;
-          color: var(--secondary-text-color, #777);
+          color: var(--bk-muted);
           text-align: center;
-          margin: 16px 0 32px;
+          margin: 18px 0 32px;
           line-height: 1.5;
         }
         .backdrop {
@@ -819,6 +1077,135 @@ class KrBabyKitPanel extends HTMLElement {
           z-index: 50;
           padding: 16px;
         }
+        .drawer-backdrop {
+          justify-content: flex-end;
+          padding: 0;
+        }
+        .drawer {
+          background: var(--card-background-color, #ffffff);
+          color: var(--primary-text-color, #212121);
+          width: 100%;
+          max-width: 440px;
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          box-shadow: -8px 0 32px rgba(0, 0, 0, 0.25);
+          font-family: system-ui, -apple-system, sans-serif;
+        }
+        .drawer-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 16px 20px;
+          border-bottom: 1px solid var(--divider-color, #e0e0e0);
+        }
+        .drawer-head h3 { margin: 0; font-family: inherit; }
+        .drawer-body {
+          flex: 1;
+          overflow-y: auto;
+          padding: 16px 20px 32px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .drawer-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--secondary-text-color, #555);
+          margin-bottom: 8px;
+        }
+        .theme-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 10px;
+        }
+        .theme-card {
+          text-align: left;
+          padding: 8px;
+          border-radius: 10px;
+          border: 1.5px solid var(--divider-color, #ddd);
+          background: var(--primary-background-color, #fafafa);
+          color: var(--primary-text-color, #212121);
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          gap: 5px;
+        }
+        .theme-card.active {
+          border-color: var(--primary-color, #03a9f4);
+          box-shadow: 0 0 0 2px rgba(3, 169, 244, 0.22);
+        }
+        .swatch {
+          height: 44px;
+          border-radius: 6px;
+          border: 1px solid #ddd;
+          padding: 6px;
+          display: flex;
+          align-items: center;
+        }
+        .swatch-card {
+          width: 100%;
+          height: 100%;
+          padding: 5px 7px;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          gap: 4px;
+        }
+        .swatch-bar {
+          display: block;
+          width: 45%;
+          height: 5px;
+          border-radius: 3px;
+        }
+        .swatch-line {
+          display: block;
+          width: 75%;
+          height: 3px;
+          border-radius: 2px;
+          background: rgba(128, 128, 128, 0.35);
+        }
+        .theme-name { font-size: 13px; font-weight: 600; }
+        .theme-desc { font-size: 11px; color: var(--secondary-text-color, #666); line-height: 1.3; }
+        .seg-group {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 6px;
+        }
+        .seg {
+          padding: 8px 6px;
+          border-radius: 8px;
+          border: 1px solid var(--divider-color, #ccc);
+          background: transparent;
+          color: var(--primary-text-color, #212121);
+          font-size: 13px;
+          cursor: pointer;
+        }
+        .seg.active {
+          background: var(--primary-color, #03a9f4);
+          color: #fff;
+          border-color: transparent;
+        }
+        .order-list {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .order-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 10px;
+          border-radius: 8px;
+          background: var(--primary-background-color, #f5f5f5);
+        }
+        .order-btns { display: flex; gap: 4px; }
+        .drawer-footer {
+          padding-top: 8px;
+          border-top: 1px solid var(--divider-color, #e0e0e0);
+          display: flex;
+          justify-content: flex-end;
+        }
         .modal {
           background: var(--card-background-color, #fff);
           color: var(--primary-text-color, #212121);
@@ -827,6 +1214,7 @@ class KrBabyKitPanel extends HTMLElement {
           width: 100%;
           max-width: 420px;
           box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+          font-family: system-ui, -apple-system, sans-serif;
         }
         .modal form { display: flex; flex-direction: column; gap: 12px; }
         .modal-actions {
@@ -843,7 +1231,10 @@ class KrBabyKitPanel extends HTMLElement {
           <button class="menu-btn" id="btn-menu" aria-label="Menu">&#9776;</button>
           <h1>${esc(t.title)}</h1>
         </div>
-        <button class="btn-top" id="btn-add-child">+ ${esc(t.addChild)}</button>
+        <div class="topbar-right">
+          <button class="btn-top" id="btn-add-child">+ ${esc(t.addChild)}</button>
+          <button class="icon-btn" id="btn-open-settings" title="${esc(t.settingsTitle)}" aria-label="${esc(t.settingsTitle)}">${GEAR_SVG}</button>
+        </div>
       </div>
 
       <div class="container">
@@ -865,6 +1256,7 @@ class KrBabyKitPanel extends HTMLElement {
       </div>
 
       ${this._renderModal()}
+      ${this._renderSettingsDrawer()}
     `;
 
     this._bindEvents();
@@ -876,6 +1268,72 @@ class KrBabyKitPanel extends HTMLElement {
     root.getElementById("btn-add-child")?.addEventListener("click", () => {
       this._modal = { mode: "add" };
       this._error = null;
+      this._render();
+    });
+    root.getElementById("btn-open-settings")?.addEventListener("click", () => {
+      this._settingsOpen = true;
+      this._render();
+    });
+    root.getElementById("btn-close-settings")?.addEventListener("click", () => {
+      this._settingsOpen = false;
+      this._render();
+    });
+    root.getElementById("settings-backdrop")?.addEventListener("click", (e) => {
+      if (e.target.id === "settings-backdrop") {
+        this._settingsOpen = false;
+        this._render();
+      }
+    });
+    root.querySelectorAll("[data-select-theme]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-select-theme");
+        this._updatePrefs((p) => {
+          p.theme = id;
+        });
+      });
+    });
+    root.querySelectorAll("[data-select-layout]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const mode = btn.getAttribute("data-select-layout");
+        this._updatePrefs((p) => {
+          p.layout = mode;
+        });
+      });
+    });
+    root.querySelectorAll("[data-toggle-section]").forEach((chk) => {
+      chk.addEventListener("change", () => {
+        const sec = chk.getAttribute("data-toggle-section");
+        this._updatePrefs((p) => {
+          p.visible[sec] = chk.checked;
+        });
+      });
+    });
+    root.querySelectorAll("[data-move-sec]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const sec = btn.getAttribute("data-move-sec");
+        const dir = Number(btn.getAttribute("data-dir"));
+        this._updatePrefs((p) => {
+          const i = p.order.indexOf(sec);
+          const j = i + dir;
+          if (i >= 0 && j >= 0 && j < p.order.length) {
+            [p.order[i], p.order[j]] = [p.order[j], p.order[i]];
+          }
+        });
+      });
+    });
+    root.querySelectorAll("[data-default-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tab = btn.getAttribute("data-default-tab");
+        this._scheduleTab = tab;
+        this._updatePrefs((p) => {
+          p.defaultScheduleTab = tab;
+        });
+      });
+    });
+    root.getElementById("btn-reset-prefs")?.addEventListener("click", () => {
+      this._prefs = structuredClone(DEFAULT_PREFS);
+      this._scheduleTab = DEFAULT_PREFS.defaultScheduleTab;
+      savePrefs(this._prefs);
       this._render();
     });
     root.getElementById("btn-edit-child")?.addEventListener("click", () => {

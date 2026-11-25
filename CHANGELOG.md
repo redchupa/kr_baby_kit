@@ -4,6 +4,13 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.12.0] - 2026-11-25
+
+### Added
+
+- **12 distinct sidebar panel themes** (`frontend/themes.js`): `HA Native`, `Nordic Nursery`, `Paper Journal`, `Aurora Glass`, `Midnight Studio`, `Bento Pop`, `Pediatric Chart`, `Botanical Linen`, `Pastel Cloud`, `Retro Terminal`, `Warm Terracotta`, and `Tokyo Minimal` — each varying layout geometry, typography, surface texture, borders, and elevation.
+- **Gear customization drawer**: Click the gear icon in the `Baby Kit` top bar to switch themes with live visual swatches, choose layout mode (`Single column`, `2-column bento`, `Compact`), toggle individual sections on/off, reorder cards, pick the default schedule tab, or reset to defaults (persisted per device in `localStorage`).
+
 ## [0.11.1] - 2026-11-25
 
 ### Fixed
