@@ -22,7 +22,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util import dt as dt_util
 
-from .const import ATTRIBUTION, DOMAIN
+from .const import DOMAIN, attribution_for, is_korean
 from .coordinator import BabyKitCoordinator
 from .device import child_device
 from .schedule import (
@@ -34,10 +34,10 @@ from .schedule import (
 )
 
 _CALENDARS: tuple[tuple[str, str, str, str], ...] = (
-    # (upcoming data key, full-list data key, unique-id slug, friendly name)
-    ("upcoming_vaccines", "all_vaccines", "immunization", "예방접종_전체_일정_캘린더"),
-    ("upcoming_checkups", "all_checkups", "checkup", "건강검진_전체_일정_캘린더"),
-    ("upcoming_oral_checkups", "all_oral_checkups", "oral_checkup", "구강검진_전체_일정_캘린더"),
+    # (upcoming data key, full-list data key, unique-id slug, translation_key)
+    ("upcoming_vaccines", "all_vaccines", "immunization", "immunization_calendar"),
+    ("upcoming_checkups", "all_checkups", "checkup", "checkup_calendar"),
+    ("upcoming_oral_checkups", "all_oral_checkups", "oral_checkup", "oral_checkup_calendar"),
 )
 
 
@@ -54,9 +54,9 @@ async def async_setup_entry(
             upcoming_key=upcoming_key,
             all_key=all_key,
             slug=slug,
-            label=label,
+            translation_key=translation_key,
         )
-        for upcoming_key, all_key, slug, label in _CALENDARS
+        for upcoming_key, all_key, slug, translation_key in _CALENDARS
     )
 
 
@@ -66,32 +66,56 @@ def _to_calendar_event(
     child_id: str,
     today: date | None = None,
     completed: dict | None = None,
+    korean: bool = True,
+    profile: str = "kr",
 ) -> CalendarEvent:
-    summary = event.name_ko
+    base_name = event.name_ko if korean else (event.name_en or event.name_ko)
+    summary = base_name
     if (
         event.dose is not None
         and event.kind == KIND_VACCINE
         and (event.dose_count or 0) != 1  # single-shot vaccines: no "(1차)"
     ):
-        summary = f"{event.name_ko} ({event.dose}차)"
+        summary = (
+            f"{base_name} ({event.dose}차)"
+            if korean
+            else f"{base_name} (dose {event.dose})"
+        )
 
     status = event_status(event, today, completed) if today else None
     description_lines: list[str] = []
     if status == STATUS_DONE:
-        summary = f"✅ {summary}"
+        summary = f"✓ {summary}" if not korean else f"✅ {summary}"
         done_date = ((completed or {}).get(event.event_id) or {}).get("date")
-        description_lines.append(f"완료: {done_date}" if done_date else "완료")
+        if korean:
+            description_lines.append(f"완료: {done_date}" if done_date else "완료")
+        else:
+            description_lines.append(f"Done: {done_date}" if done_date else "Done")
     elif status == STATUS_PAST:
-        description_lines.append("기간 지남")
+        description_lines.append("기간 지남" if korean else "Window passed")
 
-    if event.window_note:
-        description_lines.append(f"검진 시기: {event.window_note}")
-    if event.items:
-        description_lines.append("검진 항목: " + ", ".join(event.items))
+    wnote = event.window_note if korean else (event.window_note_en or event.window_note)
+    if wnote:
+        description_lines.append(
+            f"검진 시기: {wnote}" if korean else f"Window: {wnote}"
+        )
+    items = event.items if korean else (event.items_en or event.items)
+    if items:
+        prefix = "검진 항목: " if korean else "Items: "
+        description_lines.append(prefix + ", ".join(items))
     if event.note:
         description_lines.append(event.note)
-    description_lines.append(f"일정 ID: {event.event_id}")
-    description_lines.append("출처: 질병관리청·보건복지부·국민건강보험공단 (참고용)")
+    description_lines.append(
+        f"일정 ID: {event.event_id}" if korean else f"Event ID: {event.event_id}"
+    )
+    if korean:
+        description_lines.append(
+            f"출처: {attribution_for(profile, korean=True)} (참고용)"
+        )
+    else:
+        description_lines.append(
+            f"Source: {attribution_for(profile, korean=False)} (for reference only)"
+        )
     return CalendarEvent(
         summary=summary,
         start=event.start,
@@ -103,9 +127,6 @@ def _to_calendar_event(
 
 class BabyKitCalendar(CoordinatorEntity[BabyKitCoordinator], CalendarEntity):
     _attr_has_entity_name = True
-    _attr_attribution = ATTRIBUTION
-    # on/off -> "지금 기간 중인 일정 있음/없음" instead of 켜짐/꺼짐
-    _attr_translation_key = "schedule_calendar"
 
     def __init__(
         self,
@@ -115,14 +136,20 @@ class BabyKitCalendar(CoordinatorEntity[BabyKitCoordinator], CalendarEntity):
         upcoming_key: str,
         all_key: str,
         slug: str,
-        label: str,
+        translation_key: str,
     ) -> None:
         super().__init__(coordinator)
         self.entry = entry
         self._upcoming_key = upcoming_key
         self._all_key = all_key
-        self._attr_name = label
+        self._attr_translation_key = translation_key
         self._attr_unique_id = f"{DOMAIN}_{coordinator.child_id}_{slug}_calendar"
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
+        )
 
     @property
     def device_info(self):
@@ -140,6 +167,8 @@ class BabyKitCalendar(CoordinatorEntity[BabyKitCoordinator], CalendarEntity):
             child_id=self.coordinator.child_id,
             today=today,
             completed=completed,
+            korean=is_korean(self.coordinator.hass),
+            profile=self.coordinator.profile,
         )
 
     @property

@@ -14,8 +14,9 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
-from .const import ATTRIBUTION, DOMAIN, TZ_ASIA_SEOUL
+from .const import DOMAIN, attribution_for, is_korean
 from .coordinator import BabyKitCoordinator
 from .device import child_device
 from .storage import async_append_measurement, latest
@@ -23,21 +24,18 @@ from .storage import async_append_measurement, latest
 
 _NUMBER_SPECS = {
     "height": {
-        "name": "키_기록하기_오늘_날짜로",
         "unit": "cm",
         "min": 30.0,
         "max": 200.0,
         "step": 0.1,
     },
     "weight": {
-        "name": "몸무게_기록하기_오늘_날짜로",
         "unit": "kg",
         "min": 1.0,
         "max": 100.0,
         "step": 0.05,
     },
     "head": {
-        "name": "머리둘레_기록하기_오늘_날짜로",
         "unit": "cm",
         "min": 25.0,
         "max": 65.0,
@@ -60,7 +58,6 @@ async def async_setup_entry(
 class MeasurementNumber(CoordinatorEntity[BabyKitCoordinator], NumberEntity):
     _attr_has_entity_name = True
     _attr_mode = NumberMode.BOX
-    _attr_attribution = ATTRIBUTION
 
     def __init__(
         self,
@@ -71,13 +68,19 @@ class MeasurementNumber(CoordinatorEntity[BabyKitCoordinator], NumberEntity):
         super().__init__(coordinator)
         self._kind = kind
         spec = _NUMBER_SPECS[kind]
-        self._attr_name = spec["name"]
+        self._attr_translation_key = f"{kind}_input"
         self._attr_native_unit_of_measurement = spec["unit"]
         self._attr_native_min_value = spec["min"]
         self._attr_native_max_value = spec["max"]
         self._attr_native_step = spec["step"]
         self._attr_unique_id = (
             f"{DOMAIN}_{coordinator.child_id}_{kind}_input"
+        )
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
         )
 
     @property
@@ -93,7 +96,7 @@ class MeasurementNumber(CoordinatorEntity[BabyKitCoordinator], NumberEntity):
         return float(last[self._kind])
 
     async def async_set_native_value(self, value: float) -> None:
-        today = datetime.now(TZ_ASIA_SEOUL).date().isoformat()
+        today = dt_util.now().date().isoformat()
         try:
             await async_append_measurement(
                 self.hass,

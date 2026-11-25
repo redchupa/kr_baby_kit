@@ -24,22 +24,38 @@ from homeassistant.helpers.selector import (
     TextSelectorConfig,
     TextSelectorType,
 )
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CHILD_BIRTHDATE,
     CONF_CHILD_ID,
     CONF_CHILD_NAME,
     CONF_CHILD_SEX,
+    CONF_PROFILE,
     DOMAIN,
+    PROFILE_GLOBAL,
+    PROFILE_KR,
+    PROFILE_OPTIONS,
     SEX_FEMALE,
     SEX_MALE,
-    TZ_ASIA_SEOUL,
+    is_korean,
 )
 
 
 _SEX_OPTIONS = [
     SelectOptionDict(value=SEX_MALE, label="남아 / Male"),
     SelectOptionDict(value=SEX_FEMALE, label="여아 / Female"),
+]
+
+_PROFILE_OPTIONS = [
+    SelectOptionDict(
+        value=PROFILE_KR,
+        label="대한민국 / South Korea (KDCA · NIP · 보육료)",
+    ),
+    SelectOptionDict(
+        value=PROFILE_GLOBAL,
+        label="해외 / International (WHO Growth Standards)",
+    ),
 ]
 
 
@@ -65,6 +81,12 @@ def _child_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),
+            _key(CONF_PROFILE): SelectSelector(
+                SelectSelectorConfig(
+                    options=_PROFILE_OPTIONS,
+                    mode=SelectSelectorMode.DROPDOWN,
+                )
+            ),
         }
     )
 
@@ -77,17 +99,25 @@ def _validate_child(
     name = (user_input.get(CONF_CHILD_NAME) or "").strip()
     bd = (user_input.get(CONF_CHILD_BIRTHDATE) or "").strip()
     sex = user_input.get(CONF_CHILD_SEX)
+    profile = user_input.get(CONF_PROFILE, PROFILE_KR)
     if not name:
         errors[CONF_CHILD_NAME] = "required"
     try:
-        if date.fromisoformat(bd) > datetime.now(TZ_ASIA_SEOUL).date():
+        if date.fromisoformat(bd) > dt_util.now().date():
             errors[CONF_CHILD_BIRTHDATE] = "future_date"
     except ValueError:
         errors[CONF_CHILD_BIRTHDATE] = "invalid_date"
     if sex not in (SEX_MALE, SEX_FEMALE):
         errors[CONF_CHILD_SEX] = "required"
+    if profile not in PROFILE_OPTIONS:
+        profile = PROFILE_KR
     return (
-        {CONF_CHILD_NAME: name, CONF_CHILD_BIRTHDATE: bd, CONF_CHILD_SEX: sex},
+        {
+            CONF_CHILD_NAME: name,
+            CONF_CHILD_BIRTHDATE: bd,
+            CONF_CHILD_SEX: sex,
+            CONF_PROFILE: profile,
+        },
         errors,
     )
 
@@ -117,9 +147,12 @@ class BabyKitConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data={CONF_CHILD_ID: child_id, **values},
                 )
 
+        defaults = user_input or {
+            CONF_PROFILE: PROFILE_KR if is_korean(self.hass) else PROFILE_GLOBAL,
+        }
         return self.async_show_form(
             step_id="user",
-            data_schema=_child_schema(user_input),
+            data_schema=_child_schema(defaults),
             errors=errors,
         )
 
@@ -147,6 +180,7 @@ class BabyKitOptionsFlow(config_entries.OptionsFlow):
             CONF_CHILD_NAME: entry.data.get(CONF_CHILD_NAME, ""),
             CONF_CHILD_BIRTHDATE: entry.data.get(CONF_CHILD_BIRTHDATE, ""),
             CONF_CHILD_SEX: entry.data.get(CONF_CHILD_SEX, SEX_MALE),
+            CONF_PROFILE: entry.data.get(CONF_PROFILE, PROFILE_KR),
         }
         return self.async_show_form(
             step_id="init",

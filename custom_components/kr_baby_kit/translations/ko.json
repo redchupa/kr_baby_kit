@@ -3,11 +3,12 @@
     "step": {
       "user": {
         "title": "자녀 등록",
-        "description": "자녀 한 명을 등록합니다. 여러 명은 통합을 추가하여 등록할 수 있습니다.\n\n⚠️ 본 정보는 참고용이며 의료기관 진료를 대체하지 않습니다.",
+        "description": "자녀 한 명을 등록합니다. 여러 명은 통합을 추가하여 등록할 수 있습니다.\n\n본 정보는 참고용이며 의료기관 진료를 대체하지 않습니다.",
         "data": {
           "child_name": "자녀 이름 또는 별칭 (예: 첫째)",
           "child_birthdate": "생년월일",
-          "child_sex": "성별"
+          "child_sex": "성별",
+          "profile": "지역 / 기준"
         }
       }
     },
@@ -24,11 +25,12 @@
     "step": {
       "init": {
         "title": "자녀 정보 수정",
-        "description": "이름·생년월일·성별을 수정합니다. 저장된 측정 기록과 완료 표시는 그대로 유지되고, 일정·백분위는 새 값으로 다시 계산됩니다.",
+        "description": "이름·생년월일·성별·기준을 수정합니다. 저장된 측정 기록과 완료 표시는 그대로 유지되고, 일정·백분위는 새 값으로 다시 계산됩니다.",
         "data": {
           "child_name": "자녀 이름 또는 별칭",
           "child_birthdate": "생년월일",
-          "child_sex": "성별"
+          "child_sex": "성별",
+          "profile": "지역 / 기준"
         }
       }
     },
@@ -65,6 +67,47 @@
     }
   },
   "entity": {
+    "sensor": {
+      "height_percentile": {
+        "name": "키_또래_중_상위_몇_퍼센트"
+      },
+      "weight_percentile": {
+        "name": "몸무게_또래_중_상위_몇_퍼센트"
+      },
+      "age_months": {
+        "name": "월령_태어난_지_몇_개월"
+      },
+      "bmi_raw": {
+        "name": "BMI_체질량지수_수치"
+      },
+      "next_vaccine": {
+        "name": "예방접종_다음_일정_시작일"
+      },
+      "vaccine_open_deadline": {
+        "name": "예방접종_지금_맞을_수_있는_마감일"
+      },
+      "next_checkup": {
+        "name": "건강검진_다음_일정_시작일"
+      },
+      "checkup_open_deadline": {
+        "name": "건강검진_지금_받을_수_있는_마감일"
+      },
+      "next_oral_checkup": {
+        "name": "구강검진_다음_일정_시작일"
+      },
+      "oral_checkup_open_deadline": {
+        "name": "구강검진_지금_받을_수_있는_마감일"
+      },
+      "standard_tuition": {
+        "name": "보육료_월_표준_금액"
+      },
+      "government_subsidy": {
+        "name": "보육료_월_정부지원금"
+      },
+      "parent_share": {
+        "name": "보육료_월_본인부담금"
+      }
+    },
     "binary_sensor": {
       "vaccine_due": {
         "name": "예방접종_이번_달_일정",
@@ -87,8 +130,22 @@
           "off": "이번 달 구강검진 없음"
         }
       },
-      "growth_concern": {
-        "name": "양극단_주의",
+      "head_concern": {
+        "name": "양극단_주의_머리둘레",
+        "state": {
+          "on": "주의 필요",
+          "off": "주의 신호 없음"
+        }
+      },
+      "bmi_concern": {
+        "name": "양극단_주의_BMI",
+        "state": {
+          "on": "주의 필요",
+          "off": "주의 신호 없음"
+        }
+      },
+      "weight_for_length_concern": {
+        "name": "양극단_주의_신장별_몸무게",
         "state": {
           "on": "주의 필요",
           "off": "주의 신호 없음"
@@ -96,12 +153,37 @@
       }
     },
     "calendar": {
-      "schedule_calendar": {
-        "name": "전체_일정_캘린더",
+      "immunization_calendar": {
+        "name": "예방접종_전체_일정_캘린더",
         "state": {
           "on": "지금 기간 중인 일정 있음",
           "off": "지금 기간 중인 일정 없음"
         }
+      },
+      "checkup_calendar": {
+        "name": "건강검진_전체_일정_캘린더",
+        "state": {
+          "on": "지금 기간 중인 일정 있음",
+          "off": "지금 기간 중인 일정 없음"
+        }
+      },
+      "oral_checkup_calendar": {
+        "name": "구강검진_전체_일정_캘린더",
+        "state": {
+          "on": "지금 기간 중인 일정 있음",
+          "off": "지금 기간 중인 일정 없음"
+        }
+      }
+    },
+    "number": {
+      "height_input": {
+        "name": "키_기록하기_오늘_날짜로"
+      },
+      "weight_input": {
+        "name": "몸무게_기록하기_오늘_날짜로"
+      },
+      "head_input": {
+        "name": "머리둘레_기록하기_오늘_날짜로"
       }
     }
   }

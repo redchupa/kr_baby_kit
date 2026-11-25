@@ -1,7 +1,6 @@
 {
-  "name": "한국 영유아 키트 (Korean Baby Kit)",
+  "name": "Korean Baby Kit (한국 영유아 키트)",
   "render_readme": true,
   "homeassistant": "2024.11.0",
-  "country": ["KR"],
   "zip_release": false
 }

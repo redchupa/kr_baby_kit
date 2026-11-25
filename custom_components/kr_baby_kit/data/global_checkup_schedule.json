@@ -1,0 +1,202 @@
+{
+  "_meta": {
+    "source": "General Pediatric Well-Child & Dental Visit Milestones (International Reference)",
+    "source_url": "https://www.who.int/tools/child-growth-standards",
+    "license": "Public reference schedule",
+    "schema_version": 3,
+    "last_synced": "2026-11-25",
+    "window_semantics": "window_*_month is an inclusive month-of-age range (start at month N, end the day before month M+1). window_*_day is exact days after birth.",
+    "note": "General pediatric well-child and dental checkup milestones for international users. Checkup schedules vary by country; follow your local pediatrician's guidance."
+  },
+  "checkups": [
+    {
+      "order": 1,
+      "name_ko": "신생아 검진 (생후 2주)",
+      "name_en": "Well-child visit (2 weeks)",
+      "window_min_day": 14,
+      "window_max_day": 28,
+      "window_note_ko": "생후 2~4주",
+      "window_note_en": "2-4 weeks",
+      "items_ko": ["신체계측", "수유 및 성장 확인"],
+      "items_en": ["Growth measurements", "Feeding & newborn check"]
+    },
+    {
+      "order": 2,
+      "name_ko": "영유아 검진 (생후 2개월)",
+      "name_en": "Well-child visit (2 months)",
+      "window_min_month": 2,
+      "window_max_month": 2,
+      "window_note_ko": "생후 2개월",
+      "window_note_en": "2 months",
+      "items_ko": ["신체계측", "발달 확인"],
+      "items_en": ["Growth measurements", "Developmental check"]
+    },
+    {
+      "order": 3,
+      "name_ko": "영유아 검진 (생후 4개월)",
+      "name_en": "Well-child visit (4 months)",
+      "window_min_month": 4,
+      "window_max_month": 4,
+      "window_note_ko": "생후 4개월",
+      "window_note_en": "4 months",
+      "items_ko": ["신체계측", "발달 확인"],
+      "items_en": ["Growth measurements", "Developmental check"]
+    },
+    {
+      "order": 4,
+      "name_ko": "영유아 검진 (생후 6개월)",
+      "name_en": "Well-child visit (6 months)",
+      "window_min_month": 6,
+      "window_max_month": 6,
+      "window_note_ko": "생후 6개월",
+      "window_note_en": "6 months",
+      "items_ko": ["신체계측", "발달 및 이유식 상담"],
+      "items_en": ["Growth measurements", "Development & nutrition check"]
+    },
+    {
+      "order": 5,
+      "name_ko": "영유아 검진 (생후 9개월)",
+      "name_en": "Well-child visit (9 months)",
+      "window_min_month": 9,
+      "window_max_month": 10,
+      "window_note_ko": "생후 9~10개월",
+      "window_note_en": "9-10 months",
+      "items_ko": ["신체계측", "발달 선별검사"],
+      "items_en": ["Growth measurements", "Developmental screening"]
+    },
+    {
+      "order": 6,
+      "name_ko": "영유아 검진 (생후 12개월)",
+      "name_en": "Well-child visit (12 months)",
+      "window_min_month": 12,
+      "window_max_month": 13,
+      "window_note_ko": "생후 12~13개월",
+      "window_note_en": "12-13 months",
+      "items_ko": ["신체계측", "발달 확인"],
+      "items_en": ["Growth measurements", "Developmental check"]
+    },
+    {
+      "order": 7,
+      "name_ko": "영유아 검진 (생후 18개월)",
+      "name_en": "Well-child visit (18 months)",
+      "window_min_month": 18,
+      "window_max_month": 19,
+      "window_note_ko": "생후 18~19개월",
+      "window_note_en": "18-19 months",
+      "items_ko": ["신체계측", "발달 선별검사"],
+      "items_en": ["Growth measurements", "Developmental screening"]
+    },
+    {
+      "order": 8,
+      "name_ko": "영유아 검진 (생후 24개월)",
+      "name_en": "Well-child visit (24 months)",
+      "window_min_month": 24,
+      "window_max_month": 25,
+      "window_note_ko": "생후 24~25개월",
+      "window_note_en": "24-25 months",
+      "items_ko": ["신체계측", "발달 선별검사"],
+      "items_en": ["Growth measurements", "Developmental screening"]
+    },
+    {
+      "order": 9,
+      "name_ko": "영유아 검진 (생후 36개월)",
+      "name_en": "Well-child visit (3 years)",
+      "window_min_month": 36,
+      "window_max_month": 38,
+      "window_note_ko": "만 3세",
+      "window_note_en": "3 years",
+      "items_ko": ["신체계측", "시력·발달 확인"],
+      "items_en": ["Growth measurements", "Vision & development check"]
+    },
+    {
+      "order": 10,
+      "name_ko": "영유아 검진 (생후 48개월)",
+      "name_en": "Well-child visit (4 years)",
+      "window_min_month": 48,
+      "window_max_month": 50,
+      "window_note_ko": "만 4세",
+      "window_note_en": "4 years",
+      "items_ko": ["신체계측", "시력·청력·발달 확인"],
+      "items_en": ["Growth measurements", "Vision, hearing & development"]
+    },
+    {
+      "order": 11,
+      "name_ko": "영유아 검진 (생후 60개월)",
+      "name_en": "Well-child visit (5 years)",
+      "window_min_month": 60,
+      "window_max_month": 62,
+      "window_note_ko": "만 5세",
+      "window_note_en": "5 years",
+      "items_ko": ["신체계측", "취학 전 건강 확인"],
+      "items_en": ["Growth measurements", "School-readiness check"]
+    },
+    {
+      "order": 12,
+      "name_ko": "영유아 검진 (생후 72개월)",
+      "name_en": "Well-child visit (6 years)",
+      "window_min_month": 72,
+      "window_max_month": 74,
+      "window_note_ko": "만 6세",
+      "window_note_en": "6 years",
+      "items_ko": ["신체계측", "연례 소아 검진"],
+      "items_en": ["Growth measurements", "Annual pediatric check"]
+    }
+  ],
+  "oral_checkups": [
+    {
+      "order": 1,
+      "name_ko": "구강검진 (생후 12개월)",
+      "name_en": "Dental checkup (12 months)",
+      "window_min_month": 12,
+      "window_max_month": 17,
+      "window_note_ko": "생후 12~17개월",
+      "window_note_en": "12-17 months",
+      "items_ko": ["첫 치과 검진", "구강 위생 상담"],
+      "items_en": ["First dental exam", "Oral hygiene guidance"]
+    },
+    {
+      "order": 2,
+      "name_ko": "구강검진 (생후 24개월)",
+      "name_en": "Dental checkup (2 years)",
+      "window_min_month": 24,
+      "window_max_month": 29,
+      "window_note_ko": "생후 24~29개월",
+      "window_note_en": "24-29 months",
+      "items_ko": ["구강 진찰", "구강보건교육"],
+      "items_en": ["Oral examination", "Preventive dental guidance"]
+    },
+    {
+      "order": 3,
+      "name_ko": "구강검진 (생후 36개월)",
+      "name_en": "Dental checkup (3 years)",
+      "window_min_month": 36,
+      "window_max_month": 41,
+      "window_note_ko": "생후 36~41개월",
+      "window_note_en": "36-41 months",
+      "items_ko": ["구강 진찰", "구강보건교육"],
+      "items_en": ["Oral examination", "Preventive dental guidance"]
+    },
+    {
+      "order": 4,
+      "name_ko": "구강검진 (생후 48개월)",
+      "name_en": "Dental checkup (4 years)",
+      "window_min_month": 48,
+      "window_max_month": 53,
+      "window_note_ko": "생후 48~53개월",
+      "window_note_en": "48-53 months",
+      "items_ko": ["구강 진찰", "구강보건교육"],
+      "items_en": ["Oral examination", "Preventive dental guidance"]
+    },
+    {
+      "order": 5,
+      "name_ko": "구강검진 (생후 60개월)",
+      "name_en": "Dental checkup (5 years)",
+      "window_min_month": 60,
+      "window_max_month": 65,
+      "window_note_ko": "생후 60~65개월",
+      "window_note_en": "60-65 months",
+      "items_ko": ["구강 진찰", "구강보건교육"],
+      "items_en": ["Oral examination", "Preventive dental guidance"]
+    }
+  ]
+}

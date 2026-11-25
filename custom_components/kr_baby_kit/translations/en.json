@@ -3,11 +3,12 @@
     "step": {
       "user": {
         "title": "Register a child",
-        "description": "Register one child. Add another integration entry for additional children.\n\n⚠️ This information is for reference only and does not replace medical consultation.",
+        "description": "Register one child. Add another integration entry for additional children.\n\nThis information is for reference only and does not replace medical consultation.",
         "data": {
-          "child_name": "Child name or alias (e.g. First-born)",
+          "child_name": "Child name or alias (e.g. Baby A)",
           "child_birthdate": "Birthdate",
-          "child_sex": "Sex"
+          "child_sex": "Sex",
+          "profile": "Region / Standard"
         }
       }
     },
@@ -24,11 +25,12 @@
     "step": {
       "init": {
         "title": "Edit child",
-        "description": "Edit name, birthdate, or sex. Stored measurements and completion marks are kept; schedules and percentiles are recalculated.",
+        "description": "Edit name, birthdate, sex, or regional standard. Stored measurements and completion marks are kept; schedules and percentiles are recalculated.",
         "data": {
           "child_name": "Child name or alias",
           "child_birthdate": "Birthdate",
-          "child_sex": "Sex"
+          "child_sex": "Sex",
+          "profile": "Region / Standard"
         }
       }
     },
@@ -41,11 +43,11 @@
   "services": {
     "record_measurement": {
       "name": "Record measurement",
-      "description": "Store height/weight/head circumference and refresh percentiles."
+      "description": "Store height, weight, or head circumference and refresh percentiles."
     },
     "delete_measurement": {
       "name": "Delete measurement",
-      "description": "Delete a whole record for a date, or only some of its fields."
+      "description": "Delete a whole record for a date, or only selected fields."
     },
     "get_measurements": {
       "name": "Get measurements",
@@ -53,7 +55,7 @@
     },
     "mark_event_done": {
       "name": "Mark event done",
-      "description": "Mark vaccine doses, infant checkups, or oral checkups as done."
+      "description": "Mark vaccine doses, checkups, or dental checkups as done."
     },
     "unmark_event_done": {
       "name": "Unmark event done",
@@ -61,10 +63,51 @@
     },
     "get_schedule": {
       "name": "Get schedule",
-      "description": "Return every vaccine/checkup/oral-checkup window with event_id and status."
+      "description": "Return every vaccine, checkup, and dental checkup window with event_id and status."
     }
   },
   "entity": {
+    "sensor": {
+      "height_percentile": {
+        "name": "Height rank among peers (top %)"
+      },
+      "weight_percentile": {
+        "name": "Weight rank among peers (top %)"
+      },
+      "age_months": {
+        "name": "Age (months)"
+      },
+      "bmi_raw": {
+        "name": "BMI"
+      },
+      "next_vaccine": {
+        "name": "Next vaccine window start"
+      },
+      "vaccine_open_deadline": {
+        "name": "Open vaccine window deadline"
+      },
+      "next_checkup": {
+        "name": "Next checkup window start"
+      },
+      "checkup_open_deadline": {
+        "name": "Open checkup window deadline"
+      },
+      "next_oral_checkup": {
+        "name": "Next dental checkup window start"
+      },
+      "oral_checkup_open_deadline": {
+        "name": "Open dental checkup window deadline"
+      },
+      "standard_tuition": {
+        "name": "Monthly standard childcare tuition"
+      },
+      "government_subsidy": {
+        "name": "Monthly government subsidy"
+      },
+      "parent_share": {
+        "name": "Monthly parent share"
+      }
+    },
     "binary_sensor": {
       "vaccine_due": {
         "name": "Vaccines this month",
@@ -81,14 +124,28 @@
         }
       },
       "oral_checkup_due": {
-        "name": "Oral checkups this month",
+        "name": "Dental checkups this month",
         "state": {
-          "on": "Oral checkup due this month",
-          "off": "No oral checkup this month"
+          "on": "Dental checkup due this month",
+          "off": "No dental checkup this month"
         }
       },
-      "growth_concern": {
-        "name": "Growth concern",
+      "head_concern": {
+        "name": "Head circumference concern",
+        "state": {
+          "on": "Needs attention",
+          "off": "No concern signal"
+        }
+      },
+      "bmi_concern": {
+        "name": "BMI concern",
+        "state": {
+          "on": "Needs attention",
+          "off": "No concern signal"
+        }
+      },
+      "weight_for_length_concern": {
+        "name": "Weight-for-length concern",
         "state": {
           "on": "Needs attention",
           "off": "No concern signal"
@@ -96,12 +153,37 @@
       }
     },
     "calendar": {
-      "schedule_calendar": {
-        "name": "Schedule calendar",
+      "immunization_calendar": {
+        "name": "Immunization schedule",
         "state": {
           "on": "Window open now",
           "off": "No window open now"
         }
+      },
+      "checkup_calendar": {
+        "name": "Health checkup schedule",
+        "state": {
+          "on": "Window open now",
+          "off": "No window open now"
+        }
+      },
+      "oral_checkup_calendar": {
+        "name": "Dental checkup schedule",
+        "state": {
+          "on": "Window open now",
+          "off": "No window open now"
+        }
+      }
+    },
+    "number": {
+      "height_input": {
+        "name": "Record height (today)"
+      },
+      "weight_input": {
+        "name": "Record weight (today)"
+      },
+      "head_input": {
+        "name": "Record head circumference (today)"
       }
     }
   }

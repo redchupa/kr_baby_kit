@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTRIBUTION, DOMAIN, MEDICAL_DISCLAIMER
+from .const import DOMAIN, attribution_for, disclaimer_for, is_korean
 from .coordinator import BabyKitCoordinator
 from .device import child_device
 
@@ -57,9 +57,7 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
     """
 
     _attr_has_entity_name = True
-    _attr_attribution = ATTRIBUTION
     _data_key = ""
-    _label = ""
     _translation_key = ""
 
     def __init__(self, coordinator: BabyKitCoordinator, entry: ConfigEntry) -> None:
@@ -68,8 +66,13 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
         self._attr_unique_id = (
             f"{DOMAIN}_{coordinator.child_id}_{self._data_key}_due_this_month"
         )
-        self._attr_name = self._label
         self._attr_translation_key = self._translation_key
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
+        )
 
     @property
     def device_info(self):
@@ -105,6 +108,7 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
                     "event_id": events[0].event_id,
                     "code": events[0].code,
                     "name_ko": events[0].name_ko,
+                    "name_en": events[0].name_en,
                     "dose": events[0].dose,
                     "start": events[0].start.isoformat(),
                     "end": events[0].end.isoformat(),
@@ -117,46 +121,38 @@ class _DueSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
 
 class VaccineDueSensor(_DueSensor):
     _data_key = "upcoming_vaccines"
-    _label = "예방접종_이번_달_일정"
     _translation_key = "vaccine_due"
 
 
 class CheckupDueSensor(_DueSensor):
     _data_key = "upcoming_checkups"
-    _label = "건강검진_이번_달_일정"
     _translation_key = "checkup_due"
 
 
 class OralCheckupDueSensor(_DueSensor):
     _data_key = "upcoming_oral_checkups"
-    _label = "구강검진_이번_달_일정"
     _translation_key = "oral_checkup_due"
 
 
 class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
-    """Binary "양극단 주의" alert for a bi-directionally concerning percentile.
-
-    state=on when the underlying KDCA statistical percentile is below 5 or
-    above 95. attributes expose the raw percentile, the direction (low/high),
-    a Korean one-line summary, and the latest raw measurement so a dashboard
-    card or automation can show details without bringing back the easy-to-
-    misread percentile sensor.
-    """
+    """Binary alert for a bi-directionally concerning percentile (<5% or >95%)."""
 
     _attr_has_entity_name = True
-    _attr_attribution = ATTRIBUTION
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
-    # on -> "주의 필요", off -> "주의 신호 없음" (also true when the metric
-    # is not defined at this age, unlike the device-class default "정상").
-    _attr_translation_key = "growth_concern"
     _slug: str = ""
-    _label: str = ""
+    _translation_key: str = ""
 
     def __init__(self, coordinator: BabyKitCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self.entry = entry
         self._attr_unique_id = f"{DOMAIN}_{coordinator.child_id}_{self._slug}_concern"
-        self._attr_name = self._label
+        self._attr_translation_key = self._translation_key
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
+        )
 
     @property
     def device_info(self):
@@ -167,10 +163,6 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
 
     @property
     def available(self) -> bool:
-        # Available if we have an explicit percentile OR something meaningful
-        # to surface via attributes (e.g. the <24mo BMI advisory). This keeps
-        # the entity from showing "unavailable" when the missing percentile
-        # itself is the information the parent needs to see.
         if not super().available:
             return False
         info = self._info()
@@ -183,8 +175,6 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
     def is_on(self) -> bool:
         pct = self._info().get("statistical_percentile")
         if pct is None:
-            # Either no measurement yet, or KDCA's percentile is intentionally
-            # undefined at this age. Don't flag a concern.
             return False
         return pct < _CLINICAL_LOW_PCT or pct > _CLINICAL_HIGH_PCT
 
@@ -198,19 +188,21 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
                 level = "low"
             elif pct > _CLINICAL_HIGH_PCT:
                 level = "high"
+        ko = is_korean(self.coordinator.hass)
         return {
             "statistical_percentile": pct,
             "level": level,
             "summary_ko": info.get("summary_ko"),
+            "summary_en": info.get("summary_en"),
             "value": info.get("value"),
             "measured_at": info.get("measured_at"),
-            "disclaimer": MEDICAL_DISCLAIMER,
+            "disclaimer": disclaimer_for(korean=ko),
         }
 
 
 class HeadConcernSensor(_ConcernSensor):
     _slug = "head"
-    _label = "양극단_주의_머리둘레"
+    _translation_key = "head_concern"
 
     def _info(self) -> dict:
         return (self.coordinator.data or {}).get("percentiles", {}).get("head") or {}
@@ -218,27 +210,28 @@ class HeadConcernSensor(_ConcernSensor):
 
 class BMIConcernSensor(_ConcernSensor):
     _slug = "bmi"
-    _label = "양극단_주의_BMI"
+    _translation_key = "bmi_concern"
 
     def _info(self) -> dict:
         data = self.coordinator.data or {}
         info = (data.get("percentiles") or {}).get("bmi") or {}
         if info:
             return info
-        # KDCA BMI percentile table starts at 24 months. Below that, surface a
-        # human-readable advisory + the raw BMI so the entity stays available
-        # and the parent sees *why* there's no percentile yet — rather than a
-        # bare "unavailable" badge.
         age_m = data.get("bmi_age_months")
         if age_m is None:
             age_m = data.get("age_months")
         if age_m is not None and age_m < 24:
             return {
                 "summary_ko": (
-                    "측정 당시 만 24개월 미만 — BMI 백분위는 KDCA 기준상 "
+                    "측정 당시 만 24개월 미만 — BMI 백분위는 "
                     "만 2세부터 적용됩니다. 같은 자녀의 '신장별 몸무게 양극단 "
                     "주의' binary_sensor 를 함께 확인하고, 만 2세 이후 다시 "
                     "측정하면 BMI 백분위가 계산됩니다."
+                ),
+                "summary_en": (
+                    "Under 24 months at measurement — BMI percentiles apply "
+                    "from age 2. Check the weight-for-length concern sensor "
+                    "instead."
                 ),
                 "value": data.get("bmi_raw"),
             }
@@ -247,17 +240,16 @@ class BMIConcernSensor(_ConcernSensor):
 
 class WeightForLengthConcernSensor(_ConcernSensor):
     _slug = "weight_for_length"
-    _label = "양극단_주의_신장별_몸무게"
+    _translation_key = "weight_for_length_concern"
 
     def _info(self) -> dict:
         wfl = (self.coordinator.data or {}).get("weight_for_length") or {}
-        # adapt the weight_for_length dict to the same shape the concern
-        # base class expects.
         if not wfl:
             return {}
         return {
             "statistical_percentile": wfl.get("statistical_percentile"),
             "summary_ko": wfl.get("summary_ko"),
+            "summary_en": wfl.get("summary_en"),
             "value": {
                 "length_cm": wfl.get("length_cm"),
                 "weight_kg": wfl.get("weight_kg"),

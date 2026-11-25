@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 _DATA_PATH = Path(__file__).parent / "data" / "growth_chart_kr.json"
+_WHO_DATA_PATH = Path(__file__).parent / "data" / "growth_chart_who.json"
 
 
 @dataclass(frozen=True)
@@ -85,9 +86,20 @@ class GrowthChart:
             return cls(json.load(fh))
 
     @classmethod
+    def from_profile(cls, profile: str = "kr") -> "GrowthChart":
+        path = _WHO_DATA_PATH if profile == "global" else _DATA_PATH
+        with path.open(encoding="utf-8") as fh:
+            return cls(json.load(fh))
+
+    @classmethod
     async def async_from_default(cls, hass) -> "GrowthChart":
         """Async variant safe to call from the HA event loop."""
         return await hass.async_add_executor_job(cls.from_default)
+
+    @classmethod
+    async def async_from_profile(cls, hass, profile: str = "kr") -> "GrowthChart":
+        """Async variant loading the chart for the chosen regional profile."""
+        return await hass.async_add_executor_job(cls.from_profile, profile)
 
     def has(self, sex: str, kind: str) -> bool:
         return (sex, kind) in self._table and bool(self._table[(sex, kind)])
@@ -308,3 +320,52 @@ def _pct_text(rank: float) -> str:
     if rank < 0.1:
         return "0.1% 미만"
     return f"{rank}%"
+
+
+_KIND_LABEL_EN: dict[str, str] = {
+    "height": "Height",
+    "weight": "Weight",
+    "head": "Head circumference",
+    "bmi": "BMI",
+    "weight_for_length": "Weight-for-length",
+}
+
+_KIND_ADJECTIVES_EN: dict[str, tuple[str, str]] = {
+    "height": ("tall", "short"),
+    "weight": ("heavy", "light"),
+    "head": ("large", "small"),
+    "bmi": ("high", "low"),
+    "weight_for_length": ("heavy for length", "light for length"),
+}
+
+
+def _pct_text_en(rank: float) -> str:
+    if rank < 0.1:
+        return "<0.1%"
+    return f"{rank}%"
+
+
+def format_summary_en(kind: str, percentile: float | None) -> str | None:
+    """One-line English summary aligned with the sensor's native value."""
+    if percentile is None:
+        return None
+    label = _KIND_LABEL_EN.get(kind, kind)
+    pct = float(percentile)
+    high, low = _KIND_ADJECTIVES_EN.get(kind, ("high", "low"))
+
+    if kind in _KIND_FAVORS_HIGH:
+        if 45.0 <= pct <= 55.0:
+            return f"{label}: around peer average"
+        rank = round(max(0.0, 100.0 - pct), 1)
+        direction = high if pct > 55.0 else low
+        return f"{label}: top {_pct_text_en(rank)} among peers ({direction})"
+
+    if 45.0 <= pct <= 55.0:
+        return f"{label}: around peer average (normal range)"
+    clinical = pct < _CLINICAL_LOW_PCT or pct > _CLINICAL_HIGH_PCT
+    suffix = ", consult pediatrician" if clinical else ""
+    if pct > 55.0:
+        rank = round(max(0.0, 100.0 - pct), 1)
+        return f"{label}: top {_pct_text_en(rank)} among peers ({high}{suffix})"
+    rank = round(pct, 1)
+    return f"{label}: bottom {_pct_text_en(rank)} among peers ({low}{suffix})"

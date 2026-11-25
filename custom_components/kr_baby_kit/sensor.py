@@ -12,55 +12,41 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.util import dt as dt_util
 
-from .const import ATTRIBUTION, DOMAIN, MEDICAL_DISCLAIMER, TZ_ASIA_SEOUL
+from .const import (
+    DOMAIN,
+    PROFILE_KR,
+    attribution_for,
+    disclaimer_for,
+    is_korean,
+)
 from .coordinator import BabyKitCoordinator
 from .device import child_device
 from .schedule import event_to_dict
 
 
-_KIND_LABELS = {
-    "height": ("키_또래_중_상위_몇_퍼센트", "Height rank among peers (top %)"),
-    "weight": ("몸무게_또래_중_상위_몇_퍼센트", "Weight rank among peers (top %)"),
-}
+_KIND_KEYS = ("height", "weight")
 # head / bmi / weight-for-length intentionally omitted — they are bi-directional
 # (양극단 우려) and exposing them as a percentile sensor invited users to read a
 # single-direction ranking. They live as `binary_sensor.<child>_<kind>_concern`
 # instead, with the raw percentile preserved on that entity's attributes.
 
 
-_CARE_TUITION_FIELDS: list[tuple[str, str, str]] = [
-    ("standard_tuition", "standard_tuition", "보육료_월_표준_금액"),
-    ("government_subsidy", "government_subsidy", "보육료_월_정부지원금"),
-    ("parent_share", "parent_share", "보육료_월_본인부담금"),
+_CARE_TUITION_FIELDS: list[tuple[str, str]] = [
+    ("standard_tuition", "standard_tuition"),
+    ("government_subsidy", "government_subsidy"),
+    ("parent_share", "parent_share"),
 ]
 
 
-# (data key, next-event uid slug, open-deadline uid slug, names)
+# (data key, next-event uid/translation slug, open-deadline uid/translation slug)
 # The two sensors split what one sensor used to mix: an already-open window
 # showed its (past) start date under a "다음" name.
-_SCHEDULE_SENSORS: tuple[tuple[str, str, str, str, str], ...] = (
-    (
-        "upcoming_vaccines",
-        "next_vaccine",
-        "vaccine_open_deadline",
-        "예방접종_다음_일정_시작일",
-        "예방접종_지금_맞을_수_있는_마감일",
-    ),
-    (
-        "upcoming_checkups",
-        "next_checkup",
-        "checkup_open_deadline",
-        "건강검진_다음_일정_시작일",
-        "건강검진_지금_받을_수_있는_마감일",
-    ),
-    (
-        "upcoming_oral_checkups",
-        "next_oral_checkup",
-        "oral_checkup_open_deadline",
-        "구강검진_다음_일정_시작일",
-        "구강검진_지금_받을_수_있는_마감일",
-    ),
+_SCHEDULE_SENSORS: tuple[tuple[str, str, str], ...] = (
+    ("upcoming_vaccines", "next_vaccine", "vaccine_open_deadline"),
+    ("upcoming_checkups", "next_checkup", "checkup_open_deadline"),
+    ("upcoming_oral_checkups", "next_oral_checkup", "oral_checkup_open_deadline"),
 )
 
 
@@ -71,22 +57,23 @@ async def async_setup_entry(
 ) -> None:
     coordinator: BabyKitCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     entities: list = [
-        PercentileSensor(coordinator, entry, kind) for kind in _KIND_LABELS
+        PercentileSensor(coordinator, entry, kind) for kind in _KIND_KEYS
     ]
     entities.append(AgeMonthsSensor(coordinator, entry))
-    for data_key, next_slug, open_slug, next_label, open_label in _SCHEDULE_SENSORS:
+    for data_key, next_slug, open_slug in _SCHEDULE_SENSORS:
         entities.append(
             NextEventSensor(
-                coordinator, entry, data_key=data_key, slug=next_slug, label=next_label
+                coordinator, entry, data_key=data_key, slug=next_slug
             )
         )
         entities.append(
             OpenDeadlineSensor(
-                coordinator, entry, data_key=data_key, slug=open_slug, label=open_label
+                coordinator, entry, data_key=data_key, slug=open_slug
             )
         )
-    for tuition_field, slug, label in _CARE_TUITION_FIELDS:
-        entities.append(CareTuitionSensor(coordinator, entry, tuition_field, slug, label))
+    if coordinator.profile == PROFILE_KR:
+        for tuition_field, slug in _CARE_TUITION_FIELDS:
+            entities.append(CareTuitionSensor(coordinator, entry, tuition_field, slug))
     entities.append(BMIRawSensor(coordinator, entry))
     async_add_entities(entities)
 
@@ -97,7 +84,6 @@ class PercentileSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     _attr_has_entity_name = True
     _attr_native_unit_of_measurement = "%"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_attribution = ATTRIBUTION
 
     def __init__(
         self,
@@ -107,9 +93,14 @@ class PercentileSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     ) -> None:
         super().__init__(coordinator)
         self._kind = kind
-        ko, en = _KIND_LABELS[kind]
-        self._attr_name = ko
+        self._attr_translation_key = f"{kind}_percentile"
         self._attr_unique_id = f"{DOMAIN}_{coordinator.child_id}_{kind}_percentile"
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
+        )
 
     @property
     def device_info(self):
@@ -125,6 +116,7 @@ class PercentileSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     def extra_state_attributes(self) -> dict:
         data = self.coordinator.data or {}
         info = (data.get("percentiles") or {}).get(self._kind, {})
+        ko = is_korean(self.coordinator.hass)
         return {
             "value": info.get("value"),
             "measured_at": info.get("measured_at"),
@@ -132,22 +124,29 @@ class PercentileSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
             "statistical_percentile": info.get("statistical_percentile"),
             "top_percent": info.get("top_percent"),
             "summary_ko": info.get("summary_ko"),
+            "summary_en": info.get("summary_en"),
             "age_months_at_measurement": info.get("age_months_at_measurement"),
             "age_months": data.get("age_months"),
-            "disclaimer": MEDICAL_DISCLAIMER,
+            "profile": self.coordinator.profile,
+            "disclaimer": disclaimer_for(korean=ko),
         }
 
 
 class AgeMonthsSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     _attr_has_entity_name = True
-    _attr_name = "월령_태어난_지_몇_개월"
+    _attr_translation_key = "age_months"
     _attr_native_unit_of_measurement = "mo"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_attribution = ATTRIBUTION
 
     def __init__(self, coordinator: BabyKitCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{DOMAIN}_{coordinator.child_id}_age_months"
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
+        )
 
     @property
     def device_info(self):
@@ -169,7 +168,6 @@ class NextEventSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
 
     _attr_has_entity_name = True
     _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_attribution = ATTRIBUTION
 
     def __init__(
         self,
@@ -178,12 +176,17 @@ class NextEventSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
         *,
         data_key: str,
         slug: str,
-        label: str,
     ) -> None:
         super().__init__(coordinator)
         self._data_key = data_key
-        self._attr_name = label
+        self._attr_translation_key = slug
         self._attr_unique_id = f"{DOMAIN}_{coordinator.child_id}_{slug}"
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
+        )
 
     @property
     def device_info(self):
@@ -207,7 +210,7 @@ class NextEventSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
         event = self._next_event()
         if event is None:
             return None
-        return datetime.combine(event.start, time.min, tzinfo=TZ_ASIA_SEOUL)
+        return datetime.combine(event.start, time.min, tzinfo=dt_util.DEFAULT_TIME_ZONE)
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -234,8 +237,8 @@ class OpenDeadlineSensor(NextEventSensor):
     """Deadline of the window(s) open right now; unknown when none is open.
 
     State is the end of the last allowed day, so a dashboard shows
-    "N일 후" until the deadline passes. Every open, not-completed event is
-    listed with its own deadline in ``open_events``.
+    "N일 후" / "in N days" until the deadline passes. Every open, not-completed
+    event is listed with its own deadline in ``open_events``.
     """
 
     def _open_events(self) -> list:
@@ -252,7 +255,9 @@ class OpenDeadlineSensor(NextEventSensor):
         events = self._open_events()
         if not events:
             return None
-        return datetime.combine(events[0].end, time(23, 59, 59), tzinfo=TZ_ASIA_SEOUL)
+        return datetime.combine(
+            events[0].end, time(23, 59, 59), tzinfo=dt_util.DEFAULT_TIME_ZONE
+        )
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -265,6 +270,7 @@ class OpenDeadlineSensor(NextEventSensor):
                 {
                     "event_id": e.event_id,
                     "name_ko": e.name_ko,
+                    "name_en": e.name_en,
                     "dose": e.dose,
                     "window_start": e.start.isoformat(),
                     "deadline": e.end.isoformat(),
@@ -277,6 +283,7 @@ class OpenDeadlineSensor(NextEventSensor):
             first = events[0]
             out["event_id"] = first.event_id
             out["name_ko"] = first.name_ko
+            out["name_en"] = first.name_en
             out["deadline"] = first.end.isoformat()
             out["days_left"] = (first.end - today).days if today else None
         return out
@@ -285,16 +292,12 @@ class OpenDeadlineSensor(NextEventSensor):
 class CareTuitionSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     """One of the three childcare-tuition figures for the current age class.
 
-    State is ``None`` when the bundled tuition table is still in placeholder
-    mode (``data_year == 0``), so dashboards don't show misleading zeros.
-    The raw figure is always surfaced in ``raw_value`` so power users can
-    write templates against it.
+    Only created for the South Korea (`kr`) profile.
     """
 
     _attr_has_entity_name = True
     _attr_native_unit_of_measurement = "KRW"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_attribution = ATTRIBUTION
 
     def __init__(
         self,
@@ -302,12 +305,17 @@ class CareTuitionSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
         entry: ConfigEntry,
         field: str,
         slug: str,
-        label: str,
     ) -> None:
         super().__init__(coordinator)
         self._field = field
-        self._attr_name = label
+        self._attr_translation_key = slug
         self._attr_unique_id = f"{DOMAIN}_{coordinator.child_id}_{slug}"
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
+        )
 
     @property
     def device_info(self):
@@ -331,6 +339,7 @@ class CareTuitionSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
     @property
     def extra_state_attributes(self) -> dict:
         tier = self._tier() or {}
+        ko = is_korean(self.coordinator.hass)
         return {
             "age_class": tier.get("age_class"),
             "age_class_label_ko": tier.get("label_ko"),
@@ -340,30 +349,28 @@ class CareTuitionSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
             "source_url": tier.get("source_url"),
             "raw_value": tier.get(self._field),
             "is_placeholder": tier.get("is_placeholder"),
-            "disclaimer": MEDICAL_DISCLAIMER,
+            "disclaimer": disclaimer_for(korean=ko),
         }
 
 
 class BMIRawSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
-    """Raw BMI value (kg/m²) for every age.
-
-    Complements the existing BMI percentile sensor, which is `unknown` under
-    24 months because KDCA's BMI reference table starts there. The raw BMI is
-    meaningful at every age, so this sensor stays populated as long as a
-    height + weight measurement exists. Under 24 months the `summary_ko`
-    attribute redirects readers to weight-for-length instead.
-    """
+    """Raw BMI value (kg/m²) for every age."""
 
     _attr_has_entity_name = True
-    _attr_name = "BMI_체질량지수_수치"
+    _attr_translation_key = "bmi_raw"
     _attr_native_unit_of_measurement = "kg/m²"
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_attribution = ATTRIBUTION
     _attr_suggested_display_precision = 2
 
     def __init__(self, coordinator: BabyKitCoordinator, entry: ConfigEntry) -> None:
         super().__init__(coordinator)
         self._attr_unique_id = f"{DOMAIN}_{coordinator.child_id}_bmi_raw"
+
+    @property
+    def attribution(self) -> str:
+        return attribution_for(
+            self.coordinator.profile, korean=is_korean(self.coordinator.hass)
+        )
 
     @property
     def device_info(self):
@@ -381,9 +388,12 @@ class BMIRawSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
         if age_m is None:
             age_m = data.get("age_months") or 0
         if age_m < 24:
-            summary = "측정 당시 만 24개월 미만 — KDCA BMI 백분위 미정의, 신장별 몸무게 백분위를 함께 확인하세요."
+            summary_ko = "측정 당시 만 24개월 미만 — BMI 백분위는 만 2세부터 적용됩니다. 신장별 몸무게를 함께 확인하세요."
+            summary_en = "Under 24 months at measurement — BMI percentile starts at age 2. Check weight-for-length instead."
         else:
-            summary = bmi_info.get("summary_ko")
+            summary_ko = bmi_info.get("summary_ko")
+            summary_en = bmi_info.get("summary_en")
+        ko = is_korean(self.coordinator.hass)
         return {
             "measured_at": data.get("bmi_measured_at"),
             "age_months": data.get("age_months"),
@@ -391,6 +401,7 @@ class BMIRawSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
             "statistical_percentile": bmi_info.get("statistical_percentile"),
             "top_percent": bmi_info.get("top_percent"),
             "z_score": bmi_info.get("z_score"),
-            "summary_ko": summary,
-            "disclaimer": MEDICAL_DISCLAIMER,
+            "summary_ko": summary_ko,
+            "summary_en": summary_en,
+            "disclaimer": disclaimer_for(korean=ko),
         }

@@ -1,0 +1,135 @@
+{
+  "_meta": {
+    "source": "WHO Recommendations for Routine Immunization — Summary of WHO Position Papers (General International Reference)",
+    "source_url": "https://www.who.int/teams/immunization-vaccines-and-biologicals/policies/who-recommendations-for-routine-immunization---summary-tables",
+    "license": "World Health Organization public reference data (attribution required)",
+    "schema_version": 1,
+    "last_synced": "2026-11-25",
+    "age_unit": "months",
+    "note": "General international childhood immunization reference based on WHO routine immunization recommendations. National schedules vary by country; always confirm exact timing with your local health authority or pediatrician."
+  },
+  "vaccines": [
+    {
+      "code": "HepB",
+      "name_ko": "B형간염 (WHO 기준)",
+      "name_en": "Hepatitis B (HepB)",
+      "doses": [
+        {
+          "dose": 1,
+          "recommended_month": 0,
+          "window_min": 0,
+          "window_max": 0,
+          "note": "Birth dose (within 24 hours)"
+        },
+        {
+          "dose": 2,
+          "recommended_month": 2,
+          "window_min": 1,
+          "window_max": 2
+        },
+        {
+          "dose": 3,
+          "recommended_month": 6,
+          "window_min": 6,
+          "window_max": 12
+        }
+      ]
+    },
+    {
+      "code": "DTaP",
+      "name_ko": "디프테리아·파상풍·백일해 (DTaP/DTP)",
+      "name_en": "DTaP / DTP",
+      "doses": [
+        { "dose": 1, "recommended_month": 2, "window_min": 2, "window_max": 3 },
+        { "dose": 2, "recommended_month": 4, "window_min": 4, "window_max": 5 },
+        { "dose": 3, "recommended_month": 6, "window_min": 6, "window_max": 7 },
+        { "dose": 4, "recommended_month": 18, "window_min": 15, "window_max": 18 },
+        { "dose": 5, "recommended_month": 60, "window_min": 48, "window_max": 72, "note": "4-6 years booster" }
+      ]
+    },
+    {
+      "code": "IPV",
+      "name_ko": "폴리오 (IPV)",
+      "name_en": "Polio (IPV)",
+      "doses": [
+        { "dose": 1, "recommended_month": 2, "window_min": 2, "window_max": 3 },
+        { "dose": 2, "recommended_month": 4, "window_min": 4, "window_max": 5 },
+        { "dose": 3, "recommended_month": 6, "window_min": 6, "window_max": 18 },
+        { "dose": 4, "recommended_month": 60, "window_min": 48, "window_max": 72, "note": "4-6 years booster" }
+      ]
+    },
+    {
+      "code": "Hib",
+      "name_ko": "b형 헤모필루스 인플루엔자 (Hib)",
+      "name_en": "Haemophilus influenzae type b (Hib)",
+      "doses": [
+        { "dose": 1, "recommended_month": 2, "window_min": 2, "window_max": 3 },
+        { "dose": 2, "recommended_month": 4, "window_min": 4, "window_max": 5 },
+        { "dose": 3, "recommended_month": 6, "window_min": 6, "window_max": 7 },
+        { "dose": 4, "recommended_month": 15, "window_min": 12, "window_max": 15 }
+      ]
+    },
+    {
+      "code": "PCV",
+      "name_ko": "폐렴구균 (PCV)",
+      "name_en": "Pneumococcal conjugate (PCV)",
+      "doses": [
+        { "dose": 1, "recommended_month": 2, "window_min": 2, "window_max": 3 },
+        { "dose": 2, "recommended_month": 4, "window_min": 4, "window_max": 5 },
+        { "dose": 3, "recommended_month": 12, "window_min": 12, "window_max": 15 }
+      ]
+    },
+    {
+      "code": "RV",
+      "name_ko": "로타바이러스 (RV)",
+      "name_en": "Rotavirus (RV)",
+      "doses": [
+        { "dose": 1, "recommended_month": 2, "window_min": 2, "window_max": 3 },
+        { "dose": 2, "recommended_month": 4, "window_min": 4, "window_max": 5 }
+      ]
+    },
+    {
+      "code": "MMR",
+      "name_ko": "홍역·유행성이하선염·풍진 (MMR)",
+      "name_en": "Measles, Mumps, Rubella (MMR)",
+      "doses": [
+        { "dose": 1, "recommended_month": 12, "window_min": 12, "window_max": 15 },
+        { "dose": 2, "recommended_month": 60, "window_min": 48, "window_max": 72, "note": "4-6 years booster" }
+      ]
+    },
+    {
+      "code": "VAR",
+      "name_ko": "수두 (Varicella)",
+      "name_en": "Varicella (Chickenpox)",
+      "doses": [
+        { "dose": 1, "recommended_month": 12, "window_min": 12, "window_max": 15 },
+        { "dose": 2, "recommended_month": 60, "window_min": 48, "window_max": 72 }
+      ]
+    },
+    {
+      "code": "HPV",
+      "name_ko": "사람유두종바이러스 (HPV)",
+      "name_en": "Human Papillomavirus (HPV)",
+      "doses": [
+        { "dose": 1, "recommended_month": 132, "window_min": 108, "window_max": 168, "note": "Ages 9-14 (WHO recommendation)" }
+      ]
+    },
+    {
+      "code": "IIV",
+      "name_ko": "인플루엔자 (매년)",
+      "name_en": "Seasonal Influenza",
+      "doses": [
+        {
+          "dose": 1,
+          "recommended_month": 6,
+          "window_min": 6,
+          "window_max": 216,
+          "recurrence": "annual_season",
+          "season_start_mmdd": "10-01",
+          "season_end_mmdd": "04-30",
+          "note": "Annual seasonal vaccine (6 months and older)"
+        }
+      ]
+    }
+  ]
+}

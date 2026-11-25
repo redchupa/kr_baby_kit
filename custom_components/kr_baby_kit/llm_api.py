@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import llm
 
-from .const import DOMAIN, MEDICAL_DISCLAIMER
+from .const import DOMAIN, MEDICAL_DISCLAIMER, PROFILE_KR, disclaimer_for, is_korean
 from .schedule import event_to_dict
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,19 +25,29 @@ def _api_id(child_id: str) -> str:
     return f"{DOMAIN}__{child_id}"
 
 
-def _api_prompt(child_name: str) -> str:
+def _api_prompt(child_name: str, profile: str = PROFILE_KR) -> str:
+    if profile == PROFILE_KR:
+        return (
+            f"You can answer questions about the child '{child_name}'. "
+            "Use the available tools to look up upcoming immunizations, "
+            "upcoming infant/child checkups (영유아 건강검진), infant oral "
+            "checkups (영유아 구강검진), which doses/checkups were already "
+            "marked as done, the latest growth percentiles (KDCA 2017), "
+            "and the childcare tuition tier (표준보육료 / 정부지원금 / "
+            "본인부담금) that applies to the child's age class. Always end "
+            "medical-adjacent answers with a brief reminder that this is "
+            "reference information, not medical advice. For tuition figures, "
+            "remind the user to confirm the current year's published rate "
+            "with their daycare or local government."
+        )
     return (
         f"You can answer questions about the child '{child_name}'. "
-        "Use the available tools to look up upcoming immunizations, "
-        "upcoming infant/child checkups (영유아 건강검진), infant oral "
-        "checkups (영유아 구강검진), which doses/checkups were already "
-        "marked as done, the latest growth percentiles, "
-        "and the childcare tuition tier (표준보육료 / 정부지원금 / "
-        "본인부담금) that applies to the child's age class. Always end "
+        "Use the available tools to look up upcoming routine immunizations "
+        "(WHO reference), upcoming well-child and dental checkup milestones, "
+        "which doses/checkups were already marked as done, and the latest "
+        "growth percentiles (WHO Child Growth Standards). Always end "
         "medical-adjacent answers with a brief reminder that this is "
-        "reference information, not medical advice. For tuition figures, "
-        "remind the user to confirm the current year's published rate "
-        "with their daycare or local government."
+        "reference information, not medical advice."
     )
 
 
@@ -324,10 +334,18 @@ class _BabyKitAPI(llm.API):
     async def async_get_api_instance(
         self, llm_context: llm.LLMContext
     ) -> llm.APIInstance:
-        tools = [cls(self.hass, self._entry_id) for cls in _TOOL_CLASSES]
+        store = self.hass.data.get(DOMAIN, {}).get(self._entry_id) or {}
+        coord = store.get("coordinator")
+        profile = coord.profile if coord is not None else PROFILE_KR
+        tool_classes = [
+            cls
+            for cls in _TOOL_CLASSES
+            if profile == PROFILE_KR or cls is not GetCareTuitionTool
+        ]
+        tools = [cls(self.hass, self._entry_id) for cls in tool_classes]
         return llm.APIInstance(
             api=self,
-            api_prompt=_api_prompt(self._child_name),
+            api_prompt=_api_prompt(self._child_name, profile),
             llm_context=llm_context,
             tools=tools,
         )

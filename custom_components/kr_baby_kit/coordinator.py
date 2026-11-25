@@ -8,19 +8,27 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_point_in_utc_time
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_CHILD_BIRTHDATE,
     CONF_CHILD_ID,
     CONF_CHILD_NAME,
     CONF_CHILD_SEX,
+    CONF_PROFILE,
     DOMAIN,
     LOGGER,
-    TZ_ASIA_SEOUL,
+    PROFILE_KR,
     UPDATE_INTERVAL,
 )
 from .care_tuition import TuitionTier, tuition_for_birthdate
-from .growth import GrowthChart, age_months, format_summary_ko, rank_percent
+from .growth import (
+    GrowthChart,
+    age_months,
+    format_summary_en,
+    format_summary_ko,
+    rank_percent,
+)
 from .schedule import (
     project_checkup_events,
     project_oral_checkup_events,
@@ -43,13 +51,15 @@ class BabyKitCoordinator(DataUpdateCoordinator):
         chart: GrowthChart,
         nip_schedule: dict,
         checkup_schedule: dict,
-        tuition_table: dict,
+        tuition_table: dict | None = None,
+        profile: str | None = None,
     ) -> None:
         self.entry = entry
         self.child_name: str = entry.data[CONF_CHILD_NAME]
         self.child_id: str = entry.data.get(CONF_CHILD_ID, entry.entry_id)
         self.child_sex: str = entry.data[CONF_CHILD_SEX]
         self.birthdate: date = date.fromisoformat(entry.data[CONF_CHILD_BIRTHDATE])
+        self.profile: str = profile or entry.data.get(CONF_PROFILE, PROFILE_KR)
         self.chart = chart
         self._nip_schedule = nip_schedule
         self._checkup_schedule = checkup_schedule
@@ -90,9 +100,9 @@ class BabyKitCoordinator(DataUpdateCoordinator):
         @callback
         def _arm() -> None:
             nonlocal unsub
-            now = datetime.now(TZ_ASIA_SEOUL)
+            now = dt_util.now()
             next_midnight = datetime.combine(
-                now.date() + timedelta(days=1), time(0, 0, 5), tzinfo=TZ_ASIA_SEOUL
+                now.date() + timedelta(days=1), time(0, 0, 5), tzinfo=now.tzinfo
             )
             unsub = async_track_point_in_utc_time(self.hass, _fire, next_midnight)
 
@@ -113,7 +123,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         records = (await async_load_records(self.hass)).get(self.child_id, [])
         completed = await async_get_child_completions(self.hass, self.child_id)
-        today = datetime.now(TZ_ASIA_SEOUL).date()
+        today = dt_util.now().date()
         age_m = age_months(self.birthdate.isoformat(), today.isoformat())
 
         percentiles: dict[str, dict] = {}
@@ -137,18 +147,19 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                 # that favor a single direction (height, weight) this is the
                 # rank percent (big raw → small number). For bi-directional
                 # metrics (head, bmi, weight_for_length) this stays as the
-                # KDCA statistical percentile so 50 means "normal".
+                # statistical percentile so 50 means "normal".
                 "percentile": rank,
                 "statistical_percentile": pct,
                 "top_percent": round(max(0.0, 100.0 - pct), 1) if pct is not None else None,
                 "summary_ko": format_summary_ko(kind, pct),
+                "summary_en": format_summary_en(kind, pct),
                 "age_months_at_measurement": round(age_at, 2),
             }
 
         h_record = latest(records, "height")
         w_record = latest(records, "weight")
-        # BMI raw value is always meaningful; KDCA BMI *percentile* table
-        # only starts at 24 months (under-2s use weight-for-length instead).
+        # BMI raw value is always meaningful; BMI *percentile* table
+        # starts at 24 months (under-2s use weight-for-length instead).
         bmi_raw: float | None = None
         bmi_measured_at: str | None = None
         bmi_age: float | None = None
@@ -173,6 +184,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                             "statistical_percentile": pct,
                             "top_percent": round(max(0.0, 100.0 - pct), 1),
                             "summary_ko": format_summary_ko("bmi", pct),
+                            "summary_en": format_summary_en("bmi", pct),
                             "age_months_at_measurement": round(bmi_age, 2),
                         }
 
@@ -195,6 +207,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
                     "statistical_percentile": pct,
                     "top_percent": round(max(0.0, 100.0 - pct), 1),
                     "summary_ko": format_summary_ko("weight_for_length", pct),
+                    "summary_en": format_summary_en("weight_for_length", pct),
                     "measured_at": max(
                         h_record["date"], w_record["date"]
                     ),
@@ -215,28 +228,31 @@ class BabyKitCoordinator(DataUpdateCoordinator):
         )
 
         # Daycare classes follow birth year, not months of age (v0.9.1).
-        tier: TuitionTier | None = tuition_for_birthdate(
-            self.birthdate, today, self._tuition_table
-        )
+        # Only applicable to the South Korea profile.
         care_tuition = None
-        if tier is not None:
-            care_tuition = {
-                "age_class": tier.age_class,
-                "label_ko": tier.label_ko,
-                "label_en": tier.label_en,
-                "standard_tuition": tier.standard_tuition,
-                "government_subsidy": tier.government_subsidy,
-                "parent_share": tier.parent_share,
-                "data_year": tier.data_year,
-                "source_url": tier.source_url,
-                "is_placeholder": tier.is_placeholder,
-                "age_class_basis": (
-                    f"{today.year}년 보육료 지원 연령 기준 "
-                    f"(출생연도 {self.birthdate.year}년)"
-                ),
-            }
+        if self.profile == PROFILE_KR and self._tuition_table is not None:
+            tier: TuitionTier | None = tuition_for_birthdate(
+                self.birthdate, today, self._tuition_table
+            )
+            if tier is not None:
+                care_tuition = {
+                    "age_class": tier.age_class,
+                    "label_ko": tier.label_ko,
+                    "label_en": tier.label_en,
+                    "standard_tuition": tier.standard_tuition,
+                    "government_subsidy": tier.government_subsidy,
+                    "parent_share": tier.parent_share,
+                    "data_year": tier.data_year,
+                    "source_url": tier.source_url,
+                    "is_placeholder": tier.is_placeholder,
+                    "age_class_basis": (
+                        f"{today.year}년 보육료 지원 연령 기준 "
+                        f"(출생연도 {self.birthdate.year}년)"
+                    ),
+                }
 
         return {
+            "profile": self.profile,
             "age_months": age_m,
             "today": today.isoformat(),
             "records": records,

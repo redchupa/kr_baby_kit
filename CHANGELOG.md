@@ -4,6 +4,21 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.10.0] - 2026-11-25
+
+### Added
+
+- **International (`global`) regional profile**: Choose between South Korea (`kr`: KDCA 2017, NIP, NHIS, MOE tuition) and International (`global`: WHO Child Growth Standards 2006 for 0-5y & WHO Growth Reference 2007 for 5-19y, WHO routine immunization reference, and general pediatric/dental well-child milestones) during child registration or later in Options Flow.
+- **Full Home Assistant entity localization**: All sensors, binary sensors, calendars, and number entities now use `translation_key` (`strings.json`, `translations/en.json`, `translations/ko.json`), so English Home Assistant instances see English entity names, states, summaries (`summary_en`), and calendar events while Korean instances keep the exact existing Korean names.
+- **Separate English README (`README.en.md`)**: Linked from the top of `README.md`, with both READMEs rewritten in a clean, straightforward style without decorative emojis.
+- New unit test suite `tests/test_international.py` covering WHO LMS medians, global schedule projections, English summaries, and translation key parity.
+
+### Changed
+
+- **Local timezone support**: Coordinator date calculations, midnight refreshes, number inputs, services, and timestamp sensors now use Home Assistant's configured local time zone (`dt_util`) instead of hardcoded `Asia/Seoul`.
+- **Childcare tuition sensors**: Only created for the South Korea (`kr`) profile (and omitted from the Assist LLM API for `global` profiles).
+- **HACS discovery**: Removed `"country": ["KR"]` restriction from `hacs.json` so international HACS users can discover and install the integration.
+
 ## [0.9.2] - 2026-11-10
 
 ### Changed

@@ -20,8 +20,9 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
+from homeassistant.util import dt as dt_util
 
-from .const import CONF_CHILD_ID, DOMAIN, LOGGER, TZ_ASIA_SEOUL
+from .const import CONF_CHILD_ID, DOMAIN, LOGGER
 from .schedule import event_to_dict
 from .storage import (
     async_append_measurement,
@@ -92,7 +93,7 @@ def _iso_date(value) -> str:
 
 
 def _today() -> str:
-    return datetime.now(TZ_ASIA_SEOUL).date().isoformat()
+    return dt_util.now().date().isoformat()
 
 
 _MEASUREMENT_KIND = vol.In(["height", "weight", "head"])

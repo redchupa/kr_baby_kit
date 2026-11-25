@@ -118,7 +118,18 @@ Z = ln(X / M) / S
 
 ---
 
-## ⚠️ 의학적 면책 (Medical Disclaimer)
+## 5. 해외 기준 데이터 (International Profile — WHO)
+
+해외 이용자(`global` 프로필)를 위해 아래 국제 공개 기준 데이터를 함께 번들했습니다.
+
+- **성장 표준 (0–5세)**: [WHO Child Growth Standards (2006)](https://www.who.int/tools/child-growth-standards) — `data/growth_chart_who.json` (키/신장 0–60개월, 몸무게 0–60개월, 머리둘레 0–60개월, BMI 24–60개월, 신장별 체중 45–120cm)
+- **성장 참고치 (5–19세)**: [WHO Growth Reference Data for 5–19 Years (2007)](https://www.who.int/tools/growth-reference-data-for-5to19-years) — `data/growth_chart_who.json` (신장 61–228개월, 체중 61–120개월, BMI 61–228개월)
+- **예방접종 참고 일정**: [WHO Recommendations for Routine Immunization](https://www.who.int/teams/immunization-vaccines-and-biologicals/policies/who-recommendations-for-routine-immunization---summary-tables) — `data/who_schedule.json`
+- **소아·치과 정기검진 참고 일정**: 일반 소아 정기검진 마일스톤 — `data/global_checkup_schedule.json` (국가별 세부 일정이 다르므로 현지 소아과 안내를 우선합니다.)
+
+---
+
+## 의학적 면책 (Medical Disclaimer)
 
 > 본 통합이 제공하는 모든 성장 백분위·예방접종·검진 정보는 **참고용**이며, 의학적 진단·처방·치료를 대체하지 않습니다.
 > 자녀의 성장·건강 상태는 반드시 소아청소년과 전문의의 진료를 통해 평가하시기 바랍니다.

@@ -26,6 +26,8 @@ from typing import Iterable
 _DATA_DIR = Path(__file__).parent / "data"
 _NIP_PATH = _DATA_DIR / "nip_schedule.json"
 _CHECKUP_PATH = _DATA_DIR / "health_checkup_schedule.json"
+_WHO_VACCINE_PATH = _DATA_DIR / "who_schedule.json"
+_GLOBAL_CHECKUP_PATH = _DATA_DIR / "global_checkup_schedule.json"
 
 _AVG_DAYS_PER_MONTH = 30.4375
 
@@ -45,7 +47,9 @@ class ScheduleEvent:
     end: date
     note: str = ""
     items: tuple[str, ...] = field(default_factory=tuple)
+    items_en: tuple[str, ...] = field(default_factory=tuple)
     window_note: str = ""
+    window_note_en: str = ""
     season: int | None = None  # annual vaccines: season start year
     dose_count: int | None = None  # total doses of this vaccine (1 = single shot)
 
@@ -83,8 +87,22 @@ def load_nip_schedule(path: Path | None = None) -> dict:
         return json.load(fh)
 
 
+def load_vaccine_schedule(profile: str = "kr", path: Path | None = None) -> dict:
+    target = path or (_WHO_VACCINE_PATH if profile == "global" else _NIP_PATH)
+    with target.open(encoding="utf-8") as fh:
+        return json.load(fh)
+
+
 def load_checkup_schedule(path: Path | None = None) -> dict:
     with (path or _CHECKUP_PATH).open(encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def load_checkup_schedule_for_profile(
+    profile: str = "kr", path: Path | None = None
+) -> dict:
+    target = path or (_GLOBAL_CHECKUP_PATH if profile == "global" else _CHECKUP_PATH)
+    with target.open(encoding="utf-8") as fh:
         return json.load(fh)
 
 
@@ -93,9 +111,23 @@ async def async_load_nip_schedule(hass, path: Path | None = None) -> dict:
     return await hass.async_add_executor_job(load_nip_schedule, path)
 
 
+async def async_load_vaccine_schedule(
+    hass, profile: str = "kr", path: Path | None = None
+) -> dict:
+    return await hass.async_add_executor_job(load_vaccine_schedule, profile, path)
+
+
 async def async_load_checkup_schedule(hass, path: Path | None = None) -> dict:
     """Async variant safe to call from the HA event loop."""
     return await hass.async_add_executor_job(load_checkup_schedule, path)
+
+
+async def async_load_checkup_schedule_for_profile(
+    hass, profile: str = "kr", path: Path | None = None
+) -> dict:
+    return await hass.async_add_executor_job(
+        load_checkup_schedule_for_profile, profile, path
+    )
 
 
 def project_vaccine_events(
@@ -197,7 +229,9 @@ def _project_checkup_list(
                 end=end,
                 note=entry.get("note_ko", ""),
                 items=tuple(entry.get("items_ko") or ()),
+                items_en=tuple(entry.get("items_en") or ()),
                 window_note=entry.get("window_note_ko", ""),
+                window_note_en=entry.get("window_note_en", ""),
             )
         )
     return sort_events(events)
@@ -294,8 +328,12 @@ def event_to_dict(
         out["note"] = event.note
     if event.window_note:
         out["window_note_ko"] = event.window_note
+    if event.window_note_en:
+        out["window_note_en"] = event.window_note_en
     if event.items:
         out["items_ko"] = list(event.items)
+    if event.items_en:
+        out["items_en"] = list(event.items_en)
     if today is not None:
         out["status"] = event_status(event, today, completed)
     if completed and event.event_id in completed:

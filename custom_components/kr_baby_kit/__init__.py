@@ -5,7 +5,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_CHILD_ID, CONF_CHILD_NAME, DOMAIN, LOGGER  # noqa: F401  (LOGGER re-exported)
+from .const import (
+    CONF_CHILD_ID,
+    CONF_CHILD_NAME,
+    CONF_PROFILE,
+    DOMAIN,
+    LOGGER,  # noqa: F401  (LOGGER re-exported)
+    PROFILE_KR,
+)
 from .llm_api import async_cleanup_llm_api, async_setup_llm_api
 from .services import async_register_services, async_unregister_services
 
@@ -24,20 +31,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     from .care_tuition import async_load_tuition_table
     from .coordinator import BabyKitCoordinator
     from .growth import GrowthChart
-    from .schedule import async_load_checkup_schedule, async_load_nip_schedule
+    from .schedule import (
+        async_load_checkup_schedule_for_profile,
+        async_load_vaccine_schedule,
+    )
 
-    chart = await GrowthChart.async_from_default(hass)
-    nip_schedule = await async_load_nip_schedule(hass)
-    checkup_schedule = await async_load_checkup_schedule(hass)
-    tuition_table = await async_load_tuition_table(hass)
+    profile = entry.data.get(CONF_PROFILE, PROFILE_KR)
+    chart = await GrowthChart.async_from_profile(hass, profile)
+    vaccine_schedule = await async_load_vaccine_schedule(hass, profile)
+    checkup_schedule = await async_load_checkup_schedule_for_profile(hass, profile)
+    tuition_table = (
+        await async_load_tuition_table(hass) if profile == PROFILE_KR else None
+    )
 
     coordinator = BabyKitCoordinator(
         hass,
         entry,
         chart=chart,
-        nip_schedule=nip_schedule,
+        nip_schedule=vaccine_schedule,
         checkup_schedule=checkup_schedule,
         tuition_table=tuition_table,
+        profile=profile,
     )
     await coordinator.async_config_entry_first_refresh()
 
