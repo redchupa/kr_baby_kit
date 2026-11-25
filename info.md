@@ -1,4 +1,4 @@
-# Korean Baby Kit (한국 영유아 키트)
+# Baby Kit
 
 Home Assistant integration for child growth percentiles, immunization schedules, and checkup milestones.
 

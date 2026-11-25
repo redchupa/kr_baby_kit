@@ -1,12 +1,12 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.14.0";
+import { THEMES, getThemeCss } from "./themes.js?v=0.15.0";
 import {
   CARD_STYLES,
   ICONS,
   cardStyleCss,
   renderPercentileGauge,
   renderSparkline,
-} from "./cards.js?v=0.14.0";
+} from "./cards.js?v=0.15.0";
 
 const PREFS_KEY = "kr_baby_kit_panel_prefs_v3";
 
@@ -164,6 +164,11 @@ const STRINGS = {
     widthHalf: "1/2",
     settingsDefaultTab: "기본 일정 탭",
     resetPrefs: "기본값으로 초기화",
+    navAll: "전체",
+    navCare: "돌봄",
+    navGrowth: "성장",
+    navDiary: "일기",
+    navSchedule: "일정",
   },
   en: {
     title: "Baby Kit",
@@ -292,6 +297,11 @@ const STRINGS = {
     widthHalf: "1/2",
     settingsDefaultTab: "Default schedule tab",
     resetPrefs: "Reset to defaults",
+    navAll: "All",
+    navCare: "Care",
+    navGrowth: "Growth",
+    navDiary: "Diary",
+    navSchedule: "Schedule",
   },
 };
 
@@ -407,6 +417,7 @@ class KrBabyKitPanel extends HTMLElement {
     this._selectedId = null;
     this._prefs = loadPrefs();
     this._scheduleTab = this._prefs.defaultScheduleTab;
+    this._mobileNav = "all"; // "all" | "care" | "growth" | "diary" | "schedule"
     this._careKind = "note";
     this._timelineFilter = "all";
     this._pendingPhoto = null;
@@ -1478,6 +1489,37 @@ class KrBabyKitPanel extends HTMLElement {
       </div>`;
   }
 
+  _renderMobileNav() {
+    const t = this._t();
+    const items = [
+      { id: "all", icon: ICONS.home, label: t.navAll },
+      { id: "care", icon: ICONS.feeding, label: t.navCare },
+      { id: "growth", icon: ICONS.ruler, label: t.navGrowth },
+      { id: "diary", icon: ICONS.note, label: t.navDiary },
+      { id: "schedule", icon: ICONS.vaccine, label: t.navSchedule },
+    ];
+    return `
+      <nav class="mobile-nav" aria-label="Navigation">
+        ${items
+          .map(
+            (it) => `
+              <button type="button" class="mnav-btn ${this._mobileNav === it.id ? "active" : ""}" data-mobile-nav="${esc(it.id)}">
+                ${it.icon}
+                <span>${esc(it.label)}</span>
+              </button>`
+          )
+          .join("")}
+      </nav>`;
+  }
+
+  _mobileVisibleSections() {
+    if (this._mobileNav === "care") return new Set(["care"]);
+    if (this._mobileNav === "growth") return new Set(["growth", "measurements", "tuition"]);
+    if (this._mobileNav === "diary") return new Set(["timeline"]);
+    if (this._mobileNav === "schedule") return new Set(["schedules"]);
+    return null;
+  }
+
   _render() {
     const t = this._t();
     const children = this._data?.children || [];
@@ -1493,7 +1535,9 @@ class KrBabyKitPanel extends HTMLElement {
       const sexLabel = child.sex === "male" ? t.male : t.female;
       const profLabel = child.profile === "kr" ? "KR · KDCA" : "WHO";
       const initial = (child.name || "?").trim().slice(0, 1).toUpperCase();
+      const mFilter = this._mobileVisibleSections();
       const sectionsHtml = this._prefs.order
+        .filter((secId) => !mFilter || mFilter.has(secId))
         .map((secId) => this._renderSection(secId, child))
         .join("");
 
@@ -1804,6 +1848,71 @@ class KrBabyKitPanel extends HTMLElement {
         .modal form { display: flex; flex-direction: column; gap: 12px; }
         .modal-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
         .right-actions { display: flex; gap: 8px; }
+        .mobile-nav { display: none; }
+        @media (max-width: 720px) {
+          .topbar {
+            padding: max(10px, env(safe-area-inset-top)) 12px 10px;
+          }
+          .topbar h1 { font-size: 18px; }
+          .btn-top { padding: 7px 11px; font-size: 13px; }
+          .container { padding: 12px 10px calc(86px + env(safe-area-inset-bottom)); }
+          .child-header { padding: 14px; }
+          .avatar-btn { width: 54px; height: 54px; }
+          .child-pills, .chips-bar, .quick-bar, .tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding-bottom: 4px;
+          }
+          .child-pills::-webkit-scrollbar,
+          .chips-bar::-webkit-scrollbar,
+          .quick-bar::-webkit-scrollbar,
+          .tabs::-webkit-scrollbar { display: none; }
+          .pill, .chip, .quick-pill, .tab { flex-shrink: 0; white-space: nowrap; }
+          .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+          .timer-grid { grid-template-columns: 1fr; }
+          .gauge-grid, .spark-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+          input, select, textarea { font-size: 16px; min-height: 44px; }
+          .btn-primary, .btn-outline, .quick-pill { min-height: 40px; }
+          .sub-btn { width: 40px; height: 40px; }
+          .tl-photo { max-width: 100%; max-height: 220px; }
+          .drawer { max-width: 100vw; }
+          .theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+          .mobile-nav {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            position: fixed;
+            left: 0; right: 0; bottom: 0;
+            z-index: 30;
+            background: var(--bk-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: var(--bk-card-border);
+            padding: 6px 4px max(6px, env(safe-area-inset-bottom));
+            box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.08);
+          }
+          .mnav-btn {
+            background: transparent;
+            border: none;
+            color: var(--bk-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            padding: 6px 2px;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 12px;
+            font-family: inherit;
+          }
+          .mnav-btn.active {
+            color: var(--bk-accent);
+            font-weight: 700;
+          }
+        }
         ${cStyle}
       </style>
 
@@ -1836,6 +1945,7 @@ class KrBabyKitPanel extends HTMLElement {
         ${bodyHtml}
       </div>
 
+      ${child ? this._renderMobileNav() : ""}
       ${this._renderModal()}
       ${this._renderSettingsDrawer()}
       ${this._renderLightbox()}
@@ -1846,6 +1956,13 @@ class KrBabyKitPanel extends HTMLElement {
 
   _bindEvents() {
     const root = this.shadowRoot;
+    root.querySelectorAll("[data-mobile-nav]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this._mobileNav = btn.getAttribute("data-mobile-nav");
+        this._render();
+        window.scrollTo?.({ top: 0, behavior: "smooth" });
+      });
+    });
     root.getElementById("btn-menu")?.addEventListener("click", () => this._openSidebar());
     root.getElementById("btn-add-child")?.addEventListener("click", () => {
       this._modal = { mode: "add" };

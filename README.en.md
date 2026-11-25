@@ -1,4 +1,4 @@
-# Korean Baby Kit
+# Baby Kit
 
 [English](README.en.md) | [한국어](README.md)
 
@@ -36,7 +36,7 @@ Requires Home Assistant 2024.11 or later and HACS.
 
 1. Open **HACS** → **Integrations** → top-right menu (⋮) → **Custom repositories**.
 2. Add `https://github.com/redchupa/kr_baby_kit` with category **Integration**.
-3. Search for **Korean Baby Kit**, download it, and restart Home Assistant.
+3. Search for **Baby Kit**, download it, and restart Home Assistant.
 
 ### 2. Register a child
 
@@ -50,7 +50,7 @@ Requires Home Assistant 2024.11 or later and HACS.
 | Sex | Male / Female | Used for sex-specific LMS tables |
 | Region / Standard | International (WHO) / South Korea | Selects growth chart and schedule tables |
 
-Add the integration again for additional children. You can edit name, birthdate, sex, or regional standard later under **Settings → Devices & Services → Korean Baby Kit → Configure** while preserving measurement history and completion marks.
+Add the integration again for additional children. You can edit name, birthdate, sex, or regional standard later under **Settings → Devices & Services → Baby Kit → Configure** while preserving measurement history and completion marks.
 
 ## Entities
 

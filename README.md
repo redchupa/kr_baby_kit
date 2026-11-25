@@ -1,4 +1,4 @@
-# Korean Baby Kit (한국 영유아 키트)
+# Baby Kit
 
 [한국어](README.md) | [English](README.en.md)
 
@@ -31,7 +31,7 @@ Home Assistant 2024.11 이상과 HACS가 필요합니다. (Home Assistant를 처
 
 1. Home Assistant에서 **HACS** → **Integrations** → 우측 상단 메뉴(⋮) → **사용자 지정 저장소**로 이동합니다.
 2. 저장소 URL에 `https://github.com/redchupa/kr_baby_kit` 을 입력하고 카테고리는 **Integration**을 선택해 추가합니다.
-3. HACS에서 **Korean Baby Kit**을 검색해 다운로드한 뒤 Home Assistant를 재시작합니다.
+3. HACS에서 **Baby Kit**을 검색해 다운로드한 뒤 Home Assistant를 재시작합니다.
 
 ### 2. 자녀 등록
 
@@ -45,7 +45,7 @@ Home Assistant 2024.11 이상과 HACS가 필요합니다. (Home Assistant를 처
 | 성별 | 남아 / 여아 | 성장도표 성별 기준 |
 | 지역 / 기준 | 대한민국 / 해외 (WHO) | 성장도표 및 일정 기준 |
 
-자녀가 여러 명이면 통합 추가를 반복하면 됩니다. 등록 후 이름·생년월일·성별·기준을 바꾸려면 **설정 → 기기 및 서비스 → 한국 영유아 키트 → 구성**에서 수정할 수 있으며, 기존 측정 기록과 완료 표시는 유지됩니다.
+자녀가 여러 명이면 통합 추가를 반복하면 됩니다. 등록 후 이름·생년월일·성별·기준을 바꾸려면 **설정 → 기기 및 서비스 → Baby Kit → 구성**에서 수정할 수 있으며, 기존 측정 기록과 완료 표시는 유지됩니다.
 
 ## 생성되는 엔티티
 

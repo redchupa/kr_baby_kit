@@ -4,6 +4,16 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.15.0] - 2026-11-25
+
+### Changed
+
+- **Global rename to `Baby Kit`**: Updated the integration display name in `manifest.json`, `hacs.json`, `README.md`, `README.en.md`, and `info.md` from `Korean Baby Kit` to `Baby Kit` (internal domain `kr_baby_kit` unchanged for seamless upgrades).
+- **Mobile-first UX overhaul**:
+  - Added a fixed bottom navigation bar on mobile screens (`All`, `Care`, `Growth`, `Diary`, `Schedule`) with `env(safe-area-inset-bottom)` support.
+  - Horizontal single-row scrollable chips, child pills, quick-log pills, and tabs on narrow screens so nothing wraps into cluttered rows.
+  - 16px mobile inputs (prevents iOS Safari auto-zoom), 44px touch targets, and responsive Bubble/Template card radii so multi-line text never clips on phones.
+
 ## [0.14.0] - 2026-11-25
 
 ### Added
