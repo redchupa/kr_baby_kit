@@ -11,6 +11,14 @@
 
 한국 기준과 해외 기준(WHO)을 모두 지원하며, 복잡한 외부 가입이나 API 키 없이 집 안의 Home Assistant에서 바로 사용할 수 있습니다.
 
+## 스크린샷
+
+테스트용 가상 아이(Demo Baby)로 찍은 화면입니다.
+
+| 오늘의 돌봄 기록과 성장 백분위 | 예방접종·검진 일정 |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/screenshots/panel-ko.png" alt="오늘의 돌봄 기록과 성장 백분위" width="100%"> | <img src="https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/screenshots/schedule-ko.png" alt="예방접종·검진 일정" width="100%"> |
+
 ## 주요 기능
 
 - **성장 백분위 (LMS)**: 키·몸무게·머리둘레를 입력하면 측정일 월령 기준으로 백분위와 Z-score를 계산합니다. 키와 몸무게는 또래 상위 퍼센트로 표시하고, 양쪽 극단이 모두 진료 참고 대상인 머리둘레·BMI·신장별 몸무게는 5% 미만 또는 95% 초과 시에만 켜지는 `binary_sensor`로 분리했습니다.

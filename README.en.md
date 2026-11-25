@@ -11,6 +11,14 @@ An all-in-one baby care companion for Home Assistant — track daily feedings, s
 
 Works offline with both International (WHO) and South Korea standards — no cloud accounts or external API keys needed.
 
+## Screenshots
+
+Taken with a made-up demo child.
+
+| Daily care log and growth percentiles | Immunization and checkup schedule |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/screenshots/panel-en.png" alt="Daily care log and growth percentiles" width="100%"> | <img src="https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/screenshots/schedule-en.png" alt="Immunization and checkup schedule" width="100%"> |
+
 ## Features
 
 - **LMS growth percentiles**: Enter height, weight, and head circumference to compute percentiles and Z-scores against the child's age at the time of measurement. Height and weight are reported as top-percent rank sensors; bi-directional indicators (head circumference, BMI, weight-for-length) are exposed as `binary_sensor` alerts that turn on only outside the 5th-95th statistical percentile band.
