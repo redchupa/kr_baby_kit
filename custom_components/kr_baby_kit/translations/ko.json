@@ -40,6 +40,20 @@
       "future_date": "미래 날짜는 사용할 수 없습니다."
     }
   },
+  "selector": {
+    "child_sex": {
+      "options": {
+        "male": "남아",
+        "female": "여아"
+      }
+    },
+    "profile": {
+      "options": {
+        "kr": "대한민국 (질병관리청 · NIP · 보육료)",
+        "global": "해외 (WHO 성장 표준)"
+      }
+    }
+  },
   "services": {
     "record_measurement": {
       "name": "측정값 기록",

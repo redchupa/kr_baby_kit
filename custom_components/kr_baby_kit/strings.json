@@ -40,6 +40,20 @@
       "future_date": "Future dates are not allowed."
     }
   },
+  "selector": {
+    "child_sex": {
+      "options": {
+        "male": "Male",
+        "female": "Female"
+      }
+    },
+    "profile": {
+      "options": {
+        "kr": "South Korea (KDCA, NIP, Childcare Tuition)",
+        "global": "International (WHO Growth Standards)"
+      }
+    }
+  },
   "services": {
     "record_measurement": {
       "name": "Record measurement",

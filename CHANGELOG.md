@@ -4,6 +4,12 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.10.2] - 2026-11-25
+
+### Changed
+
+- Localized the Config Flow / Options Flow dropdown options (`child_sex` and `profile`) via Home Assistant selector `translation_key` so English Home Assistant users see pure English options (`Male`/`Female`, `International (WHO Growth Standards)`, `South Korea (KDCA, NIP, Childcare Tuition)`) and Korean users see pure Korean options.
+
 ## [0.10.1] - 2026-11-25
 
 ### Fixed

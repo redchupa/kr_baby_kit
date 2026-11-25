@@ -16,7 +16,6 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
-    SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
@@ -42,23 +41,6 @@ from .const import (
 )
 
 
-_SEX_OPTIONS = [
-    SelectOptionDict(value=SEX_MALE, label="남아 / Male"),
-    SelectOptionDict(value=SEX_FEMALE, label="여아 / Female"),
-]
-
-_PROFILE_OPTIONS = [
-    SelectOptionDict(
-        value=PROFILE_KR,
-        label="대한민국 / South Korea (KDCA · NIP · 보육료)",
-    ),
-    SelectOptionDict(
-        value=PROFILE_GLOBAL,
-        label="해외 / International (WHO Growth Standards)",
-    ),
-]
-
-
 def _child_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
     d = defaults or {}
 
@@ -77,14 +59,16 @@ def _child_schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
             ),
             _key(CONF_CHILD_SEX): SelectSelector(
                 SelectSelectorConfig(
-                    options=_SEX_OPTIONS,
+                    options=[SEX_MALE, SEX_FEMALE],
                     mode=SelectSelectorMode.DROPDOWN,
+                    translation_key="child_sex",
                 )
             ),
             _key(CONF_PROFILE): SelectSelector(
                 SelectSelectorConfig(
-                    options=_PROFILE_OPTIONS,
+                    options=PROFILE_OPTIONS,
                     mode=SelectSelectorMode.DROPDOWN,
+                    translation_key="profile",
                 )
             ),
         }
