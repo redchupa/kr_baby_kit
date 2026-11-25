@@ -4,6 +4,24 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.17.0] - 2026-11-25
+
+### Security
+
+- **Authenticated private photo storage & serving (`media_view.py`, `storage.py`)**: Moved uploaded child profile avatars and diary photos out of unauthenticated `<config>/www/kr_baby_kit_media/` into `<config>/.storage/kr_baby_kit_media/<child_id>/` and served them through an authenticated `HomeAssistantView` (`/api/kr_baby_kit/media/{child_id}/{filename}`, `requires_auth = True`) using short-lived signed URLs (`async_sign_path`). Existing legacy `/local/kr_baby_kit_media/...` URLs are transparently normalized and cleaned up on deletion.
+- **Admin guard on child deletion (`websocket_api.py`)**: Enforced `@websocket_api.require_admin` on `kr_baby_kit/delete_child` so non-admin household accounts cannot accidentally wipe stored child records and photos.
+
+### Added
+
+- **Interactive LMS Growth Curve SVG Chart (`frontend/charts.js`, `growth.py`)**: Renders KDCA/WHO 3rd, 15th, 50th, 85th, and 97th percentile reference bands, a current-age vertical guide, and the child's recorded height/weight trajectory with a one-tap Height / Weight switcher.
+- **7-Day Sleep & Feeding Care Trend Chart (`frontend/charts.js`, `coordinator.py`)**: Grouped 7-day SVG bar chart for daily sleep hours and feeding volume (`mL`).
+- **5 Native Daily Care Home Assistant Sensors (`sensor.py`)**: Added `today_sleep_minutes`, `today_feeding_ml`, `today_diaper_count`, `last_temperature`, and `active_timers` (localized in EN/KO) plus the `get_daily_care_summary` Assist LLM tool (`llm_api.py`).
+
+### Changed
+
+- **Modal / Bottom-Sheet Care Logger & Draft Preservation (`frontend/panel.js`)**: Replaced the permanently-expanded inline care form on the main dashboard with clean tactile category launcher buttons that open a dedicated modal (or mobile bottom-sheet), balancing PC 2-column Bento card heights and preserving unsaved draft inputs (`_careDraft`, `_measureDraft`) across photo attachments, tab switches, and language toggles.
+- **Eliminated duplicate entry reload on `kr_baby_kit/update_child`**: Relies on the registered config entry update listener with `async_block_till_done()` instead of triggering a second reload.
+
 ## [0.16.2] - 2026-11-25
 
 ### Changed

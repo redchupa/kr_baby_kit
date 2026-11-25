@@ -120,6 +120,21 @@
       },
       "parent_share": {
         "name": "Monthly parent share"
+      },
+      "today_sleep_minutes": {
+        "name": "Today's sleep"
+      },
+      "today_feeding_ml": {
+        "name": "Today's feeding volume"
+      },
+      "today_diaper_count": {
+        "name": "Today's diapers"
+      },
+      "last_temperature": {
+        "name": "Last temperature"
+      },
+      "active_timers": {
+        "name": "Active care timers"
       }
     },
     "binary_sensor": {

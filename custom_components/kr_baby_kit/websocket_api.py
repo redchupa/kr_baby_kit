@@ -27,6 +27,9 @@ from .const import (
     disclaimer_for,
     is_korean,
 )
+from .coordinator import compute_today_summary, compute_weekly_care
+from .growth import age_months as calc_age_months
+from .media_view import sign_media_url
 from .schedule import event_to_dict
 from .storage import (
     async_add_activity,
@@ -52,54 +55,52 @@ def _default_median(coordinator, kind: str, step: float, lo: float, hi: float) -
     return min(hi, max(lo, rounded))
 
 
-def compute_today_summary(activities: list[dict[str, Any]], today_iso: str) -> dict[str, Any]:
-    """Compute Baby Buddy–style daily totals for ``today_iso`` (YYYY-MM-DD)."""
-    sleep_min = 0.0
-    feeding_count = 0
-    feeding_ml = 0.0
-    diaper_wet = 0
-    diaper_solid = 0
-    tummy_min = 0.0
-    pumping_ml = 0.0
-    last_temp_c: float | None = None
-    photo_count = 0
-
-    for item in activities:
-        if item.get("photo_url"):
-            photo_count += 1
-        ts = str(item.get("timestamp") or "")
-        if not ts.startswith(today_iso):
+async def _refresh_child_coordinator(hass: HomeAssistant, child_id: str) -> None:
+    for store in (hass.data.get(DOMAIN) or {}).values():
+        if not isinstance(store, dict):
             continue
-        kind = item.get("kind")
-        if kind == "sleep":
-            sleep_min += float(item.get("duration_min") or 0.0)
-        elif kind == "feeding":
-            feeding_count += 1
-            feeding_ml += float(item.get("amount_ml") or 0.0)
-        elif kind == "diaper":
-            dtype = item.get("diaper_type") or "wet"
-            if dtype in ("wet", "both"):
-                diaper_wet += 1
-            if dtype in ("solid", "both"):
-                diaper_solid += 1
-        elif kind == "tummy_time":
-            tummy_min += float(item.get("duration_min") or 0.0)
-        elif kind == "pumping":
-            pumping_ml += float(item.get("amount_ml") or 0.0)
-        elif kind == "temperature" and last_temp_c is None and item.get("temperature_c") is not None:
-            last_temp_c = float(item["temperature_c"])
+        coord = store.get("coordinator")
+        if coord is not None and coord.child_id == child_id:
+            await coord.async_refresh()
+            return
 
-    return {
-        "sleep_min": round(sleep_min, 1),
-        "feeding_count": feeding_count,
-        "feeding_ml": round(feeding_ml, 1),
-        "diaper_wet": diaper_wet,
-        "diaper_solid": diaper_solid,
-        "tummy_min": round(tummy_min, 1),
-        "pumping_ml": round(pumping_ml, 1),
-        "last_temp_c": last_temp_c,
-        "photo_count": photo_count,
-    }
+
+def _build_growth_curves(coordinator, records: list[dict[str, Any]], age_m: float) -> dict[str, Any]:
+    bd_iso = coordinator.birthdate.isoformat()
+    max_record_age = age_m
+    for rec in records:
+        if rec.get("date"):
+            try:
+                max_record_age = max(
+                    max_record_age, calc_age_months(bd_iso, rec["date"])
+                )
+            except Exception:
+                continue
+    horizon = min(228.0, max(24.0, round(max_record_age + 6.0, 1)))
+    out: dict[str, Any] = {}
+    for kind in ("height", "weight"):
+        bands = []
+        if hasattr(coordinator.chart, "curve_series"):
+            bands = coordinator.chart.curve_series(
+                coordinator.child_sex, kind, max_months=horizon, max_points=36
+            )
+        pts = []
+        for rec in records:
+            if rec.get(kind) is None or not rec.get("date"):
+                continue
+            try:
+                am = max(0.0, round(calc_age_months(bd_iso, rec["date"]), 2))
+                pts.append(
+                    {
+                        "date": rec["date"],
+                        "age_months": am,
+                        "value": round(float(rec[kind]), 2),
+                    }
+                )
+            except Exception:
+                continue
+        out[kind] = {"bands": bands, "points": pts}
+    return out
 
 
 def _serialize_child(
@@ -117,7 +118,9 @@ def _serialize_child(
     today = date.fromisoformat(data["today"]) if data.get("today") else dt_util.now().date()
     today_iso = today.isoformat()
     ko = is_korean(hass)
-    act_list = activities or []
+    act_list = activities if activities is not None else (data.get("activities") or [])
+    timer_map = timers if timers is not None else (data.get("timers") or {})
+    age_m = round(float(data.get("age_months", 0.0)), 2)
 
     specs = (
         ("height", 0.1, 30.0, 200.0),
@@ -143,6 +146,13 @@ def _serialize_child(
     def _dump(events):
         return [event_to_dict(e, today, completed) for e in events]
 
+    signed_activities = []
+    for item in act_list[:100]:
+        copied = dict(item)
+        if copied.get("photo_url"):
+            copied["photo_url"] = sign_media_url(hass, copied["photo_url"])
+        signed_activities.append(copied)
+
     return {
         "entry_id": entry_id,
         "child_id": coordinator.child_id,
@@ -150,8 +160,8 @@ def _serialize_child(
         "birthdate": coordinator.birthdate.isoformat(),
         "sex": coordinator.child_sex,
         "profile": coordinator.profile,
-        "avatar_url": avatar_url,
-        "age_months": round(float(data.get("age_months", 0.0)), 2),
+        "avatar_url": sign_media_url(hass, avatar_url),
+        "age_months": age_m,
         "today": today_iso,
         "inputs": inputs,
         "percentiles": data.get("percentiles") or {},
@@ -164,9 +174,11 @@ def _serialize_child(
         "checkups": _dump(coordinator.all_checkups),
         "oral_checkups": _dump(coordinator.all_oral_checkups),
         "records": records[-20:],
-        "activities": act_list[:100],
-        "timers": timers or {},
+        "growth_curves": _build_growth_curves(coordinator, records, age_m),
+        "activities": signed_activities,
+        "timers": timer_map,
         "today_summary": compute_today_summary(act_list, today_iso),
+        "weekly_care": compute_weekly_care(act_list, today),
         "attribution": attribution_for(coordinator.profile, korean=ko),
         "attribution_ko": attribution_for(coordinator.profile, korean=True),
         "attribution_en": attribution_for(coordinator.profile, korean=False),
@@ -299,7 +311,7 @@ async def ws_update_child(
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Update a child's name, birthdate, sex, or profile and reload."""
+    """Update a child's name, birthdate, sex, or profile (single reload via listener)."""
     entry = hass.config_entries.async_get_entry(msg["entry_id"])
     if entry is None or entry.domain != DOMAIN:
         connection.send_error(msg["id"], "not_found", "Child entry not found.")
@@ -328,8 +340,10 @@ async def ws_update_child(
         CONF_CHILD_SEX: msg["child_sex"],
         CONF_PROFILE: msg["profile"],
     }
-    hass.config_entries.async_update_entry(entry, data=new_data, title=name)
-    await hass.config_entries.async_reload(entry.entry_id)
+    if new_data != dict(entry.data) or entry.title != name:
+        # ``_async_update_listener`` registered in __init__.py reloads the entry once.
+        hass.config_entries.async_update_entry(entry, data=new_data, title=name)
+        await hass.async_block_till_done()
     connection.send_result(msg["id"], {"entry_id": entry.entry_id})
 
 
@@ -339,13 +353,14 @@ async def ws_update_child(
         vol.Required("entry_id"): str,
     }
 )
+@websocket_api.require_admin
 @websocket_api.async_response
 async def ws_delete_child(
     hass: HomeAssistant,
     connection: websocket_api.ActiveConnection,
     msg: dict[str, Any],
 ) -> None:
-    """Delete a child config entry (and its stored records via async_remove_entry)."""
+    """Delete a child config entry (admin-only to protect stored history)."""
     entry = hass.config_entries.async_get_entry(msg["entry_id"])
     if entry is None or entry.domain != DOMAIN:
         connection.send_error(msg["id"], "not_found", "Child entry not found.")
@@ -375,7 +390,7 @@ async def ws_set_avatar(
     except ValueError as err:
         connection.send_error(msg["id"], "invalid_photo", str(err))
         return
-    connection.send_result(msg["id"], {"avatar_url": url})
+    connection.send_result(msg["id"], {"avatar_url": sign_media_url(hass, url)})
 
 
 @websocket_api.websocket_command(
@@ -417,6 +432,9 @@ async def ws_add_activity(
     except ValueError as err:
         connection.send_error(msg["id"], "invalid_activity", str(err))
         return
+    await _refresh_child_coordinator(hass, msg["child_id"])
+    if entry.get("photo_url"):
+        entry = {**entry, "photo_url": sign_media_url(hass, entry["photo_url"])}
     connection.send_result(msg["id"], {"activity": entry})
 
 
@@ -435,6 +453,7 @@ async def ws_delete_activity(
 ) -> None:
     """Delete an activity log and any attached photo."""
     ok = await async_delete_activity(hass, msg["child_id"], msg["activity_id"])
+    await _refresh_child_coordinator(hass, msg["child_id"])
     connection.send_result(msg["id"], {"deleted": ok})
 
 
@@ -457,6 +476,7 @@ async def ws_start_timer(
     except ValueError as err:
         connection.send_error(msg["id"], "invalid_timer", str(err))
         return
+    await _refresh_child_coordinator(hass, msg["child_id"])
     connection.send_result(msg["id"], {"timer": timer_obj})
 
 
@@ -487,6 +507,7 @@ async def ws_stop_timer(
         amount_ml=msg.get("amount_ml"),
         method=msg.get("method"),
     )
+    await _refresh_child_coordinator(hass, msg["child_id"])
     connection.send_result(msg["id"], {"result": res})
 
 

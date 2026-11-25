@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
-from typing import Callable
+from typing import Any, Callable
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -35,9 +35,119 @@ from .schedule import (
     project_vaccine_events,
     upcoming,
 )
-from .storage import async_get_child_completions, async_load_records, latest
+from .storage import (
+    async_get_child_activities,
+    async_get_child_completions,
+    async_get_child_timers,
+    async_load_records,
+    latest,
+)
 
 UPCOMING_HORIZON_DAYS = 365 * 20
+
+
+def compute_today_summary(
+    activities: list[dict[str, Any]], today_iso: str
+) -> dict[str, Any]:
+    """Compute Baby Buddy-style daily totals for ``today_iso`` (YYYY-MM-DD)."""
+    sleep_min = 0.0
+    feeding_count = 0
+    feeding_ml = 0.0
+    diaper_count = 0
+    diaper_wet = 0
+    diaper_solid = 0
+    tummy_min = 0.0
+    pumping_ml = 0.0
+    last_temp_c: float | None = None
+    last_temp_at: str | None = None
+    photo_count = 0
+
+    for item in activities:
+        if item.get("photo_url"):
+            photo_count += 1
+        ts = str(item.get("timestamp") or "")
+        kind = item.get("kind")
+        if (
+            kind == "temperature"
+            and last_temp_c is None
+            and item.get("temperature_c") is not None
+        ):
+            # Track most recent temperature reading (today or earlier) in timestamp-sorted list.
+            if ts.startswith(today_iso) or last_temp_at is None:
+                pass
+        if not ts.startswith(today_iso):
+            continue
+        if kind == "sleep":
+            sleep_min += float(item.get("duration_min") or 0.0)
+        elif kind == "feeding":
+            feeding_count += 1
+            feeding_ml += float(item.get("amount_ml") or 0.0)
+        elif kind == "diaper":
+            diaper_count += 1
+            dtype = item.get("diaper_type") or "wet"
+            if dtype in ("wet", "both"):
+                diaper_wet += 1
+            if dtype in ("solid", "both"):
+                diaper_solid += 1
+        elif kind == "tummy_time":
+            tummy_min += float(item.get("duration_min") or 0.0)
+        elif kind == "pumping":
+            pumping_ml += float(item.get("amount_ml") or 0.0)
+        elif (
+            kind == "temperature"
+            and last_temp_c is None
+            and item.get("temperature_c") is not None
+        ):
+            last_temp_c = float(item["temperature_c"])
+            last_temp_at = ts
+
+    return {
+        "sleep_min": round(sleep_min, 1),
+        "feeding_count": feeding_count,
+        "feeding_ml": round(feeding_ml, 1),
+        "diaper_count": diaper_count,
+        "diaper_wet": diaper_wet,
+        "diaper_solid": diaper_solid,
+        "tummy_min": round(tummy_min, 1),
+        "pumping_ml": round(pumping_ml, 1),
+        "last_temp_c": last_temp_c,
+        "last_temp_at": last_temp_at,
+        "photo_count": photo_count,
+    }
+
+
+def compute_weekly_care(
+    activities: list[dict[str, Any]], today: date, days: int = 7
+) -> list[dict[str, Any]]:
+    """Aggregate daily sleep, feeding ml, and diaper counts for the past ``days`` days."""
+    buckets: dict[str, dict[str, Any]] = {}
+    for offset in range(days - 1, -1, -1):
+        d_iso = (today - timedelta(days=offset)).isoformat()
+        buckets[d_iso] = {
+            "date": d_iso,
+            "sleep_min": 0.0,
+            "feeding_ml": 0.0,
+            "feeding_count": 0,
+            "diaper_count": 0,
+        }
+    for item in activities:
+        d_iso = str(item.get("timestamp") or "")[:10]
+        bucket = buckets.get(d_iso)
+        if bucket is None:
+            continue
+        kind = item.get("kind")
+        if kind == "sleep":
+            bucket["sleep_min"] = round(
+                bucket["sleep_min"] + float(item.get("duration_min") or 0.0), 1
+            )
+        elif kind == "feeding":
+            bucket["feeding_count"] += 1
+            bucket["feeding_ml"] = round(
+                bucket["feeding_ml"] + float(item.get("amount_ml") or 0.0), 1
+            )
+        elif kind == "diaper":
+            bucket["diaper_count"] += 1
+    return list(buckets.values())
 
 
 class BabyKitCoordinator(DataUpdateCoordinator):
@@ -123,8 +233,11 @@ class BabyKitCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         records = (await async_load_records(self.hass)).get(self.child_id, [])
         completed = await async_get_child_completions(self.hass, self.child_id)
+        activities = await async_get_child_activities(self.hass, self.child_id)
+        timers = await async_get_child_timers(self.hass, self.child_id)
         today = dt_util.now().date()
-        age_m = age_months(self.birthdate.isoformat(), today.isoformat())
+        today_iso = today.isoformat()
+        age_m = age_months(self.birthdate.isoformat(), today_iso)
 
         percentiles: dict[str, dict] = {}
         for kind in ("height", "weight", "head"):
@@ -254,7 +367,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
         return {
             "profile": self.profile,
             "age_months": age_m,
-            "today": today.isoformat(),
+            "today": today_iso,
             "records": records,
             "percentiles": percentiles,
             "weight_for_length": weight_for_length,
@@ -265,6 +378,10 @@ class BabyKitCoordinator(DataUpdateCoordinator):
             "all_checkups": self.all_checkups,
             "all_oral_checkups": self.all_oral_checkups,
             "completed": completed,
+            "activities": activities,
+            "timers": timers,
+            "today_summary": compute_today_summary(activities, today_iso),
+            "weekly_care": compute_weekly_care(activities, today),
             "care_tuition": care_tuition,
             "bmi_raw": bmi_raw,
             "bmi_measured_at": bmi_measured_at,

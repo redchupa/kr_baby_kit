@@ -33,7 +33,8 @@ def _api_prompt(child_name: str, profile: str = PROFILE_KR) -> str:
             "upcoming infant/child checkups (영유아 건강검진), infant oral "
             "checkups (영유아 구강검진), which doses/checkups were already "
             "marked as done, the latest growth percentiles (KDCA 2017), "
-            "and the childcare tuition tier (표준보육료 / 정부지원금 / "
+            "today's daily care summary (sleep, feeding, diapers, temperature, "
+            "active timers), and the childcare tuition tier (표준보육료 / 정부지원금 / "
             "본인부담금) that applies to the child's age class. Always end "
             "medical-adjacent answers with a brief reminder that this is "
             "reference information, not medical advice. For tuition figures, "
@@ -44,9 +45,10 @@ def _api_prompt(child_name: str, profile: str = PROFILE_KR) -> str:
         f"You can answer questions about the child '{child_name}'. "
         "Use the available tools to look up upcoming routine immunizations "
         "(WHO reference), upcoming well-child and dental checkup milestones, "
-        "which doses/checkups were already marked as done, and the latest "
-        "growth percentiles (WHO Child Growth Standards). Always end "
-        "medical-adjacent answers with a brief reminder that this is "
+        "which doses/checkups were already marked as done, the latest "
+        "growth percentiles (WHO Child Growth Standards), and today's daily "
+        "care summary (sleep, feeding, diapers, temperature, active timers). "
+        "Always end medical-adjacent answers with a brief reminder that this is "
         "reference information, not medical advice."
     )
 
@@ -303,12 +305,41 @@ class ListUpcomingEventsTool(_BabyKitTool):
         }
 
 
+class GetDailyCareSummaryTool(_BabyKitTool):
+    name = "get_daily_care_summary"
+    description = (
+        "Return today's daily care summary (sleep minutes, feeding count/mL, "
+        "diaper changes, tummy time, latest temperature), 7-day care trend, "
+        "and currently running stopwatch timers for this child."
+    )
+    parameters = vol.Schema({})
+
+    async def async_call(
+        self,
+        hass: HomeAssistant,
+        tool_input: llm.ToolInput,
+        llm_context: llm.LLMContext,
+    ) -> dict[str, Any]:
+        coord = self._coordinator()
+        if coord is None or coord.data is None:
+            return {"error": "데이터 준비 중", "disclaimer": MEDICAL_DISCLAIMER}
+        return {
+            "child_name": coord.child_name,
+            "today": coord.data.get("today"),
+            "today_summary": coord.data.get("today_summary") or {},
+            "weekly_care": coord.data.get("weekly_care") or [],
+            "active_timers": coord.data.get("timers") or {},
+            "disclaimer": MEDICAL_DISCLAIMER,
+        }
+
+
 _TOOL_CLASSES = [
     GetNextVaccineTool,
     GetNextCheckupTool,
     GetNextOralCheckupTool,
     GetCompletedEventsTool,
     GetGrowthPercentilesTool,
+    GetDailyCareSummaryTool,
     GetCareTuitionTool,
     ListUpcomingEventsTool,
 ]

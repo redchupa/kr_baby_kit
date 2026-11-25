@@ -120,6 +120,21 @@
       },
       "parent_share": {
         "name": "보육료_월_본인부담금"
+      },
+      "today_sleep_minutes": {
+        "name": "돌봄_오늘_수면_시간"
+      },
+      "today_feeding_ml": {
+        "name": "돌봄_오늘_수유량"
+      },
+      "today_diaper_count": {
+        "name": "돌봄_오늘_기저귀_횟수"
+      },
+      "last_temperature": {
+        "name": "돌봄_최근_체온"
+      },
+      "active_timers": {
+        "name": "돌봄_실행_중_타이머"
       }
     },
     "binary_sensor": {

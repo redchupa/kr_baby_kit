@@ -1,12 +1,16 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.16.0";
+import { THEMES, getThemeCss } from "./themes.js?v=0.17.0";
 import {
   CARD_STYLES,
   ICONS,
   cardStyleCss,
   renderPercentileGauge,
   renderSparkline,
-} from "./cards.js?v=0.16.0";
+} from "./cards.js?v=0.17.0";
+import {
+  renderGrowthCurveChart,
+  renderWeeklyCareChart,
+} from "./charts.js?v=0.17.0";
 
 const PREFS_KEY = "kr_baby_kit_panel_prefs_v4";
 
@@ -106,6 +110,10 @@ const STRINGS = {
     attachPhoto: "사진 첨부",
     removePhoto: "사진 제거",
     logSave: "기록 저장",
+    logDetailTitle: "돌봄 · 사진 기록하기",
+    logDetailSub: "항목을 눌러 메모나 사진을 함께 남겨보세요",
+    curveHeight: "키 성장곡선",
+    curveWeight: "몸무게 성장곡선",
     timelineTitle: "타임라인 · 사진 일기",
     filterAll: "전체",
     filterPhotos: "사진만",
@@ -244,6 +252,10 @@ const STRINGS = {
     attachPhoto: "Attach photo",
     removePhoto: "Remove photo",
     logSave: "Save entry",
+    logDetailTitle: "Log care or photo",
+    logDetailSub: "Tap a category to add details or attach a photo",
+    curveHeight: "Height curve",
+    curveWeight: "Weight curve",
     timelineTitle: "Timeline & Photo Diary",
     filterAll: "All",
     filterPhotos: "Photos",
@@ -431,6 +443,10 @@ class KrBabyKitPanel extends HTMLElement {
     this._scheduleTab = this._prefs.defaultScheduleTab;
     this._mobileNav = "all"; // "all" | "care" | "growth" | "diary" | "schedule"
     this._careKind = "note";
+    this._careModalOpen = false;
+    this._careDraft = this._emptyCareDraft();
+    this._measureDraft = {};
+    this._growthChartKind = "height"; // "height" | "weight"
     this._timelineFilter = "all";
     this._pendingPhoto = null;
     this._lightboxUrl = null;
@@ -466,6 +482,17 @@ class KrBabyKitPanel extends HTMLElement {
   set narrow(val) {
     this._narrow = Boolean(val);
     this._render();
+  }
+
+  _emptyCareDraft() {
+    return {
+      method: "formula",
+      amount_ml: "",
+      duration_min: "",
+      diaper_type: "wet",
+      temperature_c: "",
+      note: "",
+    };
   }
 
   _isKo() {
@@ -657,6 +684,8 @@ class KrBabyKitPanel extends HTMLElement {
     try {
       await this._hass.callWS(payload);
       this._pendingPhoto = null;
+      this._careDraft = this._emptyCareDraft();
+      this._careModalOpen = false;
       await this._load();
       this._flash(this._t().saved);
     } catch (err) {
@@ -705,6 +734,7 @@ class KrBabyKitPanel extends HTMLElement {
     this._render();
     try {
       await this._hass.callService("kr_baby_kit", "record_measurement", payload);
+      delete this._measureDraft[child.child_id];
       await this._load();
       this._flash(this._t().saved);
     } catch (err) {
@@ -939,24 +969,25 @@ class KrBabyKitPanel extends HTMLElement {
   _renderCareFormFields() {
     const t = this._t();
     const k = this._careKind;
+    const d = this._careDraft || this._emptyCareDraft();
     if (k === "feeding") {
       return `
         <div class="grid-3">
           <label>${esc(t.methodLabel)}
-            <select name="method">
-              <option value="formula">${esc(t.methodFormula)}</option>
-              <option value="bottle">${esc(t.methodBottle)}</option>
-              <option value="breast_left">${esc(t.methodBreastL)}</option>
-              <option value="breast_right">${esc(t.methodBreastR)}</option>
-              <option value="breast_both">${esc(t.methodBreastB)}</option>
-              <option value="solid">${esc(t.methodSolid)}</option>
+            <select name="method" data-care-field="method">
+              <option value="formula" ${d.method === "formula" ? "selected" : ""}>${esc(t.methodFormula)}</option>
+              <option value="bottle" ${d.method === "bottle" ? "selected" : ""}>${esc(t.methodBottle)}</option>
+              <option value="breast_left" ${d.method === "breast_left" ? "selected" : ""}>${esc(t.methodBreastL)}</option>
+              <option value="breast_right" ${d.method === "breast_right" ? "selected" : ""}>${esc(t.methodBreastR)}</option>
+              <option value="breast_both" ${d.method === "breast_both" ? "selected" : ""}>${esc(t.methodBreastB)}</option>
+              <option value="solid" ${d.method === "solid" ? "selected" : ""}>${esc(t.methodSolid)}</option>
             </select>
           </label>
           <label>${esc(t.amountMl)}
-            <input name="amount_ml" type="number" step="5" min="0" max="1000" placeholder="140" />
+            <input name="amount_ml" data-care-field="amount_ml" type="number" step="5" min="0" max="1000" placeholder="140" value="${esc(d.amount_ml)}" />
           </label>
           <label>${esc(t.durationMin)}
-            <input name="duration_min" type="number" step="1" min="0" max="300" placeholder="15" />
+            <input name="duration_min" data-care-field="duration_min" type="number" step="1" min="0" max="300" placeholder="15" value="${esc(d.duration_min)}" />
           </label>
         </div>`;
     }
@@ -964,7 +995,7 @@ class KrBabyKitPanel extends HTMLElement {
       return `
         <div class="grid-3">
           <label>${esc(t.durationMin)}
-            <input name="duration_min" type="number" step="1" min="1" max="1440" placeholder="${k === "sleep" ? "90" : "15"}" />
+            <input name="duration_min" data-care-field="duration_min" type="number" step="1" min="1" max="1440" placeholder="${k === "sleep" ? "90" : "15"}" value="${esc(d.duration_min)}" />
           </label>
         </div>`;
     }
@@ -972,10 +1003,10 @@ class KrBabyKitPanel extends HTMLElement {
       return `
         <div class="grid-3">
           <label>${esc(t.diaperType)}
-            <select name="diaper_type">
-              <option value="wet">${esc(t.wet)}</option>
-              <option value="solid">${esc(t.solid)}</option>
-              <option value="both">${esc(t.both)}</option>
+            <select name="diaper_type" data-care-field="diaper_type">
+              <option value="wet" ${d.diaper_type === "wet" ? "selected" : ""}>${esc(t.wet)}</option>
+              <option value="solid" ${d.diaper_type === "solid" ? "selected" : ""}>${esc(t.solid)}</option>
+              <option value="both" ${d.diaper_type === "both" ? "selected" : ""}>${esc(t.both)}</option>
             </select>
           </label>
         </div>`;
@@ -984,10 +1015,10 @@ class KrBabyKitPanel extends HTMLElement {
       return `
         <div class="grid-3">
           <label>${esc(t.amountMl)}
-            <input name="amount_ml" type="number" step="5" min="0" max="1000" placeholder="120" />
+            <input name="amount_ml" data-care-field="amount_ml" type="number" step="5" min="0" max="1000" placeholder="120" value="${esc(d.amount_ml)}" />
           </label>
           <label>${esc(t.durationMin)}
-            <input name="duration_min" type="number" step="1" min="0" max="180" placeholder="20" />
+            <input name="duration_min" data-care-field="duration_min" type="number" step="1" min="0" max="180" placeholder="20" value="${esc(d.duration_min)}" />
           </label>
         </div>`;
     }
@@ -995,7 +1026,7 @@ class KrBabyKitPanel extends HTMLElement {
       return `
         <div class="grid-3">
           <label>${esc(t.tempC)}
-            <input name="temperature_c" type="number" step="0.1" min="34" max="43" placeholder="36.7" required />
+            <input name="temperature_c" data-care-field="temperature_c" type="number" step="0.1" min="34" max="43" placeholder="36.7" value="${esc(d.temperature_c)}" required />
           </label>
         </div>`;
     }
@@ -1095,36 +1126,34 @@ class KrBabyKitPanel extends HTMLElement {
 
           <div class="timer-grid">${timerCards}</div>
 
-          <div class="tabs care-tabs">
-            ${logKinds
-              .map(
-                (lk) =>
-                  `<button type="button" class="tab ${this._careKind === lk ? "active" : ""}" data-care-kind="${esc(lk)}">${esc(this._kindLabel(lk))}</button>`
-              )
-              .join("")}
+          <div class="care-launcher-box">
+            <div class="care-launcher-head">
+              <strong>${esc(t.logDetailTitle)}</strong>
+              <span class="muted small">${esc(t.logDetailSub)}</span>
+            </div>
+            <div class="care-launcher-grid">
+              ${logKinds
+                .map((lk) => {
+                  const toneMap = {
+                    note: "teal",
+                    feeding: "sky",
+                    sleep: "indigo",
+                    diaper: "amber",
+                    tummy_time: "green",
+                    pumping: "rose",
+                    temperature: "rose",
+                  };
+                  return `
+                    <button type="button" class="care-launch-btn" data-open-care="${esc(lk)}" ${this._busy ? "disabled" : ""}>
+                      <span class="icon-well tone-${toneMap[lk] || "blue"}">${ICONS[lk] || ICONS.note}</span>
+                      <span>${esc(this._kindLabel(lk))}</span>
+                    </button>`;
+                })
+                .join("")}
+            </div>
           </div>
 
-          <form id="care-form" class="care-form">
-            ${this._renderCareFormFields()}
-            <label>${esc(t.noteLabel)}
-              <textarea name="note" rows="2" placeholder="${esc(t.notePlaceholder)}"></textarea>
-            </label>
-            <div class="photo-row">
-              <label class="btn-outline small photo-upload-btn">
-                ${ICONS.camera} <span>${esc(t.attachPhoto)}</span>
-                <input type="file" id="care-photo-input" accept="image/*" hidden />
-              </label>
-              ${
-                this._pendingPhoto
-                  ? `<div class="photo-preview-wrap">
-                       <img src="${esc(this._pendingPhoto)}" class="photo-preview" alt="preview" />
-                       <button type="button" class="btn-outline small" id="btn-remove-photo">${esc(t.removePhoto)}</button>
-                     </div>`
-                  : ""
-              }
-              <button type="submit" class="btn-primary" style="margin-left:auto;" ${this._busy ? "disabled" : ""}>${esc(this._busy ? t.saving : t.logSave)}</button>
-            </div>
-          </form>
+          ${renderWeeklyCareChart(child.weekly_care, { ko })}
         </div>`;
     }
 
@@ -1196,25 +1225,30 @@ class KrBabyKitPanel extends HTMLElement {
     }
 
     if (secId === "measurements") {
+      const mDraft = this._measureDraft[child.child_id] || {};
+      const hVal = mDraft.height ?? child.inputs?.height?.value ?? "";
+      const wVal = mDraft.weight ?? child.inputs?.weight?.value ?? "";
+      const headVal = mDraft.head ?? child.inputs?.head?.value ?? "";
+      const dateVal = mDraft.date ?? child.today ?? "";
       return `
         <div class="card section-card ${wideClass}" data-section="measurements">
           <h3>${esc(t.measurements)}</h3>
           <form id="measure-form">
             <div class="grid-2">
               <label>${esc(t.height)}
-                <input name="height" type="number" step="0.1" min="30" max="200" value="${esc(child.inputs?.height?.value ?? "")}" />
+                <input name="height" data-measure-field="height" type="number" step="0.1" min="30" max="200" value="${esc(hVal)}" />
                 <span class="hint">${esc(child.inputs?.height?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.height?.measured_at || ""))}</span>
               </label>
               <label>${esc(t.weight)}
-                <input name="weight" type="number" step="0.05" min="1" max="100" value="${esc(child.inputs?.weight?.value ?? "")}" />
+                <input name="weight" data-measure-field="weight" type="number" step="0.05" min="1" max="100" value="${esc(wVal)}" />
                 <span class="hint">${esc(child.inputs?.weight?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.weight?.measured_at || ""))}</span>
               </label>
               <label>${esc(t.head)}
-                <input name="head" type="number" step="0.1" min="25" max="65" value="${esc(child.inputs?.head?.value ?? "")}" />
+                <input name="head" data-measure-field="head" type="number" step="0.1" min="25" max="65" value="${esc(headVal)}" />
                 <span class="hint">${esc(child.inputs?.head?.is_default_median ? t.defaultMedian : t.recordedAt(child.inputs?.head?.measured_at || ""))}</span>
               </label>
               <label>${esc(t.measureDate)}
-                <input name="date" type="date" value="${esc(child.today || "")}" />
+                <input name="date" data-measure-field="date" type="date" value="${esc(dateVal)}" />
                 <span class="hint">&nbsp;</span>
               </label>
             </div>
@@ -1235,6 +1269,12 @@ class KrBabyKitPanel extends HTMLElement {
       const sumKey = ko ? "summary_ko" : "summary_en";
       const hSpark = renderSparkline(child.records, "height", "cm");
       const wSpark = renderSparkline(child.records, "weight", "kg");
+      const cKind = this._growthChartKind === "weight" ? "weight" : "height";
+      const curveSvg = renderGrowthCurveChart(
+        child.growth_curves?.[cKind],
+        child.age_months,
+        { unit: cKind === "weight" ? "kg" : "cm", ko }
+      );
 
       const gaugeItem = (icon, tone, title, valText, pct, summary, warnBand = false) => `
         <div class="gauge-card">
@@ -1256,12 +1296,19 @@ class KrBabyKitPanel extends HTMLElement {
 
       return `
         <div class="card section-card ${wideClass}" data-section="growth">
-          <h3>${esc(t.growthSummary)}</h3>
+          <div class="card-head">
+            <h3>${esc(t.growthSummary)}</h3>
+            <div class="curve-tabs">
+              <button type="button" class="quick-pill ${cKind === "height" ? "active-pill" : ""}" data-curve-kind="height">${esc(t.curveHeight)}</button>
+              <button type="button" class="quick-pill ${cKind === "weight" ? "active-pill" : ""}" data-curve-kind="weight">${esc(t.curveWeight)}</button>
+            </div>
+          </div>
+          ${curveSvg}
           ${
             !hInfo && !wInfo && !headInfo
-              ? `<p class="muted">${esc(t.noMeasureYet)}</p>`
+              ? `<p class="muted" style="margin-top:10px;">${esc(t.noMeasureYet)}</p>`
               : `
-                <div class="gauge-grid">
+                <div class="gauge-grid" style="margin-top:12px;">
                   ${gaugeItem(ICONS.ruler, "blue", t.height, hInfo ? `${hInfo.value} cm` : "-", hInfo?.statistical_percentile, hInfo?.[sumKey])}
                   ${gaugeItem(ICONS.scale, "teal", t.weight, wInfo ? `${wInfo.value} kg` : "-", wInfo?.statistical_percentile, wInfo?.[sumKey])}
                   ${gaugeItem(ICONS.shield, "indigo", t.concernHead, headInfo ? `${headInfo.value} cm` : "-", headInfo?.statistical_percentile, headInfo?.[sumKey], true)}
@@ -1511,6 +1558,51 @@ class KrBabyKitPanel extends HTMLElement {
       </div>`;
   }
 
+  _renderCareModal() {
+    if (!this._careModalOpen || !this._currentChild()) return "";
+    const t = this._t();
+    const d = this._careDraft || this._emptyCareDraft();
+    const logKinds = ["note", "feeding", "sleep", "diaper", "tummy_time", "pumping", "temperature"];
+    return `
+      <div class="backdrop care-modal-backdrop" id="care-backdrop">
+        <div class="modal care-modal" role="dialog" aria-modal="true">
+          <div class="card-head" style="margin-bottom:10px;">
+            <h3>${esc(t.logDetailTitle)}</h3>
+            <button type="button" class="btn-outline small" id="btn-close-care">${esc(t.close)}</button>
+          </div>
+          <div class="tabs care-tabs">
+            ${logKinds
+              .map(
+                (lk) =>
+                  `<button type="button" class="tab ${this._careKind === lk ? "active" : ""}" data-care-kind="${esc(lk)}">${esc(this._kindLabel(lk))}</button>`
+              )
+              .join("")}
+          </div>
+          <form id="care-form" class="care-form">
+            ${this._renderCareFormFields()}
+            <label>${esc(t.noteLabel)}
+              <textarea name="note" data-care-field="note" rows="3" placeholder="${esc(t.notePlaceholder)}">${esc(d.note)}</textarea>
+            </label>
+            <div class="photo-row">
+              <label class="btn-outline small photo-upload-btn">
+                ${ICONS.camera} <span>${esc(t.attachPhoto)}</span>
+                <input type="file" id="care-photo-input" accept="image/*" hidden />
+              </label>
+              ${
+                this._pendingPhoto
+                  ? `<div class="photo-preview-wrap">
+                       <img src="${esc(this._pendingPhoto)}" class="photo-preview" alt="preview" />
+                       <button type="button" class="btn-outline small" id="btn-remove-photo">${esc(t.removePhoto)}</button>
+                     </div>`
+                  : ""
+              }
+              <button type="submit" class="btn-primary" style="margin-left:auto;" ${this._busy ? "disabled" : ""}>${esc(this._busy ? t.saving : t.logSave)}</button>
+            </div>
+          </form>
+        </div>
+      </div>`;
+  }
+
   _renderLightbox() {
     if (!this._lightboxUrl) return "";
     return `
@@ -1737,6 +1829,43 @@ class KrBabyKitPanel extends HTMLElement {
           border: 1px solid var(--bk-input-border); cursor: pointer;
         }
         .quick-pill:hover { border-color: var(--bk-accent); color: var(--bk-accent); }
+        .quick-pill.active-pill { background: var(--bk-accent); color: var(--bk-accent-text); border-color: transparent; }
+        .curve-tabs { display: flex; gap: 6px; }
+        .care-launcher-box {
+          padding: 12px 14px; border-radius: 18px; background: var(--bk-surface);
+          border: 1px solid rgba(128, 128, 128, 0.14); display: flex; flex-direction: column; gap: 10px;
+        }
+        .care-launcher-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+        .care-launcher-grid {
+          display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px;
+        }
+        .care-launch-btn {
+          display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+          padding: 10px 6px; border-radius: 16px; border: 1px solid rgba(128, 128, 128, 0.15);
+          background: var(--bk-card); color: var(--bk-text); cursor: pointer;
+          font-size: 12px; font-weight: 600; font-family: inherit; transition: transform 0.12s ease, border-color 0.12s ease;
+        }
+        .care-launch-btn:hover { border-color: var(--bk-accent); transform: translateY(-1px); }
+        .care-modal {
+          max-width: 520px; background: var(--bk-card); color: var(--bk-text);
+          border: var(--bk-card-border); border-radius: var(--bk-card-radius);
+          font-family: var(--bk-font-body);
+        }
+        .curve-chart-box, .weekly-chart-box {
+          padding: 12px 14px; border-radius: 18px; background: var(--bk-surface);
+          border: 1px solid rgba(128, 128, 128, 0.12);
+        }
+        .weekly-chart-box { margin-top: 12px; }
+        .weekly-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+        .curve-svg { width: 100%; height: auto; max-height: 225px; display: block; }
+        .weekly-svg { width: 100%; height: auto; max-height: 130px; display: block; }
+        .curve-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--bk-muted); margin-top: 4px; }
+        .curve-legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .lg-band { width: 12px; height: 8px; border-radius: 3px; background: var(--bk-accent); opacity: 0.25; display: inline-block; }
+        .lg-mid { width: 12px; height: 2px; background: var(--bk-accent); opacity: 0.7; display: inline-block; }
+        .lg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bk-accent); display: inline-block; }
+        .lg-sleep { width: 9px; height: 9px; border-radius: 3px; background: #6366f1; display: inline-block; }
+        .lg-feed { width: 9px; height: 9px; border-radius: 3px; background: #0ea5e9; display: inline-block; }
         .kpi-grid {
           display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           gap: 10px; margin-bottom: 14px;
@@ -1933,6 +2062,12 @@ class KrBabyKitPanel extends HTMLElement {
           .sub-btn { width: 40px; height: 40px; }
           .tl-photo { max-width: 100%; max-height: 220px; }
           .drawer { max-width: 100vw; }
+          .care-modal-backdrop { align-items: flex-end; padding: 0; }
+          .care-modal {
+            max-width: 100vw; border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+            padding: 18px 16px calc(20px + env(safe-area-inset-bottom));
+          }
+          .care-launcher-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
           .theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
           .mobile-nav {
             display: grid;
@@ -2002,6 +2137,7 @@ class KrBabyKitPanel extends HTMLElement {
       </div>
 
       ${child ? this._renderMobileNav() : ""}
+      ${this._renderCareModal()}
       ${this._renderModal()}
       ${this._renderSettingsDrawer()}
       ${this._renderLightbox()}
@@ -2057,9 +2193,53 @@ class KrBabyKitPanel extends HTMLElement {
     root.querySelectorAll("[data-cancel-timer]").forEach((btn) => {
       btn.addEventListener("click", () => this._stopTimer(btn.getAttribute("data-cancel-timer"), false));
     });
+    root.querySelectorAll("[data-open-care]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this._careKind = btn.getAttribute("data-open-care");
+        this._careModalOpen = true;
+        this._error = null;
+        this._render();
+      });
+    });
+    root.getElementById("btn-close-care")?.addEventListener("click", () => {
+      this._careModalOpen = false;
+      this._render();
+    });
+    root.getElementById("care-backdrop")?.addEventListener("click", (e) => {
+      if (e.target.id === "care-backdrop") {
+        this._careModalOpen = false;
+        this._render();
+      }
+    });
     root.querySelectorAll("[data-care-kind]").forEach((btn) => {
       btn.addEventListener("click", () => {
         this._careKind = btn.getAttribute("data-care-kind");
+        this._render();
+      });
+    });
+    root.querySelectorAll("[data-care-field]").forEach((el) => {
+      const update = () => {
+        const key = el.getAttribute("data-care-field");
+        if (key) this._careDraft[key] = el.value;
+      };
+      el.addEventListener("input", update);
+      el.addEventListener("change", update);
+    });
+    root.querySelectorAll("[data-measure-field]").forEach((el) => {
+      const update = () => {
+        const child = this._currentChild();
+        const key = el.getAttribute("data-measure-field");
+        if (child && key) {
+          this._measureDraft[child.child_id] = this._measureDraft[child.child_id] || {};
+          this._measureDraft[child.child_id][key] = el.value;
+        }
+      };
+      el.addEventListener("input", update);
+      el.addEventListener("change", update);
+    });
+    root.querySelectorAll("[data-curve-kind]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this._growthChartKind = btn.getAttribute("data-curve-kind");
         this._render();
       });
     });
@@ -2180,6 +2360,8 @@ class KrBabyKitPanel extends HTMLElement {
       btn.addEventListener("click", () => {
         this._selectedId = btn.getAttribute("data-select-child");
         this._pendingPhoto = null;
+        this._careDraft = this._emptyCareDraft();
+        this._careModalOpen = false;
         this._render();
       });
     });

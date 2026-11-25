@@ -117,6 +117,55 @@ class GrowthChart:
         """Return (z_score, percentile_0_100) for an age-indexed measurement."""
         return _percentile_from(self._table.get((sex, kind)), age_months, value)
 
+    def value_at_z(
+        self, sex: str, kind: str, age_months: float, z: float
+    ) -> float | None:
+        """Inverse LMS: return physical value at ``z`` SD for ``age_months``."""
+        point = _lookup(self._table.get((sex, kind)), age_months)
+        if point is None:
+            return None
+        return _lms_value(z, point.L, point.M, point.S)
+
+    def curve_series(
+        self,
+        sex: str,
+        kind: str,
+        *,
+        max_months: float = 36.0,
+        max_points: int = 36,
+    ) -> list[dict[str, float]]:
+        """Sampled P3/P15/P50/P85/P97 curve points from birth up to ``max_months``."""
+        points = self._table.get((sex, kind))
+        if not points:
+            return []
+        upper = max(1.0, min(float(max_months), points[-1].x))
+        n = max(12, int(max_points))
+        step = upper / (n - 1)
+        ages = [round(i * step, 2) for i in range(n - 1)] + [round(upper, 2)]
+        z_bands = (
+            ("p3", -1.88079),
+            ("p15", -1.03643),
+            ("p50", 0.0),
+            ("p85", 1.03643),
+            ("p97", 1.88079),
+        )
+        out: list[dict[str, float]] = []
+        for age_m in ages:
+            pt = _lookup(points, age_m)
+            if pt is None:
+                continue
+            row: dict[str, float] = {"age_months": age_m}
+            ok = True
+            for key, z in z_bands:
+                val = _lms_value(z, pt.L, pt.M, pt.S)
+                if val is None:
+                    ok = False
+                    break
+                row[key] = round(val, 2)
+            if ok:
+                out.append(row)
+        return out
+
     def weight_for_length_percentile(
         self,
         sex: str,
@@ -188,6 +237,17 @@ def _lms_z(value: float, L: float, M: float, S: float) -> float | None:
     if L == 0:
         return math.log(value / M) / S
     return ((value / M) ** L - 1.0) / (L * S)
+
+
+def _lms_value(z: float, L: float, M: float, S: float) -> float | None:
+    if M <= 0 or S <= 0:
+        return None
+    if L == 0:
+        return M * math.exp(S * z)
+    base = 1.0 + L * S * z
+    if base <= 0:
+        return None
+    return M * (base ** (1.0 / L))
 
 
 def _normal_cdf(z: float) -> float:

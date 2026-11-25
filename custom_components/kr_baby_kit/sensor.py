@@ -75,6 +75,15 @@ async def async_setup_entry(
         for tuition_field, slug in _CARE_TUITION_FIELDS:
             entities.append(CareTuitionSensor(coordinator, entry, tuition_field, slug))
     entities.append(BMIRawSensor(coordinator, entry))
+    entities.extend(
+        [
+            TodaySleepSensor(coordinator, entry),
+            TodayFeedingVolumeSensor(coordinator, entry),
+            TodayDiaperCountSensor(coordinator, entry),
+            LastTemperatureSensor(coordinator, entry),
+            ActiveTimersSensor(coordinator, entry),
+        ]
+    )
     async_add_entities(entities)
 
 
@@ -404,4 +413,135 @@ class BMIRawSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
             "summary_ko": summary_ko,
             "summary_en": summary_en,
             "disclaimer": disclaimer_for(korean=ko),
+        }
+
+
+class _BaseCareSensor(CoordinatorEntity[BabyKitCoordinator], SensorEntity):
+    """Common base for Baby Buddy-style daily care sensors."""
+
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: BabyKitCoordinator, entry: ConfigEntry) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = (
+            f"{DOMAIN}_{coordinator.child_id}_{self._attr_translation_key}"
+        )
+
+    @property
+    def device_info(self):
+        return child_device(self.coordinator.entry)
+
+    def _summary(self) -> dict:
+        return (self.coordinator.data or {}).get("today_summary") or {}
+
+
+class TodaySleepSensor(_BaseCareSensor):
+    """Total sleep logged today (minutes)."""
+
+    _attr_translation_key = "today_sleep_minutes"
+    _attr_native_unit_of_measurement = "min"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:power-sleep"
+
+    @property
+    def native_value(self) -> float:
+        return round(float(self._summary().get("sleep_min") or 0.0), 1)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        mins = float(self._summary().get("sleep_min") or 0.0)
+        return {
+            "sleep_hours": round(mins / 60.0, 2),
+            "tummy_time_minutes": round(
+                float(self._summary().get("tummy_min") or 0.0), 1
+            ),
+        }
+
+
+class TodayFeedingVolumeSensor(_BaseCareSensor):
+    """Total milk/formula volume logged today (mL)."""
+
+    _attr_translation_key = "today_feeding_ml"
+    _attr_native_unit_of_measurement = "mL"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:baby-bottle-outline"
+
+    @property
+    def native_value(self) -> float:
+        return round(float(self._summary().get("feeding_ml") or 0.0), 1)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        s = self._summary()
+        return {
+            "feeding_count": int(s.get("feeding_count") or 0),
+            "pumping_ml": round(float(s.get("pumping_ml") or 0.0), 1),
+        }
+
+
+class TodayDiaperCountSensor(_BaseCareSensor):
+    """Total diaper changes logged today."""
+
+    _attr_translation_key = "today_diaper_count"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:human-baby-changing-table"
+
+    @property
+    def native_value(self) -> int:
+        s = self._summary()
+        if "diaper_count" in s:
+            return int(s["diaper_count"] or 0)
+        return int(s.get("diaper_wet") or 0) + int(s.get("diaper_solid") or 0)
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        s = self._summary()
+        return {
+            "wet": int(s.get("diaper_wet") or 0),
+            "solid": int(s.get("diaper_solid") or 0),
+        }
+
+
+class LastTemperatureSensor(_BaseCareSensor):
+    """Latest body temperature logged today (°C)."""
+
+    _attr_translation_key = "last_temperature"
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = "°C"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_suggested_display_precision = 1
+
+    @property
+    def native_value(self) -> float | None:
+        val = self._summary().get("last_temp_c")
+        return round(float(val), 1) if val is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {
+            "recorded_at": self._summary().get("last_temp_at"),
+        }
+
+
+class ActiveTimersSensor(_BaseCareSensor):
+    """Number of currently running live care timers."""
+
+    _attr_translation_key = "active_timers"
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:timer-outline"
+
+    @property
+    def native_value(self) -> int:
+        timers = (self.coordinator.data or {}).get("timers") or {}
+        return sum(1 for v in timers.values() if isinstance(v, dict) and v.get("started_at"))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        timers = (self.coordinator.data or {}).get("timers") or {}
+        running = sorted(
+            k for k, v in timers.items() if isinstance(v, dict) and v.get("started_at")
+        )
+        return {
+            "running_kinds": running,
+            "timers": timers,
         }

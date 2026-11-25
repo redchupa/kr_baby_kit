@@ -326,30 +326,43 @@ def _write_photo_sync(base_dir: Path, child_dir: str, raw: bytes, ext: str) -> s
     target_dir.mkdir(parents=True, exist_ok=True)
     fname = f"{uuid.uuid4().hex[:16]}{ext}"
     (target_dir / fname).write_bytes(raw)
-    return f"/local/{MEDIA_SUBDIR}/{child_dir}/{fname}"
+    return f"/api/{DOMAIN}/media/{child_dir}/{fname}"
 
 
-def _delete_photo_sync(base_dir: Path, photo_url: str) -> None:
-    prefix = f"/local/{MEDIA_SUBDIR}/"
-    if not photo_url or not photo_url.startswith(prefix):
+def _delete_photo_sync(roots: tuple[Path, ...], photo_url: str) -> None:
+    if not photo_url:
         return
-    rel = photo_url[len(prefix):]
-    target = (base_dir / rel).resolve()
-    try:
-        target.relative_to(base_dir.resolve())
-    except ValueError:
+    rel: str | None = None
+    for prefix in (f"/api/{DOMAIN}/media/", f"/local/{MEDIA_SUBDIR}/"):
+        if photo_url.startswith(prefix):
+            rel = photo_url[len(prefix) :]
+            break
+    if not rel:
         return
-    if target.is_file():
-        target.unlink(missing_ok=True)
+    for base_dir in roots:
+        target = (base_dir / rel).resolve()
+        try:
+            target.relative_to(base_dir.resolve())
+        except ValueError:
+            continue
+        if target.is_file():
+            target.unlink(missing_ok=True)
+
+
+def _media_roots(hass: HomeAssistant) -> tuple[Path, Path]:
+    return (
+        Path(hass.config.path(".storage", MEDIA_SUBDIR)),
+        Path(hass.config.path("www", MEDIA_SUBDIR)),
+    )
 
 
 async def async_save_photo(
     hass: HomeAssistant, child_id: str, data_url: str
 ) -> str:
-    """Persist an uploaded photo under ``<config>/www/kr_baby_kit_media/<child_id>/``."""
+    """Persist an uploaded photo privately under ``<config>/.storage/kr_baby_kit_media/<child_id>/``."""
     raw, ext = _decode_data_url(data_url)
     child_dir = _safe_child_dir_name(child_id)
-    base_dir = Path(hass.config.path("www", MEDIA_SUBDIR))
+    base_dir = Path(hass.config.path(".storage", MEDIA_SUBDIR))
     return await hass.async_add_executor_job(
         _write_photo_sync, base_dir, child_dir, raw, ext
     )
@@ -367,7 +380,7 @@ async def async_set_child_avatar(
 ) -> str | None:
     """Save (or clear when None) a child's profile photo URL."""
     new_url = await async_save_photo(hass, child_id, data_url) if data_url else None
-    base_dir = Path(hass.config.path("www", MEDIA_SUBDIR))
+    roots = _media_roots(hass)
     async with _lock(hass):
         data = await _profiles_store(hass).async_load() or {}
         meta = dict(data.get(child_id) or {})
@@ -383,7 +396,7 @@ async def async_set_child_avatar(
                 data.pop(child_id, None)
         await _profiles_store(hass).async_save(data)
     if old_url and old_url != new_url:
-        await hass.async_add_executor_job(_delete_photo_sync, base_dir, old_url)
+        await hass.async_add_executor_job(_delete_photo_sync, roots, old_url)
     return new_url
 
 
@@ -464,7 +477,7 @@ async def async_delete_activity(
     hass: HomeAssistant, child_id: str, activity_id: str
 ) -> bool:
     """Delete an activity log and any attached photo file."""
-    base_dir = Path(hass.config.path("www", MEDIA_SUBDIR))
+    roots = _media_roots(hass)
     removed_photo: str | None = None
     found = False
     async with _lock(hass):
@@ -484,7 +497,7 @@ async def async_delete_activity(
                 data.pop(child_id, None)
             await _activities_store(hass).async_save(data)
     if removed_photo:
-        await hass.async_add_executor_job(_delete_photo_sync, base_dir, removed_photo)
+        await hass.async_add_executor_job(_delete_photo_sync, roots, removed_photo)
     return found
 
 
@@ -578,8 +591,9 @@ async def async_remove_child_data(hass: HomeAssistant, child_id: str) -> None:
 
     try:
         child_dir = _safe_child_dir_name(child_id)
-        target = Path(hass.config.path("www", MEDIA_SUBDIR)) / child_dir
-        await hass.async_add_executor_job(shutil.rmtree, target, True)
+        for base in _media_roots(hass):
+            target = base / child_dir
+            await hass.async_add_executor_job(shutil.rmtree, target, True)
     except Exception:
         pass
 

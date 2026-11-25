@@ -14,6 +14,7 @@ from .const import (
     PROFILE_KR,
 )
 from .llm_api import async_cleanup_llm_api, async_setup_llm_api
+from .media_view import async_register_media_view
 from .panel import async_register_panel, async_unregister_panel
 from .services import async_register_services, async_unregister_services
 from .websocket_api import async_register_websocket_api
@@ -72,6 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     async_register_services(hass)
     async_register_websocket_api(hass)
+    async_register_media_view(hass)
     await async_register_panel(hass)
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     # Armed last so a failed setup never leaves a timer behind.

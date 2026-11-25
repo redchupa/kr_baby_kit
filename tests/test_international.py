@@ -156,9 +156,11 @@ def test_default_birthdate_and_panel_assets():
     panel_js = FRONTEND_DIR / "panel.js"
     themes_js = FRONTEND_DIR / "themes.js"
     cards_js = FRONTEND_DIR / "cards.js"
+    charts_js = FRONTEND_DIR / "charts.js"
     assert panel_js.is_file()
     assert themes_js.is_file()
     assert cards_js.is_file()
+    assert charts_js.is_file()
     js_text = panel_js.read_text(encoding="utf-8")
     themes_text = themes_js.read_text(encoding="utf-8")
     cards_text = cards_js.read_text(encoding="utf-8")
@@ -189,6 +191,8 @@ def test_default_birthdate_and_panel_assets():
     assert serialized["birthdate"] == "2024-07-01"
     assert serialized["inputs"]["height"]["is_default_median"] is True
     assert serialized["inputs"]["height"]["value"] is not None
+    assert len(serialized["growth_curves"]["height"]["bands"]) >= 10
+    assert len(serialized["weekly_care"]) == 7
 
 
 def test_concern_binary_sensors_stay_available_without_measurements():
@@ -246,3 +250,104 @@ def test_today_summary_and_photo_decoder():
     assert raw.startswith(b"\xff\xd8")
     with pytest.raises(ValueError):
         _decode_data_url("data:text/plain;base64,aGVsbG8=")
+
+
+def test_lms_inverse_curve_series_and_weekly_care():
+    from custom_components.kr_baby_kit.coordinator import compute_weekly_care
+
+    for profile in (PROFILE_KR, PROFILE_GLOBAL):
+        chart = GrowthChart.from_profile(profile)
+        val_p50 = chart.value_at_z("female", "height", 24.0, 0.0)
+        assert val_p50 is not None
+        z_back, pct_back = chart.percentile("female", "height", 24.0, val_p50)
+        assert z_back is not None and abs(z_back) < 0.02
+        assert pct_back is not None and 49.0 <= pct_back <= 51.0
+
+        bands = chart.curve_series("female", "weight", max_months=36.0, max_points=25)
+        assert len(bands) >= 12
+        for b in bands:
+            assert b["p3"] < b["p15"] < b["p50"] < b["p85"] < b["p97"]
+
+    activities = [
+        {"id": "1", "kind": "sleep", "timestamp": "2026-11-23T08:00:00", "duration_min": 120.0},
+        {"id": "2", "kind": "feeding", "timestamp": "2026-11-25T09:00:00", "amount_ml": 180.0},
+        {"id": "3", "kind": "diaper", "timestamp": "2026-11-25T10:00:00", "diaper_type": "wet"},
+    ]
+    weekly = compute_weekly_care(activities, date(2026, 11, 25), days=7)
+    assert len(weekly) == 7
+    assert weekly[-1]["date"] == "2026-11-25"
+    assert weekly[-1]["feeding_ml"] == 180.0
+    assert weekly[-1]["diaper_count"] == 1
+    day_23 = next(d for d in weekly if d["date"] == "2026-11-23")
+    assert day_23["sleep_min"] == 120.0
+
+
+def test_authenticated_media_url_helpers_and_care_sensors():
+    from types import SimpleNamespace
+    from custom_components.kr_baby_kit.media_view import (
+        MEDIA_API_PREFIX,
+        _is_safe_segment,
+        normalize_media_url,
+        sign_media_url,
+    )
+    from custom_components.kr_baby_kit.sensor import (
+        ActiveTimersSensor,
+        LastTemperatureSensor,
+        TodayDiaperCountSensor,
+        TodayFeedingVolumeSensor,
+        TodaySleepSensor,
+    )
+
+    assert _is_safe_segment("child_01") is True
+    assert _is_safe_segment("photo_ab12.jpg", allow_dot=True) is True
+    assert _is_safe_segment("photo_ab12.jpg", allow_dot=False) is False
+    assert _is_safe_segment("..", allow_dot=True) is False
+    assert _is_safe_segment("a/b", allow_dot=True) is False
+
+    legacy = "/local/kr_baby_kit_media/child_a/abc123.jpg"
+    normalized = normalize_media_url(legacy)
+    assert normalized == f"{MEDIA_API_PREFIX}/child_a/abc123.jpg"
+    hass_ko = SimpleNamespace(config=SimpleNamespace(language="ko"))
+    hass_en = SimpleNamespace(config=SimpleNamespace(language="en"))
+    assert sign_media_url(hass_ko, legacy) == normalized
+
+    entry = SimpleNamespace(entry_id="e1", data={"child_id": "c1", "child_name": "Child A"})
+    coord = SimpleNamespace(
+        hass=hass_en,
+        last_update_success=True,
+        child_id="c1",
+        profile=PROFILE_GLOBAL,
+        data={
+            "today_summary": {
+                "sleep_min": 135.0,
+                "feeding_count": 3,
+                "feeding_ml": 420.0,
+                "diaper_count": 4,
+                "diaper_wet": 3,
+                "diaper_solid": 1,
+                "tummy_min": 20.0,
+                "last_temp_c": 36.7,
+                "last_temp_at": "2026-11-25T11:00:00",
+            },
+            "timers": {"sleep": {"started_at": "2026-11-25T11:30:00"}},
+        },
+    )
+
+    s_sleep = TodaySleepSensor(coord, entry)
+    assert s_sleep.native_value == 135.0
+    assert s_sleep.extra_state_attributes["sleep_hours"] == 2.25
+
+    s_feed = TodayFeedingVolumeSensor(coord, entry)
+    assert s_feed.native_value == 420.0
+    assert s_feed.extra_state_attributes["feeding_count"] == 3
+
+    s_diaper = TodayDiaperCountSensor(coord, entry)
+    assert s_diaper.native_value == 4
+
+    s_temp = LastTemperatureSensor(coord, entry)
+    assert s_temp.native_value == 36.7
+    assert s_temp.available is True
+
+    s_timers = ActiveTimersSensor(coord, entry)
+    assert s_timers.native_value == 1
+    assert s_timers.extra_state_attributes["running_kinds"] == ["sleep"]

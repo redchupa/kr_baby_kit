@@ -25,10 +25,10 @@ Taken with a made-up demo child.
 - **Regional profile selection**: Choose between `International (WHO Growth Standards)` and `South Korea (KDCA · NIP · Childcare Tuition)` when registering a child. The default matches your Home Assistant language setting, and you can switch profiles later in the integration options without losing stored measurements.
 - **Vaccination, well-child, and dental schedules**: Projected from the child's birthdate into calendars and sensors. Open windows expose a deadline sensor; upcoming windows expose a next-window start sensor.
 - **Completion tracking**: Mark completed doses or visits with `kr_baby_kit.mark_event_done` to remove them from upcoming sensors and monthly reminders. Marking is optional; windows that have passed without a mark simply show as passed without triggering warnings.
-- **Daily care logs, live timers & photo diary**: Inspired by Baby Buddy — live stopwatches for sleep, feeding, tummy time, and pumping; quick logs for diapers, temperature, and notes; child profile avatars and photo-attached timeline entries stored locally under `/local/kr_baby_kit_media/` with a full-screen lightbox.
-- **Dedicated sidebar panel with 12 themes & layout customization**: Adds a `Baby Kit` entry to the Home Assistant sidebar where you can view and edit child details (name, birthdate, sex, regional profile), add or remove children (default birthdate `2024-07-01`), record measurements, and mark vaccines or checkups done. Use the gear button in the top bar to switch between 12 distinct themes, change layout modes (single column, 2-column bento, compact), toggle sections, and reorder cards.
+- **Daily care logs, live timers, 7-day chart & photo diary**: Inspired by Baby Buddy — live stopwatches for sleep, feeding, tummy time, and pumping; quick logs and modal/bottom-sheet logger for diapers, temperature, and notes; 7-day sleep and feeding trend bar chart; child profile avatars and photo-attached timeline entries stored privately under `.storage/kr_baby_kit_media/` and served via short-lived authenticated URLs.
+- **Dedicated sidebar panel with LMS growth curves, 12 themes & layout customization**: Adds a `Baby Kit` entry to the Home Assistant sidebar featuring interactive KDCA/WHO LMS growth curve charts (3rd–97th percentile bands with child trajectory overlay), child management (default birthdate `2024-07-01`), measurement logging, and vaccine/checkup completion marks. Use the gear button in the top bar to switch between 12 distinct themes, 4 card styles, layout modes (single column, 2-column bento, compact), section visibility, and card order.
 - **Home Assistant localization & timezone**: Entity names, states, summaries, and calendar events automatically follow your Home Assistant language (`en` / `ko`) and configured local time zone.
-- **Assist (LLM API)**: Registers a per-child LLM API for Home Assistant Assist so you can ask about upcoming vaccines, checkups, or latest growth percentiles in natural language.
+- **Assist (LLM API)**: Registers a per-child LLM API for Home Assistant Assist so you can ask about upcoming vaccines, checkups, latest growth percentiles, or today's sleep/feeding/diaper summary in natural language.
 - **South Korea childcare tuition (KR profile only)**: Exposes monthly standard tuition, government subsidy, and parent share in KRW based on birth-year age class. Not created when using the International profile.
 
 ## Installation
@@ -89,6 +89,11 @@ Each of the three categories provides:
 | **Next ... window start** | Start date of the next future window (`days_until_start` included). |
 | **... this month** | Turns on when a non-completed window overlaps the current calendar month. |
 | **... schedule** (`calendar`) | Full schedule as all-day events, including past and completed entries. |
+
+### Daily care metrics (`sensor`)
+
+- **Today's sleep** (`min`), **Today's feeding volume** (`mL`), **Today's diapers**, **Last temperature** (`°C`), **Active care timers**
+- Care logs and timers recorded in the `Baby Kit` panel update native Home Assistant sensors immediately for Lovelace cards, mobile notifications, and Assist voice queries.
 
 ### Childcare tuition (`sensor`, KRW — South Korea profile only)
 
@@ -171,8 +176,9 @@ See [docs/data-sources.md](docs/data-sources.md) for full references and licensi
 
 ## Privacy & Storage
 
-- Measurements and completion records are stored locally as plain JSON inside Home Assistant's `.storage/` directory. Nothing is sent to external servers.
-- Removing a child entry deletes its stored measurements and completion marks.
+- Measurements, care logs, and completion records are stored locally as plain JSON inside Home Assistant's `.storage/` directory. Nothing is sent to external servers.
+- Child avatars and diary photos are stored privately under `.storage/kr_baby_kit_media/` (never in unauthenticated `/local/`) and served through `/api/kr_baby_kit/media/...` using short-lived signed Home Assistant auth URLs.
+- Removing a child entry (restricted to Home Assistant administrators) deletes its stored measurements, care logs, completion marks, and photo files.
 - Measurement inputs are validated against plausible ranges at both the service schema and storage layers.
 
 ## Medical Disclaimer

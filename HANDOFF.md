@@ -1,6 +1,6 @@
 # Handover Document — Baby Kit (`kr_baby_kit`)
 
-> Last updated: 2026-11-25 (Latest released tag: `v0.16.0`, working tree includes `ruff` lint + photo-validation order fix + this `HANDOFF.md`)
+> Last updated: 2026-11-25 (Latest released tag: `v0.17.0`)
 
 ## 1. Project Overview
 
@@ -18,7 +18,7 @@
 ## 2. Critical Rules & Guardrails
 
 1. **Privacy / Security Guard (Strict)**:
-   - NEVER commit real child names, real birthdates, real measurements, daycare names, family names, or private HA URLs/IPs (`192.168.*`, `10.0.*`, `ha.redchupa`).
+   - NEVER commit real child names, real birthdates, real measurements, daycare names, family names, or private LAN HA URLs/IPs.
    - CI enforces a regex check in `.github/workflows/test.yml` (`security-grep` job).
    - Use synthetic data only (`Child A`, `Baby A`, `2020-03-15`, `2024-07-01`).
 2. **Release Checklist**:
@@ -43,8 +43,9 @@
 | `growth.py` | LMS interpolation (`GrowthChart.from_profile("kr" | "global")`), `rank_percent`, `format_summary_ko`, `format_summary_en` |
 | `schedule.py` | Calendar-month schedule projection for vaccines (incl. seasonal influenza), health checkups, and oral checkups |
 | `care_tuition.py` | Birth-year age class lookup for South Korea MOE childcare tuition |
-| `storage.py` | Lock-serialized HA `Store` persistence for measurement records, schedule completions, Baby Buddy activities, live timers, profile avatars, and local photo files |
-| `sensor.py` | Localized percentile, age, BMI, next-event, open-deadline, and KR-only childcare tuition sensors |
+| `storage.py` | Lock-serialized HA `Store` persistence for measurement records, schedule completions, Baby Buddy activities, live timers, profile avatars, and private `.storage/kr_baby_kit_media/` photo files |
+| `media_view.py` | Authenticated `HomeAssistantView` (`/api/kr_baby_kit/media/{child_id}/{filename}`, `requires_auth = True`) + short-lived signed URL helper (`sign_media_url`) with legacy `/local/` fallback |
+| `sensor.py` | Localized percentile, age, BMI, next-event, open-deadline, daily care (`today_sleep_minutes`, `today_feeding_ml`, `today_diaper_count`, `last_temperature`, `active_timers`), and KR-only childcare tuition sensors |
 | `binary_sensor.py` | Localized monthly due sensors + bi-directional concern alerts (`head_concern`, `bmi_concern`, `weight_for_length_concern`) |
 | `calendar.py` | Localized immunization, health checkup, and oral/dental checkup calendars |
 | `number.py` | Measurement input entities; fall back to 50th-percentile LMS median (`is_default_median: true`) before first measurement |
@@ -62,41 +63,21 @@
 - `care_tuition_kr.json` — South Korea 2026 MOE childcare tuition rates
 
 ### Frontend (`custom_components/kr_baby_kit/frontend/`)
-- `panel.js` — Main `<kr-baby-kit-panel>` Shadow DOM web component (Hero card + `D+days`, status chips, Baby Buddy daily care & live timers, one-tap logs, photo diary & lightbox, growth gauges & sparklines, schedules with collapse/expand, mobile bottom nav bar, top-bar `EN`/`한국어` toggle, Gear customization drawer)
+- `panel.js` — Main `<kr-baby-kit-panel>` Shadow DOM web component (Hero card + `D+days`, status chips, Baby Buddy daily care & live timers, modal/bottom-sheet care logger with draft preservation, one-tap logs, photo diary & lightbox, LMS growth curve chart + gauges & sparklines, schedules with collapse/expand, mobile bottom nav bar, top-bar `EN`/`한국어` toggle, Gear customization drawer)
+- `charts.js` — Interactive LMS Growth Curve SVG chart (P3/P15/P50/P85/P97 bands + child trajectory + current-age marker) and 7-day Sleep & Feeding grouped bar chart
 - `themes.js` — 12 architectural themes (`ha-native`, `nordic-nursery`, `paper-journal`, `glass-aurora`, `midnight-studio`, `bento-pop`, `clinical-chart`, `botanical-linen`, `pastel-cloud`, `retro-terminal`, `warm-terracotta`, `tokyo-minimal`)
 - `cards.js` — 4 card style presets (`bubble`, `mushroom`, `bento-pro`, `classic`), inline SVG icon set, 0–100% LMS percentile gauge bar, and SVG growth sparkline
 
 ---
 
-## 4. Final Quality & Security Audit Findings (Priority Recommendations for Next Upgrade)
+## 4. Completed in `v0.17.0` Upgrade
 
-### Fixed in This Audit
-- Removed 3 unused imports caught by `ruff` (`config_flow.py`, `llm_api.py`).
-- Fixed photo-orphan edge case in `storage.py:async_add_activity` by validating `temperature_c` before writing the uploaded photo to disk.
-- Verified: `pytest -q` (162 passed), `ruff check` (0 errors), `scripts/check_care_tuition.py --strict` (OK), all JSON valid, security grep (0 leaks), Node ES module load check (OK).
-
-### High-Priority Security & Privacy Improvements
-1. **Authenticated Photo Serving (Important for Public-Facing HA Instances)**:
-   - Currently, uploaded baby photos are saved under `<config>/www/kr_baby_kit_media/<child_id>/` and served at `/local/kr_baby_kit_media/...`.
-   - Home Assistant serves `/local/` **without authentication**. While filenames are random 16-char hex UUIDs, anyone with a leaked URL can access them without logging in.
-   - **Recommended upgrade**: Move storage to `<config>/.storage/kr_baby_kit_media/<child_id>/` and serve via an authenticated `HomeAssistantView` (`/api/kr_baby_kit/media/{child_id}/{filename}`, `requires_auth = True`) or signed HA auth URLs (`hass.auth`).
-2. **Admin Guard Consideration on Config-Entry Mutations**:
-   - `ws_add_child`, `ws_update_child`, `ws_delete_child` require an authenticated HA user (`connection.user`), but do not currently enforce `@websocket_api.require_admin`. Decide whether non-admin household members should be allowed to delete child entries, or add `require_admin` on `delete_child`.
-
-### High-Priority UX & Visual Design Upgrades (User's Main Feedback)
-The user specifically wants a **truly polished, mom-friendly mobile + PC experience** (like top-tier native baby apps, with zero awkward whitespace on PC and genuinely cohesive card design):
-1. **Preserve Unsaved Form State on Partial Re-Renders (`frontend/panel.js`)**:
-   - Currently, `_render()` replaces `this.shadowRoot.innerHTML` completely. If a user types a note in `<textarea name="note">` and then attaches a photo or switches a filter, the typed note text is cleared.
-   - **Fix**: Keep draft form state (`this._draftCare`) in component state or move to incremental DOM updates / LitElement (bundled or lightweight reactive helper).
-2. **True Visual Polish & Editorial Hierarchy (Mobile & PC)**:
-   - Consider splitting `panel.js` (~2,200 lines) into focused ES modules (`components/hero.js`, `components/care.js`, `components/growth.js`, `components/timeline.js`, `components/settings.js`).
-   - Add a **proper interactive LMS Growth Curve Chart** (plotting WHO/KDCA 3rd, 15th, 50th, 85th, 97th percentile curves as shaded SVG bands with the child's actual measurement dots overlaid — moms LOVE seeing their baby's curve!).
-   - Replace plain inline `<form>` for daily care with a **clean bottom-sheet / modal quick-logger** triggered by large visual icon buttons (Sleep, Feed, Diaper, Tummy, Temp, Photo) so the main dashboard stays ultra-clean and uncluttered!
-   - Add **daily/weekly trend charts** for Sleep & Feeding (Baby Buddy's signature 24-hour sleep timeline bar + daily feeding ml bar chart).
-3. **Expose Daily Care Totals as Native HA Sensors**:
-   - Right now daily sleep, feeding count/ml, diaper counts, and last temperature live in `storage.py` + WebSocket only. Exposing them as real HA `sensor` entities (`today_sleep_minutes`, `today_feeding_ml`, `today_diaper_count`, `last_temperature`, `active_timer`) will unlock HA dashboards, mobile notifications, and Assist voice queries ("How much did the baby drink today?").
-4. **Prevent Double Reload on `ws_update_child`**:
-   - In `websocket_api.py:ws_update_child`, `hass.config_entries.async_update_entry(...)` is followed by `await hass.config_entries.async_reload(...)`. Verify on live HA 2026.x whether `add_update_listener` already triggers a reload on `data` change to avoid double reloads.
+All priority security, backend, and UX/visual recommendations from the previous audit were implemented in `v0.17.0`:
+1. **Authenticated Photo Serving (`media_view.py`, `storage.py`)**: Photos are now saved under `<config>/.storage/kr_baby_kit_media/<child_id>/` and served via `/api/kr_baby_kit/media/{child_id}/{filename}` (`requires_auth = True`) using `async_sign_path` short-lived signed URLs (with read/delete fallback for legacy `www/kr_baby_kit_media/` files).
+2. **Admin Guard & Single Reload (`websocket_api.py`)**: Added `@websocket_api.require_admin` on `ws_delete_child` and removed the duplicate `async_reload` in `ws_update_child`.
+3. **Draft State Preservation & Modal/Bottom-Sheet Care Logger (`frontend/panel.js`)**: Typed notes and inputs in `_careDraft` and `_measureDraft` persist across photo uploads, tab changes, and language switches; replaced the inline care form with clean category launcher tiles + slide-up/modal logger.
+4. **Interactive LMS Growth Curve & 7-Day Care Charts (`frontend/charts.js`, `growth.py`, `coordinator.py`)**: Added inverse LMS `value_at_z` / `curve_series` (P3/P15/P50/P85/P97 shaded bands + child trajectory) and a 7-day Sleep & Feeding bar chart.
+5. **Native HA Daily Care Sensors & Assist Tool (`sensor.py`, `llm_api.py`)**: Added `today_sleep_minutes`, `today_feeding_ml`, `today_diaper_count`, `last_temperature`, `active_timers`, and the `get_daily_care_summary` Assist LLM tool.
 
 ---
 
