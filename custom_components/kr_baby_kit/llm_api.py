@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import llm
 
-from .const import DOMAIN, MEDICAL_DISCLAIMER, PROFILE_KR, disclaimer_for, is_korean
+from .const import DOMAIN, MEDICAL_DISCLAIMER, PROFILE_KR
 from .schedule import event_to_dict
 
 _LOGGER = logging.getLogger(__name__)

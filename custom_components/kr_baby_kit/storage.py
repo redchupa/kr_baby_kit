@@ -416,6 +416,12 @@ async def async_add_activity(
     if kind not in ACTIVITY_KINDS:
         raise ValueError(f"Unsupported activity kind: {kind!r}")
 
+    temp_val: float | None = None
+    if temperature_c is not None:
+        temp_val = round(float(temperature_c), 1)
+        if not (34.0 <= temp_val <= 43.0):
+            raise ValueError("Temperature must be between 34.0 and 43.0 °C.")
+
     photo_url = (
         await async_save_photo(hass, child_id, photo_data_url)
         if photo_data_url
@@ -435,11 +441,8 @@ async def async_add_activity(
         entry["method"] = str(method).strip()
     if diaper_type:
         entry["diaper_type"] = str(diaper_type).strip()
-    if temperature_c is not None:
-        temp = round(float(temperature_c), 1)
-        if not (34.0 <= temp <= 43.0):
-            raise ValueError("Temperature must be between 34.0 and 43.0 °C.")
-        entry["temperature_c"] = temp
+    if temp_val is not None:
+        entry["temperature_c"] = temp_val
     if note and str(note).strip():
         entry["note"] = str(note).strip()
     if photo_url:
