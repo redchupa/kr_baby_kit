@@ -1563,7 +1563,6 @@ class KrBabyKitPanel extends HTMLElement {
       bodyHtml = `<div class="card"><p class="muted">${esc(t.noChildren)}</p></div>`;
     } else {
       const sexLabel = child.sex === "male" ? t.male : t.female;
-      const profLabel = child.profile === "kr" ? "KR · KDCA" : "WHO";
       const initial = (child.name || "?").trim().slice(0, 1).toUpperCase();
       const livedDays = daysBetween(child.birthdate, child.today);
       const mFilter = this._mobileVisibleSections();
@@ -1596,7 +1595,6 @@ class KrBabyKitPanel extends HTMLElement {
                   <span>${esc(child.birthdate)}</span>
                   <span>·</span>
                   <span>${esc(sexLabel)}</span>
-                  <span class="badge neutral">${esc(profLabel)}</span>
                 </div>
               </div>
             </div>

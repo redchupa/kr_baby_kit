@@ -4,6 +4,12 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.16.2] - 2026-11-25
+
+### Changed
+
+- Removed the `KR · KDCA` / `WHO` technical badge from the Hero child header card for a cleaner parent-facing look (the regional standard remains editable in Edit info).
+
 ## [0.16.1] - 2026-11-25
 
 ### Changed
