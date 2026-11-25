@@ -26,10 +26,10 @@ export const ICONS = {
 };
 
 export const CARD_STYLES = [
-  { id: "bubble", nameKo: "버블 카드", nameEn: "Bubble Card", descKo: "캡슐형 필 카드와 원형 아이콘·서브 버튼" },
-  { id: "mushroom", nameKo: "템플릿 카드", nameEn: "Template Card", descKo: "머쉬룸 스타일 아이콘 배지·칩 요약" },
-  { id: "bento-pro", nameKo: "벤토 프로", nameEn: "Bento Pro", descKo: "대형 수치 KPI와 게이지·스파크라인 강조" },
-  { id: "classic", nameKo: "클래식", nameEn: "Classic", descKo: "단정하고 익숙한 표준 카드" },
+  { id: "bubble", nameKo: "버블 카드", nameEn: "Bubble Card", descKo: "캡슐형 필 카드와 원형 아이콘·서브 버튼", descEn: "Pill capsules with circular icon wells & sub-buttons" },
+  { id: "mushroom", nameKo: "템플릿 카드", nameEn: "Template Card", descKo: "머쉬룸 스타일 아이콘 배지·칩 요약", descEn: "Mushroom-style icon badges & status chips" },
+  { id: "bento-pro", nameKo: "벤토 프로", nameEn: "Bento Pro", descKo: "대형 수치 KPI와 게이지·스파크라인 강조", descEn: "Large KPI typography & visual gauges" },
+  { id: "classic", nameKo: "클래식", nameEn: "Classic", descKo: "단정하고 익숙한 표준 카드", descEn: "Clean standard Home Assistant cards" },
 ];
 
 export function cardStyleCss(styleId) {

@@ -4,6 +4,12 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.15.1] - 2026-11-25
+
+### Added
+
+- **One-click language toggle (`EN` / `한국어`) in the `Baby Kit` top bar** and a `Display language` (`Auto (HA)` / `한국어` / `English`) selector inside the Gear drawer. Switching translates the entire panel immediately — including vaccine/checkup names, growth summaries, card style descriptions, and footer disclaimer/attribution.
+
 ## [0.15.0] - 2026-11-25
 
 ### Changed

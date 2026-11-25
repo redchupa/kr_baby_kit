@@ -168,7 +168,11 @@ def _serialize_child(
         "timers": timers or {},
         "today_summary": compute_today_summary(act_list, today_iso),
         "attribution": attribution_for(coordinator.profile, korean=ko),
+        "attribution_ko": attribution_for(coordinator.profile, korean=True),
+        "attribution_en": attribution_for(coordinator.profile, korean=False),
         "disclaimer": disclaimer_for(korean=ko),
+        "disclaimer_ko": disclaimer_for(korean=True),
+        "disclaimer_en": disclaimer_for(korean=False),
     }
 
 

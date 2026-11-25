@@ -1,16 +1,17 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.15.0";
+import { THEMES, getThemeCss } from "./themes.js?v=0.15.1";
 import {
   CARD_STYLES,
   ICONS,
   cardStyleCss,
   renderPercentileGauge,
   renderSparkline,
-} from "./cards.js?v=0.15.0";
+} from "./cards.js?v=0.15.1";
 
 const PREFS_KEY = "kr_baby_kit_panel_prefs_v3";
 
 const DEFAULT_PREFS = {
+  lang: "auto", // "auto" | "ko" | "en"
   theme: "ha-native",
   cardStyle: "bubble", // "bubble" | "mushroom" | "bento-pro" | "classic"
   layout: "bento", // "single" | "bento" | "compact"
@@ -145,6 +146,8 @@ const STRINGS = {
     modalAddTitle: "아이 추가",
     modalEditTitle: "아이 정보 수정",
     settingsTitle: "카드 · 테마 · 레이아웃 설정",
+    settingsLang: "표시 언어",
+    langAuto: "자동 (HA)",
     settingsCardStyle: "카드 스타일",
     settingsTheme: "테마 선택 (12종)",
     settingsLayout: "레이아웃 구성",
@@ -278,6 +281,8 @@ const STRINGS = {
     modalAddTitle: "Add child",
     modalEditTitle: "Edit child",
     settingsTitle: "Cards, Theme & Layout",
+    settingsLang: "Display language",
+    langAuto: "Auto (HA)",
     settingsCardStyle: "Card style",
     settingsTheme: "Theme (12 styles)",
     settingsLayout: "Layout mode",
@@ -380,6 +385,7 @@ function loadPrefs() {
       if (!validOrder.includes(k)) validOrder.push(k);
     }
     return {
+      lang: ["auto", "ko", "en"].includes(parsed.lang) ? parsed.lang : DEFAULT_PREFS.lang,
       theme: THEMES.some((t) => t.id === parsed.theme) ? parsed.theme : DEFAULT_PREFS.theme,
       cardStyle: CARD_STYLES.some((c) => c.id === parsed.cardStyle)
         ? parsed.cardStyle
@@ -456,6 +462,8 @@ class KrBabyKitPanel extends HTMLElement {
   }
 
   _isKo() {
+    if (this._prefs?.lang === "ko") return true;
+    if (this._prefs?.lang === "en") return false;
     const lang = (this._hass?.language || this._data?.language || "ko").toLowerCase();
     return lang.startsWith("ko");
   }
@@ -1329,7 +1337,7 @@ class KrBabyKitPanel extends HTMLElement {
       (cs) => `
         <button type="button" class="style-card ${this._prefs.cardStyle === cs.id ? "active" : ""}" data-select-cardstyle="${esc(cs.id)}">
           <div class="theme-name">${esc(ko ? cs.nameKo : cs.nameEn)}</div>
-          <div class="theme-desc">${esc(cs.descKo)}</div>
+          <div class="theme-desc">${esc(ko ? cs.descKo : cs.descEn)}</div>
         </button>`
     ).join("");
 
@@ -1379,6 +1387,15 @@ class KrBabyKitPanel extends HTMLElement {
             <button type="button" class="btn-outline small" id="btn-close-settings">${esc(t.close)}</button>
           </div>
           <div class="drawer-body">
+            <div class="drawer-sec">
+              <div class="drawer-label">${esc(t.settingsLang)}</div>
+              <div class="seg-group">
+                <button type="button" class="seg ${this._prefs.lang === "auto" ? "active" : ""}" data-select-lang="auto">${esc(t.langAuto)}</button>
+                <button type="button" class="seg ${this._prefs.lang === "ko" ? "active" : ""}" data-select-lang="ko">한국어</button>
+                <button type="button" class="seg ${this._prefs.lang === "en" ? "active" : ""}" data-select-lang="en">English</button>
+              </div>
+            </div>
+
             <div class="drawer-sec">
               <div class="drawer-label">${esc(t.settingsCardStyle)}</div>
               <div class="theme-grid">${cardStyleBtns}</div>
@@ -1576,7 +1593,7 @@ class KrBabyKitPanel extends HTMLElement {
 
         ${
           this._prefs.visible.footer
-            ? `<p class="disclaimer">${esc(child.disclaimer || "")}<br/>${esc(child.attribution || "")}</p>`
+            ? `<p class="disclaimer">${esc(this._isKo() ? (child.disclaimer_ko || child.disclaimer || "") : (child.disclaimer_en || child.disclaimer || ""))}<br/>${esc(this._isKo() ? (child.attribution_ko || child.attribution || "") : (child.attribution_en || child.attribution || ""))}</p>`
             : ""
         }
       `;
@@ -1922,6 +1939,7 @@ class KrBabyKitPanel extends HTMLElement {
           <h1>${esc(t.title)}</h1>
         </div>
         <div class="topbar-right">
+          <button class="btn-top lang-btn" id="btn-toggle-lang" title="Switch language">${this._isKo() ? "EN" : "한국어"}</button>
           <button class="btn-top" id="btn-add-child">+ ${esc(t.addChild)}</button>
           <button class="icon-btn" id="btn-open-settings" title="${esc(t.settingsTitle)}" aria-label="${esc(t.settingsTitle)}">${ICONS.gear}</button>
         </div>
@@ -1961,6 +1979,16 @@ class KrBabyKitPanel extends HTMLElement {
         this._mobileNav = btn.getAttribute("data-mobile-nav");
         this._render();
         window.scrollTo?.({ top: 0, behavior: "smooth" });
+      });
+    });
+    root.getElementById("btn-toggle-lang")?.addEventListener("click", () => {
+      const nextLang = this._isKo() ? "en" : "ko";
+      this._updatePrefs((p) => { p.lang = nextLang; });
+    });
+    root.querySelectorAll("[data-select-lang]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const lang = btn.getAttribute("data-select-lang");
+        this._updatePrefs((p) => { p.lang = lang; });
       });
     });
     root.getElementById("btn-menu")?.addEventListener("click", () => this._openSidebar());
