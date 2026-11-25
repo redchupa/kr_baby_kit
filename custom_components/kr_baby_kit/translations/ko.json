@@ -78,6 +78,18 @@
     "get_schedule": {
       "name": "전체 일정 조회",
       "description": "예방접종·검진·구강검진 전체 일정과 event_id, 상태를 돌려줍니다."
+    },
+    "log_care": {
+      "name": "돌봄 기록 추가",
+      "description": "무선 버튼·자동화·스크립트에서 수유·기저귀·수면·터미타임·유축·체온·메모를 기록합니다."
+    },
+    "start_timer": {
+      "name": "돌봄 타이머 시작",
+      "description": "수면·수유·터미타임·유축 실시간 타이머를 시작합니다."
+    },
+    "stop_timer": {
+      "name": "돌봄 타이머 종료 및 저장",
+      "description": "실행 중인 실시간 타이머를 종료하고 경과 시간을 돌봄 기록으로 저장합니다."
     }
   },
   "entity": {
@@ -135,6 +147,15 @@
       },
       "active_timers": {
         "name": "돌봄_실행_중_타이머"
+      },
+      "last_feeding_at": {
+        "name": "돌봄_마지막_수유_시각"
+      },
+      "last_diaper_at": {
+        "name": "돌봄_마지막_기저귀_시각"
+      },
+      "last_sleep_at": {
+        "name": "돌봄_마지막_수면_시각"
       }
     },
     "binary_sensor": {

@@ -1,16 +1,21 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.17.1";
+import { THEMES, getThemeCss } from "./themes.js?v=0.18.0";
 import {
   CARD_STYLES,
   ICONS,
   cardStyleCss,
   renderPercentileGauge,
   renderSparkline,
-} from "./cards.js?v=0.17.1";
+} from "./cards.js?v=0.18.0";
 import {
   renderGrowthCurveChart,
   renderWeeklyCareChart,
-} from "./charts.js?v=0.17.1";
+} from "./charts.js?v=0.18.0";
+import {
+  AUTOMATION_RECIPES,
+  LAYOUT_MODES,
+  renderAutomationsSection,
+} from "./automations.js?v=0.18.0";
 
 const PREFS_KEY = "kr_baby_kit_panel_prefs_v4";
 
@@ -18,8 +23,9 @@ const DEFAULT_PREFS = {
   lang: "auto", // "auto" | "ko" | "en"
   theme: "nordic-nursery",
   cardStyle: "bubble", // "bubble" | "mushroom" | "bento-pro" | "classic"
-  layout: "bento", // "single" | "bento" | "compact"
-  order: ["care", "growth", "measurements", "timeline", "schedules", "tuition"],
+  layout: "bento", // 8 layout modes in LAYOUT_MODES
+  mobileCols: 2, // 2 | 3 | 4 (mobile micro-tile density)
+  order: ["care", "growth", "measurements", "timeline", "schedules", "tuition", "automations"],
   visible: {
     chips: true,
     care: true,
@@ -28,6 +34,7 @@ const DEFAULT_PREFS = {
     timeline: true,
     tuition: true,
     schedules: true,
+    automations: true,
     footer: true,
   },
   wide: {
@@ -37,6 +44,7 @@ const DEFAULT_PREFS = {
     timeline: false,
     tuition: false,
     schedules: false,
+    automations: true,
   },
   defaultScheduleTab: "vaccines",
 };
@@ -163,7 +171,11 @@ const STRINGS = {
     langAuto: "자동 (HA)",
     settingsCardStyle: "카드 스타일",
     settingsTheme: "테마 선택 (12종)",
-    settingsLayout: "레이아웃 구성",
+    settingsLayout: "레이아웃 구성 (8종)",
+    settingsMobileCols: "모바일 타일 열 수 (촘촘함)",
+    mcol2: "2열 여유",
+    mcol3: "3열 촘촘",
+    mcol4: "4열 초밀집",
     layoutSingle: "1열 표준",
     layoutBento: "2열 벤토",
     layoutCompact: "컴팩트",
@@ -175,6 +187,7 @@ const STRINGS = {
     secGrowth: "성장 백분위 · 추이",
     secTuition: "어린이집 보육료 (KR)",
     secSchedules: "예방접종 · 검진 일정",
+    secAutomations: "스마트 육아 자동화 가이드",
     secFooter: "하단 면책·출처 표시",
     widthFull: "전체",
     widthHalf: "1/2",
@@ -185,6 +198,7 @@ const STRINGS = {
     navGrowth: "성장",
     navDiary: "일기",
     navSchedule: "일정",
+    navAuto: "자동화",
   },
   en: {
     title: "Baby Kit",
@@ -307,7 +321,11 @@ const STRINGS = {
     langAuto: "Auto (HA)",
     settingsCardStyle: "Card style",
     settingsTheme: "Theme (12 styles)",
-    settingsLayout: "Layout mode",
+    settingsLayout: "Layout mode (8 presets)",
+    settingsMobileCols: "Mobile tile columns (density)",
+    mcol2: "2-Col",
+    mcol3: "3-Col Dense",
+    mcol4: "4-Col Ultra",
     layoutSingle: "Single column",
     layoutBento: "2-col Bento",
     layoutCompact: "Compact",
@@ -319,6 +337,7 @@ const STRINGS = {
     secGrowth: "Growth percentiles & trends",
     secTuition: "Childcare tuition (KR)",
     secSchedules: "Immunizations & Checkups",
+    secAutomations: "Smart Nursery Automations",
     secFooter: "Footer disclaimer & attribution",
     widthFull: "Full",
     widthHalf: "1/2",
@@ -329,6 +348,7 @@ const STRINGS = {
     navGrowth: "Growth",
     navDiary: "Diary",
     navSchedule: "Schedule",
+    navAuto: "Auto",
   },
 };
 
@@ -361,6 +381,22 @@ function fmtMinutes(min, ko) {
 function fmtTimestamp(iso) {
   if (!iso) return "";
   return String(iso).replace("T", " ").slice(0, 16);
+}
+
+function fmtAgo(iso, ko) {
+  if (!iso) return "";
+  const ts = Date.parse(iso);
+  if (Number.isNaN(ts)) return "";
+  const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000));
+  if (mins < 1) return ko ? "방금 전" : "Just now";
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h >= 24) {
+    const d = Math.floor(h / 24);
+    return ko ? `${d}일 전` : `${d}d ago`;
+  }
+  if (h > 0) return ko ? `${h}시간 ${m}분 전` : `${h}h ${m}m ago`;
+  return ko ? `${m}분 전` : `${m}m ago`;
 }
 
 function daysBetween(fromIso, toIso) {
@@ -412,9 +448,12 @@ function loadPrefs() {
       cardStyle: CARD_STYLES.some((c) => c.id === parsed.cardStyle)
         ? parsed.cardStyle
         : DEFAULT_PREFS.cardStyle,
-      layout: ["single", "bento", "compact"].includes(parsed.layout)
+      layout: LAYOUT_MODES.some((l) => l.id === parsed.layout)
         ? parsed.layout
         : DEFAULT_PREFS.layout,
+      mobileCols: [2, 3, 4].includes(Number(parsed.mobileCols))
+        ? Number(parsed.mobileCols)
+        : DEFAULT_PREFS.mobileCols,
       order: validOrder,
       visible: { ...DEFAULT_PREFS.visible, ...(parsed.visible || {}) },
       wide: { ...DEFAULT_PREFS.wide, ...(parsed.wide || {}) },
@@ -451,6 +490,9 @@ class KrBabyKitPanel extends HTMLElement {
     this._careDraft = this._emptyCareDraft();
     this._measureDraft = {};
     this._growthChartKind = "height"; // "height" | "weight"
+    this._openRecipeId = null;
+    this._copiedRecipeId = null;
+    this._appDeckTab = "care";
     this._timelineFilter = "all";
     this._pendingPhoto = null;
     this._lightboxUrl = null;
@@ -1115,14 +1157,14 @@ class KrBabyKitPanel extends HTMLElement {
             <div class="kpi-card">
               <div class="icon-well tone-sky">${ICONS.feeding}</div>
               <div class="kpi-body">
-                <div class="kpi-label">${esc(t.todayFeed)}</div>
+                <div class="kpi-label">${esc(t.todayFeed)}${child.last_care?.feeding?.timestamp ? ` · <span class="kpi-ago">${esc(fmtAgo(child.last_care.feeding.timestamp, ko))}</span>` : ""}</div>
                 <div class="kpi-val">${sum.feeding_count || 0}${esc(t.countUnit)}${sum.feeding_ml ? ` · ${sum.feeding_ml}ml` : ""}</div>
               </div>
             </div>
             <div class="kpi-card">
               <div class="icon-well tone-amber">${ICONS.diaper}</div>
               <div class="kpi-body">
-                <div class="kpi-label">${esc(t.todayDiaper)}</div>
+                <div class="kpi-label">${esc(t.todayDiaper)}${child.last_care?.diaper?.timestamp ? ` · <span class="kpi-ago">${esc(fmtAgo(child.last_care.diaper.timestamp, ko))}</span>` : ""}</div>
                 <div class="kpi-val">${esc(t.wet)} ${sum.diaper_wet || 0} · ${esc(t.solid)} ${sum.diaper_solid || 0}</div>
               </div>
             </div>
@@ -1408,6 +1450,15 @@ class KrBabyKitPanel extends HTMLElement {
           </div>
         </div>`;
     }
+
+    if (secId === "automations") {
+      return renderAutomationsSection(child, {
+        ko,
+        openRecipeId: this._openRecipeId,
+        copiedId: this._copiedRecipeId,
+        wideClass,
+      });
+    }
     return "";
   }
 
@@ -1422,7 +1473,16 @@ class KrBabyKitPanel extends HTMLElement {
       growth: t.secGrowth,
       tuition: t.secTuition,
       schedules: t.secSchedules,
+      automations: t.secAutomations,
     };
+
+    const layoutCards = LAYOUT_MODES.map(
+      (lm) => `
+        <button type="button" class="style-card ${this._prefs.layout === lm.id ? "active" : ""}" data-select-layout="${esc(lm.id)}">
+          <div class="theme-name">${esc(ko ? lm.nameKo : lm.nameEn)}</div>
+          <div class="theme-desc">${esc(ko ? lm.descKo : lm.descEn)}</div>
+        </button>`
+    ).join("");
 
     const cardStyleBtns = CARD_STYLES.map(
       (cs) => `
@@ -1494,10 +1554,15 @@ class KrBabyKitPanel extends HTMLElement {
 
             <div class="drawer-sec">
               <div class="drawer-label">${esc(t.settingsLayout)}</div>
+              <div class="theme-grid">${layoutCards}</div>
+            </div>
+
+            <div class="drawer-sec">
+              <div class="drawer-label">${esc(t.settingsMobileCols)}</div>
               <div class="seg-group">
-                <button type="button" class="seg ${this._prefs.layout === "single" ? "active" : ""}" data-select-layout="single">${esc(t.layoutSingle)}</button>
-                <button type="button" class="seg ${this._prefs.layout === "bento" ? "active" : ""}" data-select-layout="bento">${esc(t.layoutBento)}</button>
-                <button type="button" class="seg ${this._prefs.layout === "compact" ? "active" : ""}" data-select-layout="compact">${esc(t.layoutCompact)}</button>
+                <button type="button" class="seg ${this._prefs.mobileCols === 2 ? "active" : ""}" data-select-mcols="2">${esc(t.mcol2)}</button>
+                <button type="button" class="seg ${this._prefs.mobileCols === 3 ? "active" : ""}" data-select-mcols="3">${esc(t.mcol3)}</button>
+                <button type="button" class="seg ${this._prefs.mobileCols === 4 ? "active" : ""}" data-select-mcols="4">${esc(t.mcol4)}</button>
               </div>
             </div>
 
@@ -1650,6 +1715,7 @@ class KrBabyKitPanel extends HTMLElement {
       { id: "growth", icon: ICONS.ruler, label: t.navGrowth },
       { id: "diary", icon: ICONS.note, label: t.navDiary },
       { id: "schedule", icon: ICONS.vaccine, label: t.navSchedule },
+      { id: "auto", icon: ICONS.bolt, label: t.navAuto },
     ];
     return `
       <nav class="mobile-nav" aria-label="Navigation">
@@ -1670,6 +1736,7 @@ class KrBabyKitPanel extends HTMLElement {
     if (this._mobileNav === "growth") return new Set(["growth", "measurements", "tuition"]);
     if (this._mobileNav === "diary") return new Set(["timeline"]);
     if (this._mobileNav === "schedule") return new Set(["schedules"]);
+    if (this._mobileNav === "auto") return new Set(["automations"]);
     return null;
   }
 
@@ -1686,63 +1753,122 @@ class KrBabyKitPanel extends HTMLElement {
     }
     if (secId === "schedules") return 3.1;
     if (secId === "tuition") return 1.1;
+    if (secId === "automations") return 2.8;
     return 1.5;
   }
 
-  _renderSectionsContainer(child) {
-    const layoutClass = `layout-${this._prefs.layout}`;
-    const mFilter = this._mobileVisibleSections();
-    const activeIds = this._prefs.order.filter((secId) => !mFilter || mFilter.has(secId));
-
-    const isNarrowViewport =
-      this._narrow || Boolean(window.matchMedia?.("(max-width: 920px)")?.matches);
-    if (this._prefs.layout !== "bento" || isNarrowViewport) {
-      const html = activeIds.map((secId) => this._renderSection(secId, child)).join("");
-      return `<div class="sections-wrap ${layoutClass}">${html}</div>`;
-    }
-
-    // Balanced 2-column Bento layout: each card wraps its natural content height
-    // with zero dead bottom space, while full-width cards span across cleanly.
+  _renderBalancedColumns(activeIds, child, colCount) {
     const blocks = [];
-    let leftCol = [];
-    let rightCol = [];
-    let leftW = 0;
-    let rightW = 0;
+    let cols = Array.from({ length: colCount }, () => []);
+    let weights = Array.from({ length: colCount }, () => 0);
 
-    const flushCols = () => {
-      if (!leftCol.length && !rightCol.length) return;
-      if (!rightCol.length) {
-        blocks.push(`<div class="bento-single">${leftCol.join("")}</div>`);
+    const flush = () => {
+      const nonEmpty = cols.filter((c) => c.length > 0);
+      if (!nonEmpty.length) return;
+      if (nonEmpty.length === 1) {
+        blocks.push(`<div class="bento-single">${nonEmpty[0].join("")}</div>`);
       } else {
         blocks.push(
-          `<div class="bento-columns"><div class="bento-col">${leftCol.join("")}</div><div class="bento-col">${rightCol.join("")}</div></div>`
+          `<div class="bento-columns cols-${nonEmpty.length}">${nonEmpty
+            .map((c) => `<div class="bento-col">${c.join("")}</div>`)
+            .join("")}</div>`
         );
       }
-      leftCol = [];
-      rightCol = [];
-      leftW = 0;
-      rightW = 0;
+      cols = Array.from({ length: colCount }, () => []);
+      weights = Array.from({ length: colCount }, () => 0);
     };
 
     for (const secId of activeIds) {
       const rendered = this._renderSection(secId, child);
       if (!rendered) continue;
       if (this._prefs.wide[secId]) {
-        flushCols();
+        flush();
         blocks.push(`<div class="bento-wide">${rendered}</div>`);
       } else {
-        const w = this._sectionWeight(secId, child);
-        if (leftW <= rightW) {
-          leftCol.push(rendered);
-          leftW += w;
-        } else {
-          rightCol.push(rendered);
-          rightW += w;
+        let minIdx = 0;
+        for (let i = 1; i < colCount; i++) {
+          if (weights[i] < weights[minIdx]) minIdx = i;
         }
+        cols[minIdx].push(rendered);
+        weights[minIdx] += this._sectionWeight(secId, child);
       }
     }
-    flushCols();
-    return `<div class="sections-wrap layout-bento">${blocks.join("")}</div>`;
+    flush();
+    return blocks.join("");
+  }
+
+  _renderSectionsContainer(child) {
+    const mode = this._prefs.layout;
+    const layoutClass = `layout-${mode}`;
+    const mFilter = this._mobileVisibleSections();
+    const activeIds = this._prefs.order.filter((secId) => !mFilter || mFilter.has(secId));
+    const isNarrowViewport =
+      this._narrow || Boolean(window.matchMedia?.("(max-width: 920px)")?.matches);
+
+    if (mode === "app-tabs") {
+      const t = this._t();
+      const deckTabs = [
+        { id: "care", label: t.navCare, secs: ["care"] },
+        { id: "growth", label: t.navGrowth, secs: ["growth", "measurements", "tuition"] },
+        { id: "diary", label: t.navDiary, secs: ["timeline"] },
+        { id: "schedule", label: t.navSchedule, secs: ["schedules"] },
+        { id: "auto", label: t.navAuto, secs: ["automations"] },
+      ];
+      const cur = deckTabs.find((d) => d.id === this._appDeckTab) || deckTabs[0];
+      const deckNav = `<div class="app-deck-bar">${deckTabs
+        .map(
+          (d) =>
+            `<button type="button" class="pill ${cur.id === d.id ? "active" : ""}" data-deck-tab="${esc(d.id)}">${esc(d.label)}</button>`
+        )
+        .join("")}</div>`;
+      const html = cur.secs.map((secId) => this._renderSection(secId, child)).join("");
+      return `${deckNav}<div class="sections-wrap layout-app-tabs">${html}</div>`;
+    }
+
+    if (isNarrowViewport || mode === "single" || mode === "compact") {
+      const html = activeIds.map((secId) => this._renderSection(secId, child)).join("");
+      return `<div class="sections-wrap ${layoutClass}">${html}</div>`;
+    }
+
+    if (mode === "bento-3") {
+      return `<div class="sections-wrap layout-bento-3">${this._renderBalancedColumns(activeIds, child, 3)}</div>`;
+    }
+
+    if (mode === "cockpit") {
+      const topHtml = activeIds.includes("care") ? this._renderSection("care", child) : "";
+      const restIds = activeIds.filter((id) => id !== "care");
+      const mainIds = restIds.filter((id) => id === "growth" || id === "timeline" || id === "automations");
+      const sideIds = restIds.filter((id) => !mainIds.includes(id));
+      return `
+        <div class="sections-wrap layout-cockpit">
+          ${topHtml ? `<div class="bento-wide">${topHtml}</div>` : ""}
+          <div class="cockpit-split">
+            <div class="bento-col">${mainIds.map((id) => this._renderSection(id, child)).join("")}</div>
+            <div class="bento-col">${sideIds.map((id) => this._renderSection(id, child)).join("")}</div>
+          </div>
+        </div>`;
+    }
+
+    if (mode === "magazine") {
+      const dockSet = new Set(["care", "measurements", "tuition"]);
+      const dockHtml = activeIds
+        .filter((id) => dockSet.has(id))
+        .map((id) => this._renderSection(id, child))
+        .join("");
+      const streamHtml = activeIds
+        .filter((id) => !dockSet.has(id))
+        .map((id) => this._renderSection(id, child))
+        .join("");
+      return `
+        <div class="sections-wrap layout-magazine">
+          <div class="magazine-dock bento-col">${dockHtml}</div>
+          <div class="magazine-stream bento-col">${streamHtml}</div>
+        </div>`;
+    }
+
+    // "bento" and "quad-dense" both use balanced 2-column cards on desktop
+    // ("quad-dense" additionally packs internal tiles into 4-column micro-grids).
+    return `<div class="sections-wrap ${layoutClass}">${this._renderBalancedColumns(activeIds, child, 2)}</div>`;
   }
 
   _render() {
@@ -1837,9 +1963,17 @@ class KrBabyKitPanel extends HTMLElement {
         }
         .topbar h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.025em; font-family: var(--bk-font-head); }
         .container {
-          max-width: ${this._prefs.layout === "bento" ? "1380px" : "880px"};
+          max-width: ${
+            this._prefs.layout === "bento-3"
+              ? "1740px"
+              : ["bento", "quad-dense", "cockpit", "magazine"].includes(this._prefs.layout)
+              ? "1440px"
+              : this._prefs.layout === "app-tabs"
+              ? "1020px"
+              : "880px"
+          };
           margin: 0 auto;
-          padding: ${this._prefs.layout === "compact" ? "10px 14px" : "18px 22px"};
+          padding: ${this._prefs.layout === "compact" || this._prefs.layout === "quad-dense" ? "12px 14px" : "18px 22px"};
         }
         .hero-card {
           margin-bottom: 16px !important;
@@ -1888,23 +2022,59 @@ class KrBabyKitPanel extends HTMLElement {
           width: 36px; height: 36px; border-radius: 12px; flex-shrink: 0;
           display: inline-flex; align-items: center; justify-content: center;
         }
-        .sections-wrap.layout-bento {
+        .sections-wrap.layout-bento,
+        .sections-wrap.layout-bento-3,
+        .sections-wrap.layout-quad-dense,
+        .sections-wrap.layout-cockpit,
+        .sections-wrap.layout-app-tabs {
           display: flex; flex-direction: column; gap: 18px;
         }
         .bento-columns {
           display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 18px; align-items: start;
         }
+        .bento-columns.cols-3 {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .cockpit-split {
+          display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.9fr);
+          gap: 18px; align-items: start;
+        }
+        .sections-wrap.layout-magazine {
+          display: grid; grid-template-columns: 390px minmax(0, 1fr);
+          gap: 20px; align-items: start;
+        }
+        .magazine-dock { position: sticky; top: 68px; }
+        .app-deck-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
         .bento-col, .bento-single, .bento-wide {
           display: flex; flex-direction: column; gap: 18px; min-width: 0;
         }
-        @media (max-width: 920px) { .bento-columns { grid-template-columns: 1fr; } }
+        /* 4-Col Dense Matrix layout styling (desktop & mobile) */
+        .sections-wrap.layout-quad-dense .kpi-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
+        }
+        .sections-wrap.layout-quad-dense .kpi-card {
+          flex-direction: column; align-items: center; text-align: center;
+          padding: 10px 6px !important; gap: 6px; border-radius: 14px !important;
+        }
+        .sections-wrap.layout-quad-dense .kpi-card .icon-well { width: 30px !important; height: 30px !important; }
+        .sections-wrap.layout-quad-dense .kpi-label { font-size: 11px; }
+        .sections-wrap.layout-quad-dense .kpi-val { font-size: 13.5px; }
+        .sections-wrap.layout-quad-dense .timer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .sections-wrap.layout-quad-dense .gauge-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        @media (max-width: 1180px) { .bento-columns.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 920px) {
+          .bento-columns, .bento-columns.cols-3, .cockpit-split, .sections-wrap.layout-magazine {
+            grid-template-columns: 1fr;
+          }
+          .magazine-dock { position: static; }
+        }
         .card {
           background: var(--bk-card); backdrop-filter: var(--bk-card-backdrop);
           -webkit-backdrop-filter: var(--bk-card-backdrop);
           border-radius: var(--bk-card-radius);
-          padding: ${this._prefs.layout === "compact" ? "14px 16px" : "20px 22px"};
-          margin-bottom: ${this._prefs.layout === "bento" ? "0" : this._prefs.layout === "compact" ? "10px" : "16px"};
+          padding: ${this._prefs.layout === "compact" || this._prefs.layout === "quad-dense" ? "14px 15px" : "20px 22px"};
+          margin-bottom: ${["single", "compact"].includes(this._prefs.layout) ? (this._prefs.layout === "compact" ? "10px" : "16px") : "0"};
           box-shadow: var(--bk-card-shadow); border: var(--bk-card-border);
         }
         .child-header {
@@ -2004,6 +2174,42 @@ class KrBabyKitPanel extends HTMLElement {
           font-size: 12.5px; font-weight: 500; color: var(--bk-muted);
           line-height: 1.3; margin: 0; padding: 0;
         }
+        .kpi-ago { color: var(--bk-accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+        /* Smart Nursery Automation Recipe cards */
+        .auto-list { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+        .bento-wide .auto-list, .sections-wrap.layout-cockpit .auto-list {
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+        }
+        .bento-wide .auto-card.open, .sections-wrap.layout-cockpit .auto-card.open {
+          grid-column: 1 / -1;
+        }
+        .auto-card {
+          padding: 14px 16px; border-radius: 18px; background: var(--bk-surface);
+          border: 1px solid rgba(128, 128, 128, 0.14); display: flex; flex-direction: column; gap: 8px;
+        }
+        .auto-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+        .auto-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; min-width: 0; flex: 1; }
+        .auto-title { font-size: 14.5px; font-weight: 700; line-height: 1.35; color: var(--bk-text); }
+        .auto-why { margin: 0; font-size: 13px; color: var(--bk-muted); line-height: 1.5; }
+        .auto-devs { display: flex; flex-wrap: wrap; gap: 6px; }
+        .auto-dev-pill {
+          font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 999px;
+          background: var(--bk-card); color: var(--bk-muted); border: 1px solid rgba(128, 128, 128, 0.16);
+        }
+        .auto-yaml-wrap {
+          margin-top: 4px; border-radius: 12px; overflow: hidden;
+          border: 1px solid rgba(128, 128, 128, 0.2); background: #141821; color: #e2e8f0;
+        }
+        .auto-yaml-bar {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 8px 12px; background: rgba(255, 255, 255, 0.06);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .auto-yaml-bar code { color: #7dd3fc; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .auto-pre {
+          margin: 0; padding: 12px 14px; overflow-x: auto; font-size: 12px; line-height: 1.5;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
         .kpi-val {
           font-size: 17px; font-weight: 700; color: var(--bk-text);
           font-family: var(--bk-font-num); font-variant-numeric: tabular-nums;
@@ -2034,7 +2240,8 @@ class KrBabyKitPanel extends HTMLElement {
           display: inline-block; animation: bk-pulse 1.2s infinite;
         }
         @keyframes bk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
-        .gauge-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .gauge-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+        .kpi-val { white-space: nowrap; }
         .gauge-card {
           padding: 14px 16px; border-radius: 18px; background: var(--bk-surface);
           border: 1px solid rgba(128, 128, 128, 0.12);
@@ -2204,6 +2411,31 @@ class KrBabyKitPanel extends HTMLElement {
           .tuition-grid { grid-template-columns: 1fr; }
           .timer-grid { grid-template-columns: 1fr; }
           .gauge-grid, .spark-grid, .grid-2, .grid-3 { grid-template-columns: 1fr; }
+          /* Mobile 3-col & 4-col ultra-dense tile overrides */
+          .bento-wide .auto-list, .sections-wrap.layout-cockpit .auto-list {
+            grid-template-columns: 1fr;
+          }
+          .mcols-3 .kpi-grid, .mcols-3 .tuition-grid, .mcols-4 .tuition-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px !important;
+          }
+          .mcols-4 .kpi-grid, .sections-wrap.layout-quad-dense .kpi-grid {
+            grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 6px !important;
+          }
+          .mcols-3 .kpi-card, .mcols-4 .kpi-card {
+            flex-direction: column !important; align-items: center !important; text-align: center !important;
+            padding: 9px 5px !important; gap: 5px !important; border-radius: 14px !important;
+          }
+          .mcols-3 .kpi-card .icon-well, .mcols-4 .kpi-card .icon-well {
+            width: 28px !important; height: 28px !important;
+          }
+          .mcols-3 .kpi-label, .mcols-4 .kpi-label { font-size: 10.5px !important; line-height: 1.2 !important; }
+          .mcols-3 .kpi-ago, .mcols-4 .kpi-ago { display: none; }
+          .mcols-3 .kpi-val, .mcols-4 .kpi-val { font-size: 12px !important; white-space: normal !important; }
+          .mcols-3 .timer-grid, .mcols-4 .timer-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 6px !important;
+          }
+          .mcols-4 .timer-tile { padding: 8px 10px !important; }
+          .mcols-4 .timer-clock { font-size: 13px !important; }
           input, select, textarea { font-size: 16px; min-height: 44px; }
           .btn-primary, .btn-outline, .quick-pill { min-height: 40px; }
           .sub-btn { width: 40px; height: 40px; }
@@ -2218,7 +2450,7 @@ class KrBabyKitPanel extends HTMLElement {
           .theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
           .mobile-nav {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             position: fixed;
             left: 0; right: 0; bottom: 0;
             z-index: 30;
@@ -2265,7 +2497,7 @@ class KrBabyKitPanel extends HTMLElement {
         </div>
       </div>
 
-      <div class="container">
+      <div class="container mcols-${esc(this._prefs.mobileCols || 2)}">
         ${this._error ? `<div class="banner error">${esc(this._error)}</div>` : ""}
         ${this._notice ? `<div class="banner notice">${esc(this._notice)}</div>` : ""}
 
@@ -2455,6 +2687,46 @@ class KrBabyKitPanel extends HTMLElement {
       btn.addEventListener("click", () => {
         const mode = btn.getAttribute("data-select-layout");
         this._updatePrefs((p) => { p.layout = mode; });
+      });
+    });
+    root.querySelectorAll("[data-select-mcols]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const cols = Number(btn.getAttribute("data-select-mcols")) || 2;
+        this._updatePrefs((p) => { p.mobileCols = cols; });
+      });
+    });
+    root.querySelectorAll("[data-deck-tab]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        this._appDeckTab = btn.getAttribute("data-deck-tab");
+        this._render();
+      });
+    });
+    root.querySelectorAll("[data-toggle-recipe]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const rid = btn.getAttribute("data-toggle-recipe");
+        this._openRecipeId = this._openRecipeId === rid ? null : rid;
+        this._render();
+      });
+    });
+    root.querySelectorAll("[data-copy-recipe]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const rid = btn.getAttribute("data-copy-recipe");
+        const recipe = AUTOMATION_RECIPES.find((r) => r.id === rid);
+        const cid = this._currentChild()?.child_id || "your_child_id";
+        if (!recipe) return;
+        try {
+          await navigator.clipboard?.writeText(recipe.yaml(cid));
+          this._copiedRecipeId = rid;
+          this._render();
+          setTimeout(() => {
+            if (this._copiedRecipeId === rid) {
+              this._copiedRecipeId = null;
+              this._render();
+            }
+          }, 1800);
+        } catch {
+          // Ignore clipboard permission errors in insecure contexts.
+        }
       });
     });
     root.querySelectorAll("[data-toggle-section]").forEach((chk) => {

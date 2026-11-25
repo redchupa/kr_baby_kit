@@ -28,7 +28,8 @@
 - **어린이집 보육료 (한국 기준)**: 출생연도 기준 연령반에 맞춰 월 표준보육료, 정부지원금, 본인부담금을 노출합니다. 해외 기준을 선택하면 보육료 센서는 생성되지 않습니다.
 - **Assist (LLM API) 연동**: 자녀별 LLM API가 자동 등록되어 "다음 예방접종 언제야?", "키 백분위 알려줘", "오늘 수유 얼마나 했어?" 같은 자연어 질문에 답할 수 있습니다.
 - **돌봄 기록·실시간 타이머·사진 일기**: 수면·수유·터미타임·유축 실시간 타이머와 기저귀·체온·메모 기록을 지원하며, 아이 프로필 사진 및 기록별 사진 첨부(인증 보호 `.storage/kr_baby_kit_media/` 저장 및 서명 URL 제공, 타임라인·사진 필터·확대 보기)와 최근 7일 수면·수유 추이 차트를 사용할 수 있습니다.
-- **사이드바 전용 화면·성장곡선 차트·테마 커스텀**: Home Assistant 왼쪽 사이드바에 `Baby Kit` 메뉴가 추가되어 아이 정보 조회·수정(이름, 생년월일, 성별, 기준), 아이 추가·삭제(기본 생년월일 `2024-07-01`), 키·몸무게 LMS 성장곡선 차트(3-97% 밴드 및 측정 궤적), 접종·검진 완료 처리를 한 화면에서 할 수 있습니다. 우측 상단 톱니바퀴 버튼에서 12가지 테마, 4가지 카드 스타일, 1열/2열/컴팩트 레이아웃, 섹션 표시 여부와 순서를 자유롭게 커스텀할 수 있습니다.
+- **사이드바 전용 화면·성장곡선 차트·8종 레이아웃 & 모바일 4열 초밀집 모드**: Home Assistant 왼쪽 사이드바에 `Baby Kit` 메뉴가 추가되어 아이 정보 관리, 키·몸무게 LMS 성장곡선 차트(3-97% 밴드 및 측정 궤적), 접종·검진 완료 처리를 한 화면에서 할 수 있습니다. 우측 상단 톱니바퀴 버튼에서 **8가지 레이아웃**(`2열 벤토`, `3열 와이드 스튜디오`, `4열 초밀집 매트릭스`, `상단 요약 콕핏`, `매거진 스플릿`, `탭 포커스 앱`, `컴팩트 보드`, `1열 타임라인`), **모바일 타일 밀도(2열/3열/4열 초밀집)**, 12가지 테마, 4가지 카드 스타일을 자유롭게 커스텀할 수 있습니다.
+- **실전 스마트 육아 자동화 가이드 내장**: 설거지·샤워 중 안심 베이비캠 5분 팔로미 재생, 5분 무움직임 가상 센서 기반 자동 수면 입면·기상 기록, 분유통 무선 버튼 원클릭 수유 기록 + 음성 브리핑 등 Home Assistant 실전 육아 레시피를 패널 안에서 바로 확인하고 YAML을 원클릭 복사할 수 있습니다 ([스마트 육아 자동화 가이드](docs/examples/smart-nursery-automations.md)).
 - **다국어 및 현지 시간대 지원**: Home Assistant 언어 설정에 따라 한국어 또는 영어로 엔티티 이름, 상태, 요약 문구, 캘린더 일정이 표시되며, Home Assistant에 설정된 현지 시간대를 기준으로 날짜를 계산합니다.
 
 ## 설치 방법
@@ -93,7 +94,8 @@ Home Assistant 2024.11 이상과 HACS가 필요합니다. (Home Assistant를 처
 ### 오늘의 돌봄 지표 (`sensor`)
 
 - `돌봄_오늘_수면_시간` (min), `돌봄_오늘_수유량` (mL), `돌봄_오늘_기저귀_횟수`, `돌봄_최근_체온` (°C), `돌봄_실행_중_타이머`
-- 사이드바 패널이나 실시간 타이머로 기록한 돌봄 내역이 Home Assistant 표준 센서로도 노출되어 대시보드 카드, 자동화 알림, Assist 음성 질문에 바로 활용할 수 있습니다.
+- `돌봄_마지막_수유_시각`, `돌봄_마지막_기저귀_시각`, `돌봄_마지막_수면_시각` (`timestamp` — 대시보드에서 "1시간 20분 전" 표시 및 TTS/"분유 언제 먹었어?" 음성 안내에 활용)
+- 사이드바 패널이나 무선 버튼·자동화(`kr_baby_kit.log_care`, `start_timer`, `stop_timer`)로 기록한 돌봄 내역이 Home Assistant 표준 센서로 즉시 반영됩니다.
 
 ### 보육료 (`sensor`, KRW — 한국 기준 전용)
 
@@ -110,6 +112,9 @@ Home Assistant 2024.11 이상과 HACS가 필요합니다. (Home Assistant를 처
 | `kr_baby_kit.mark_event_done` | 접종·검진·구강검진 완료 표시 (쉼표로 여러 개 지정 가능) |
 | `kr_baby_kit.unmark_event_done` | 완료 표시 취소 |
 | `kr_baby_kit.get_schedule` | 전체 일정과 `event_id`, 상태(`done`, `open`, `upcoming`, `past`) 조회 |
+| `kr_baby_kit.log_care` | 무선 버튼·자동화에서 수유·기저귀·수면·터미타임·유축·체온·메모 즉시 기록 |
+| `kr_baby_kit.start_timer` | 수면·수유·터미타임·유축 실시간 타이머 시작 (모션 기반 자동 입면 등) |
+| `kr_baby_kit.stop_timer` | 실행 중 타이머 종료 및 경과 시간 돌봄 기록 저장 |
 
 `event_id` 예시: `DTaP_4`, `IIV_2026`, `checkup_3`, `oral_checkup_1`
 
@@ -152,7 +157,7 @@ Home Assistant 2024.11 이상과 HACS가 필요합니다. (Home Assistant를 처
     event_id: "{{ state_attr('sensor.kr_baby_kit_<자녀>_next_vaccine', 'open_event_ids') | join(',') }}"
 ```
 
-더 많은 예시는 [docs/examples/automation-examples.yaml](docs/examples/automation-examples.yaml)에 있습니다.
+실전 베이비캠 팔로미·무움직임 수면 판정·맘마존 무선 버튼 레시피는 **[docs/examples/smart-nursery-automations.md](docs/examples/smart-nursery-automations.md)** 에서, 추가 일정 예시는 [docs/examples/automation-examples.yaml](docs/examples/automation-examples.yaml)에서 확인하세요.
 
 ## 데이터 출처
 

@@ -22,13 +22,16 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_CHILD_ID, DOMAIN, LOGGER
+from .const import ACTIVITY_KINDS, CONF_CHILD_ID, DOMAIN, LOGGER, TIMER_KINDS
 from .schedule import event_to_dict
 from .storage import (
+    async_add_activity,
     async_append_measurement,
     async_delete_measurement,
     async_get_child_records,
     async_mark_completed,
+    async_start_timer,
+    async_stop_timer,
     async_unmark_completed,
 )
 from .validation import measurement_range
@@ -39,6 +42,9 @@ SERVICE_GET_MEASUREMENTS = "get_measurements"
 SERVICE_MARK_EVENT_DONE = "mark_event_done"
 SERVICE_UNMARK_EVENT_DONE = "unmark_event_done"
 SERVICE_GET_SCHEDULE = "get_schedule"
+SERVICE_LOG_CARE = "log_care"
+SERVICE_START_TIMER = "start_timer"
+SERVICE_STOP_TIMER = "stop_timer"
 
 ALL_SERVICES = (
     SERVICE_RECORD_MEASUREMENT,
@@ -47,6 +53,9 @@ ALL_SERVICES = (
     SERVICE_MARK_EVENT_DONE,
     SERVICE_UNMARK_EVENT_DONE,
     SERVICE_GET_SCHEDULE,
+    SERVICE_LOG_CARE,
+    SERVICE_START_TIMER,
+    SERVICE_STOP_TIMER,
 )
 
 
@@ -140,6 +149,38 @@ _UNMARK_SCHEMA = vol.Schema(
 )
 
 _GET_SCHEDULE_SCHEMA = vol.Schema({vol.Optional(CONF_CHILD_ID): str})
+
+_LOG_CARE_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_CHILD_ID): str,
+        vol.Required("kind"): vol.In(ACTIVITY_KINDS),
+        vol.Optional("timestamp"): str,
+        vol.Optional("method"): str,
+        vol.Optional("amount_ml"): vol.All(vol.Coerce(float), vol.Range(min=0, max=2000)),
+        vol.Optional("duration_min"): vol.All(vol.Coerce(float), vol.Range(min=0, max=1440)),
+        vol.Optional("diaper_type"): vol.In(["wet", "solid", "both"]),
+        vol.Optional("temperature_c"): vol.All(vol.Coerce(float), vol.Range(min=34.0, max=43.0)),
+        vol.Optional("note"): str,
+    }
+)
+
+_START_TIMER_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_CHILD_ID): str,
+        vol.Required("kind"): vol.In(TIMER_KINDS),
+    }
+)
+
+_STOP_TIMER_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_CHILD_ID): str,
+        vol.Required("kind"): vol.In(TIMER_KINDS),
+        vol.Optional("save_log", default=True): cv.boolean,
+        vol.Optional("method"): str,
+        vol.Optional("amount_ml"): vol.All(vol.Coerce(float), vol.Range(min=0, max=2000)),
+        vol.Optional("note"): str,
+    }
+)
 
 
 def _entries(hass: HomeAssistant) -> dict[str, dict]:
@@ -306,6 +347,52 @@ def async_register_services(hass: HomeAssistant) -> None:
             "oral_checkups": _dump(coordinator.all_oral_checkups),
         }
 
+    async def _handle_log_care(call: ServiceCall) -> ServiceResponse:
+        data = call.data
+        child_id = _resolve_child_id(hass, data.get(CONF_CHILD_ID))
+        try:
+            entry = await async_add_activity(
+                hass,
+                child_id,
+                data["kind"],
+                timestamp=data.get("timestamp"),
+                duration_min=data.get("duration_min"),
+                amount_ml=data.get("amount_ml"),
+                method=data.get("method"),
+                diaper_type=data.get("diaper_type"),
+                temperature_c=data.get("temperature_c"),
+                note=data.get("note"),
+            )
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+        await _refresh(hass, child_id)
+        return {"child_id": child_id, "activity": entry}
+
+    async def _handle_start_timer(call: ServiceCall) -> ServiceResponse:
+        data = call.data
+        child_id = _resolve_child_id(hass, data.get(CONF_CHILD_ID))
+        try:
+            timer_obj = await async_start_timer(hass, child_id, data["kind"])
+        except ValueError as err:
+            raise ServiceValidationError(str(err)) from err
+        await _refresh(hass, child_id)
+        return {"child_id": child_id, "timer": timer_obj}
+
+    async def _handle_stop_timer(call: ServiceCall) -> ServiceResponse:
+        data = call.data
+        child_id = _resolve_child_id(hass, data.get(CONF_CHILD_ID))
+        result = await async_stop_timer(
+            hass,
+            child_id,
+            data["kind"],
+            save_log=data.get("save_log", True),
+            note=data.get("note"),
+            amount_ml=data.get("amount_ml"),
+            method=data.get("method"),
+        )
+        await _refresh(hass, child_id)
+        return {"child_id": child_id, "result": result}
+
     hass.services.async_register(
         DOMAIN,
         SERVICE_RECORD_MEASUREMENT,
@@ -347,6 +434,27 @@ def async_register_services(hass: HomeAssistant) -> None:
         _handle_get_schedule,
         schema=_GET_SCHEDULE_SCHEMA,
         supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_LOG_CARE,
+        _handle_log_care,
+        schema=_LOG_CARE_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_START_TIMER,
+        _handle_start_timer,
+        schema=_START_TIMER_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_STOP_TIMER,
+        _handle_stop_timer,
+        schema=_STOP_TIMER_SCHEMA,
+        supports_response=SupportsResponse.OPTIONAL,
     )
 
 

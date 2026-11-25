@@ -4,6 +4,19 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.18.0] - 2026-11-25
+
+### Added
+
+- **8 Distinct Layout Modes & Mobile 2/3/4-Column Dense Tile Control (`frontend/automations.js`, `frontend/panel.js`)**:
+  - Expanded layout modes from 3 to **8 presets**: `2-Col Bento`, `3-Col Studio`, `4-Col Dense Matrix`, `Top KPI Cockpit`, `Magazine Split`, `Tabbed App Deck`, `Compact Board`, and `Single Feed`.
+  - Added a **Mobile Tile Columns (`2-Col` / `3-Col Dense` / `4-Col Ultra`)** selector in the Gear drawer so phone screens can pack 3 or 4 vertical micro-tiles per row without scrolling.
+- **Native Smart-Home Care Services & Last-Event Timestamp Sensors (`services.py`, `sensor.py`, `llm_api.py`)**:
+  - Added `kr_baby_kit.log_care`, `kr_baby_kit.start_timer`, and `kr_baby_kit.stop_timer` services for Zigbee/Matter wireless buttons and motion automations.
+  - Added `last_feeding_at`, `last_diaper_at`, and `last_sleep_at` `TIMESTAMP` sensors plus elapsed-time badges on the dashboard and `last_events` (`minutes_ago`) in the Assist `get_daily_care_summary` tool for voice queries ("분유 언제 먹었어?").
+- **In-Panel Smart Nursery Automation Cookbook & Docs (`frontend/automations.js`, `docs/examples/smart-nursery-automations.md`)**:
+  - Added 6 real-world Home Assistant parenting automation recipes (Follow-Me 5-min Baby Cam to occupied kitchen/bathroom when nursery counter is 0, 5-min motion-hold virtual sleep sensor, wireless formula-station button + TTS elapsed-time briefing, 2 AM 8% warm nursing light, fever 2h recheck alert, and D-7 vaccine reminder) with one-click YAML copy pre-filled with `child_id`.
+
 ## [0.17.1] - 2026-11-25
 
 ### Fixed

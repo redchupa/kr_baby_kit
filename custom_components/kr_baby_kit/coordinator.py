@@ -116,6 +116,39 @@ def compute_today_summary(
     }
 
 
+def compute_last_care_events(activities: list[dict[str, Any]]) -> dict[str, dict[str, Any] | None]:
+    """Return the most recent feeding, diaper, and sleep entries across all days."""
+    last_feeding: dict[str, Any] | None = None
+    last_diaper: dict[str, Any] | None = None
+    last_sleep: dict[str, Any] | None = None
+    for item in activities:
+        kind = item.get("kind")
+        if kind == "feeding" and last_feeding is None and item.get("timestamp"):
+            last_feeding = {
+                "timestamp": item["timestamp"],
+                "method": item.get("method"),
+                "amount_ml": item.get("amount_ml"),
+                "duration_min": item.get("duration_min"),
+            }
+        elif kind == "diaper" and last_diaper is None and item.get("timestamp"):
+            last_diaper = {
+                "timestamp": item["timestamp"],
+                "diaper_type": item.get("diaper_type") or "wet",
+            }
+        elif kind == "sleep" and last_sleep is None and item.get("timestamp"):
+            last_sleep = {
+                "timestamp": item["timestamp"],
+                "duration_min": item.get("duration_min"),
+            }
+        if last_feeding and last_diaper and last_sleep:
+            break
+    return {
+        "feeding": last_feeding,
+        "diaper": last_diaper,
+        "sleep": last_sleep,
+    }
+
+
 def compute_weekly_care(
     activities: list[dict[str, Any]], today: date, days: int = 7
 ) -> list[dict[str, Any]]:
@@ -381,6 +414,7 @@ class BabyKitCoordinator(DataUpdateCoordinator):
             "activities": activities,
             "timers": timers,
             "today_summary": compute_today_summary(activities, today_iso),
+            "last_care": compute_last_care_events(activities),
             "weekly_care": compute_weekly_care(activities, today),
             "care_tuition": care_tuition,
             "bmi_raw": bmi_raw,

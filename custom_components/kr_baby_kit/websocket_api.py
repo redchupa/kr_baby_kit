@@ -27,7 +27,11 @@ from .const import (
     disclaimer_for,
     is_korean,
 )
-from .coordinator import compute_today_summary, compute_weekly_care
+from .coordinator import (
+    compute_last_care_events,
+    compute_today_summary,
+    compute_weekly_care,
+)
 from .growth import age_months as calc_age_months
 from .media_view import sign_media_url
 from .schedule import event_to_dict
@@ -178,6 +182,7 @@ def _serialize_child(
         "activities": signed_activities,
         "timers": timer_map,
         "today_summary": compute_today_summary(act_list, today_iso),
+        "last_care": compute_last_care_events(act_list),
         "weekly_care": compute_weekly_care(act_list, today),
         "attribution": attribution_for(coordinator.profile, korean=ko),
         "attribution_ko": attribution_for(coordinator.profile, korean=True),

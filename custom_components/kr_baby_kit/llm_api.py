@@ -323,10 +323,27 @@ class GetDailyCareSummaryTool(_BabyKitTool):
         coord = self._coordinator()
         if coord is None or coord.data is None:
             return {"error": "데이터 준비 중", "disclaimer": MEDICAL_DISCLAIMER}
+        from homeassistant.util import dt as dt_util
+
+        now_dt = dt_util.now()
+        last_care = coord.data.get("last_care") or {}
+        enriched_last: dict[str, Any] = {}
+        for k, entry in last_care.items():
+            if not entry or not entry.get("timestamp"):
+                enriched_last[k] = None
+                continue
+            parsed = dt_util.parse_datetime(str(entry["timestamp"]))
+            mins_ago = None
+            if parsed is not None:
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=now_dt.tzinfo)
+                mins_ago = max(0, int((now_dt - parsed).total_seconds() // 60))
+            enriched_last[k] = {**entry, "minutes_ago": mins_ago}
         return {
             "child_name": coord.child_name,
             "today": coord.data.get("today"),
             "today_summary": coord.data.get("today_summary") or {},
+            "last_events": enriched_last,
             "weekly_care": coord.data.get("weekly_care") or [],
             "active_timers": coord.data.get("timers") or {},
             "disclaimer": MEDICAL_DISCLAIMER,

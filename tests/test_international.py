@@ -157,10 +157,14 @@ def test_default_birthdate_and_panel_assets():
     themes_js = FRONTEND_DIR / "themes.js"
     cards_js = FRONTEND_DIR / "cards.js"
     charts_js = FRONTEND_DIR / "charts.js"
+    automations_js = FRONTEND_DIR / "automations.js"
     assert panel_js.is_file()
     assert themes_js.is_file()
     assert cards_js.is_file()
     assert charts_js.is_file()
+    assert automations_js.is_file()
+    auto_text = automations_js.read_text(encoding="utf-8")
+    assert auto_text.count('id: "') >= 14  # 8 LAYOUT_MODES + 6 AUTOMATION_RECIPES
     js_text = panel_js.read_text(encoding="utf-8")
     themes_text = themes_js.read_text(encoding="utf-8")
     cards_text = cards_js.read_text(encoding="utf-8")
@@ -351,3 +355,47 @@ def test_authenticated_media_url_helpers_and_care_sensors():
     s_timers = ActiveTimersSensor(coord, entry)
     assert s_timers.native_value == 1
     assert s_timers.extra_state_attributes["running_kinds"] == ["sleep"]
+
+
+def test_last_care_timestamp_sensors_and_care_service_names():
+    from types import SimpleNamespace
+    from custom_components.kr_baby_kit.coordinator import compute_last_care_events
+    from custom_components.kr_baby_kit.sensor import (
+        LastDiaperTimeSensor,
+        LastFeedingTimeSensor,
+        LastSleepTimeSensor,
+    )
+    from custom_components.kr_baby_kit.services import ALL_SERVICES
+
+    assert "log_care" in ALL_SERVICES
+    assert "start_timer" in ALL_SERVICES
+    assert "stop_timer" in ALL_SERVICES
+
+    activities = [
+        {"id": "3", "kind": "feeding", "timestamp": "2026-11-25T14:20:00+09:00", "method": "formula", "amount_ml": 150.0},
+        {"id": "2", "kind": "diaper", "timestamp": "2026-11-25T13:10:00+09:00", "diaper_type": "wet"},
+        {"id": "1", "kind": "sleep", "timestamp": "2026-11-25T11:00:00+09:00", "duration_min": 80.0},
+    ]
+    last_care = compute_last_care_events(activities)
+    assert last_care["feeding"]["amount_ml"] == 150.0
+    assert last_care["diaper"]["diaper_type"] == "wet"
+    assert last_care["sleep"]["duration_min"] == 80.0
+
+    entry = SimpleNamespace(entry_id="e1", data={"child_id": "c1", "child_name": "Child A"})
+    coord = SimpleNamespace(
+        hass=SimpleNamespace(config=SimpleNamespace(language="ko")),
+        last_update_success=True,
+        child_id="c1",
+        profile=PROFILE_KR,
+        data={
+            "today_summary": {"feeding_count": 1, "feeding_ml": 150.0, "diaper_count": 1},
+            "last_care": last_care,
+            "timers": {},
+        },
+    )
+    sf = LastFeedingTimeSensor(coord, entry)
+    sd = LastDiaperTimeSensor(coord, entry)
+    ss = LastSleepTimeSensor(coord, entry)
+    assert sf.native_value is not None and sf.extra_state_attributes["amount_ml"] == 150.0
+    assert sd.native_value is not None and sd.extra_state_attributes["diaper_type"] == "wet"
+    assert ss.native_value is not None and ss.extra_state_attributes["duration_min"] == 80.0

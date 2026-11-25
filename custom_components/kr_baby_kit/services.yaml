@@ -148,3 +148,171 @@ get_schedule:
       required: false
       selector:
         text:
+
+log_care:
+  name: 돌봄 기록 추가
+  description: 무선 버튼·모션 자동화·스크립트에서 수유·기저귀·수면·터미타임·유축·체온·메모를 바로 기록합니다.
+  fields:
+    child_id:
+      name: 자녀 ID
+      description: 미지정 시 등록된 단일 자녀에 자동 적용.
+      required: false
+      selector:
+        text:
+    kind:
+      name: 기록 종류
+      required: true
+      example: "feeding"
+      selector:
+        select:
+          options:
+            - label: 수유 (feeding)
+              value: feeding
+            - label: 기저귀 (diaper)
+              value: diaper
+            - label: 수면 (sleep)
+              value: sleep
+            - label: 터미타임 (tummy_time)
+              value: tummy_time
+            - label: 유축 (pumping)
+              value: pumping
+            - label: 체온 (temperature)
+              value: temperature
+            - label: 메모 (note)
+              value: note
+    method:
+      name: 수유 방법
+      required: false
+      example: "formula"
+      selector:
+        select:
+          options:
+            - label: 분유 (formula)
+              value: formula
+            - label: 젖병 모유 (bottle)
+              value: bottle
+            - label: 모유 좌 (breast_left)
+              value: breast_left
+            - label: 모유 우 (breast_right)
+              value: breast_right
+            - label: 모유 양쪽 (breast_both)
+              value: breast_both
+            - label: 이유식 (solid)
+              value: solid
+    amount_ml:
+      name: 용량 (mL)
+      required: false
+      example: 140
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 5
+          unit_of_measurement: mL
+    duration_min:
+      name: 시간 (분)
+      required: false
+      example: 60
+      selector:
+        number:
+          min: 0
+          max: 1440
+          step: 1
+          unit_of_measurement: min
+    diaper_type:
+      name: 기저귀 종류
+      required: false
+      selector:
+        select:
+          options:
+            - label: 소변 (wet)
+              value: wet
+            - label: 대변 (solid)
+              value: solid
+            - label: 소변+대변 (both)
+              value: both
+    temperature_c:
+      name: 체온 (°C)
+      required: false
+      example: 36.7
+      selector:
+        number:
+          min: 34
+          max: 43
+          step: 0.1
+          unit_of_measurement: "°C"
+    note:
+      name: 메모
+      required: false
+      selector:
+        text:
+
+start_timer:
+  name: 돌봄 타이머 시작
+  description: 수면·수유·터미타임·유축 실시간 타이머를 시작합니다 (모션 기반 자동 입면 감지 등에 활용).
+  fields:
+    child_id:
+      name: 자녀 ID
+      required: false
+      selector:
+        text:
+    kind:
+      name: 타이머 종류
+      required: true
+      example: "sleep"
+      selector:
+        select:
+          options:
+            - label: 수면 (sleep)
+              value: sleep
+            - label: 수유 (feeding)
+              value: feeding
+            - label: 터미타임 (tummy_time)
+              value: tummy_time
+            - label: 유축 (pumping)
+              value: pumping
+
+stop_timer:
+  name: 돌봄 타이머 종료 및 저장
+  description: 실행 중인 실시간 타이머를 종료하고 경과 시간(분)을 돌봄 기록으로 자동 저장합니다.
+  fields:
+    child_id:
+      name: 자녀 ID
+      required: false
+      selector:
+        text:
+    kind:
+      name: 타이머 종류
+      required: true
+      example: "sleep"
+      selector:
+        select:
+          options:
+            - label: 수면 (sleep)
+              value: sleep
+            - label: 수유 (feeding)
+              value: feeding
+            - label: 터미타임 (tummy_time)
+              value: tummy_time
+            - label: 유축 (pumping)
+              value: pumping
+    save_log:
+      name: 기록으로 저장
+      default: true
+      required: false
+      selector:
+        boolean:
+    amount_ml:
+      name: 수유·유축 용량 (mL)
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 1000
+          step: 5
+          unit_of_measurement: mL
+    note:
+      name: 메모
+      required: false
+      selector:
+        text:

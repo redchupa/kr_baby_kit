@@ -26,7 +26,8 @@ Taken with a made-up demo child.
 - **Vaccination, well-child, and dental schedules**: Projected from the child's birthdate into calendars and sensors. Open windows expose a deadline sensor; upcoming windows expose a next-window start sensor.
 - **Completion tracking**: Mark completed doses or visits with `kr_baby_kit.mark_event_done` to remove them from upcoming sensors and monthly reminders. Marking is optional; windows that have passed without a mark simply show as passed without triggering warnings.
 - **Daily care logs, live timers, 7-day chart & photo diary**: Inspired by Baby Buddy — live stopwatches for sleep, feeding, tummy time, and pumping; quick logs and modal/bottom-sheet logger for diapers, temperature, and notes; 7-day sleep and feeding trend bar chart; child profile avatars and photo-attached timeline entries stored privately under `.storage/kr_baby_kit_media/` and served via short-lived authenticated URLs.
-- **Dedicated sidebar panel with LMS growth curves, 12 themes & layout customization**: Adds a `Baby Kit` entry to the Home Assistant sidebar featuring interactive KDCA/WHO LMS growth curve charts (3rd–97th percentile bands with child trajectory overlay), child management (default birthdate `2024-07-01`), measurement logging, and vaccine/checkup completion marks. Use the gear button in the top bar to switch between 12 distinct themes, 4 card styles, layout modes (single column, 2-column bento, compact), section visibility, and card order.
+- **Dedicated sidebar panel with 8 layouts, mobile 4-column dense mode & 12 themes**: Adds a `Baby Kit` entry to the Home Assistant sidebar featuring interactive KDCA/WHO LMS growth curve charts, **8 layout modes** (`2-Col Bento`, `3-Col Studio`, `4-Col Dense Matrix`, `Top KPI Cockpit`, `Magazine Split`, `Tabbed App Deck`, `Compact Board`, `Single Feed`), **mobile 2/3/4-column micro-tile density**, 12 themes, and 4 card styles.
+- **Built-in Smart Nursery Automation Cookbook**: Browse battle-tested Home Assistant parenting recipes (5-min Follow-Me Baby Cam to kitchen/bathroom when nursery occupancy is 0, 5-min motion-hold virtual sleep sensor, Zigbee formula-station button + "When did the baby last eat?" TTS/Assist) and one-click copy YAML with your `child_id` pre-filled ([Smart Nursery Automation Cookbook](docs/examples/smart-nursery-automations.md)).
 - **Home Assistant localization & timezone**: Entity names, states, summaries, and calendar events automatically follow your Home Assistant language (`en` / `ko`) and configured local time zone.
 - **Assist (LLM API)**: Registers a per-child LLM API for Home Assistant Assist so you can ask about upcoming vaccines, checkups, latest growth percentiles, or today's sleep/feeding/diaper summary in natural language.
 - **South Korea childcare tuition (KR profile only)**: Exposes monthly standard tuition, government subsidy, and parent share in KRW based on birth-year age class. Not created when using the International profile.
@@ -93,7 +94,8 @@ Each of the three categories provides:
 ### Daily care metrics (`sensor`)
 
 - **Today's sleep** (`min`), **Today's feeding volume** (`mL`), **Today's diapers**, **Last temperature** (`°C`), **Active care timers**
-- Care logs and timers recorded in the `Baby Kit` panel update native Home Assistant sensors immediately for Lovelace cards, mobile notifications, and Assist voice queries.
+- **Last feeding time**, **Last diaper change**, **Last sleep time** (`timestamp` device class — displays relative time like "1 hour ago" on dashboards and powers TTS / voice queries)
+- Care logs and timers recorded in the `Baby Kit` panel or via `kr_baby_kit.log_care` / `start_timer` / `stop_timer` update native Home Assistant sensors immediately.
 
 ### Childcare tuition (`sensor`, KRW — South Korea profile only)
 
@@ -109,6 +111,9 @@ Each of the three categories provides:
 | `kr_baby_kit.mark_event_done` | Mark one or more `event_id`s completed (comma-separated) |
 | `kr_baby_kit.unmark_event_done` | Remove completion marks |
 | `kr_baby_kit.get_schedule` | Return the full schedule with `event_id` and status (`done`, `open`, `upcoming`, `past`) |
+| `kr_baby_kit.log_care` | Log feeding, diaper, sleep, tummy time, pumping, temperature, or note from wireless buttons or automations |
+| `kr_baby_kit.start_timer` | Start a live sleep, feeding, tummy time, or pumping timer from automations |
+| `kr_baby_kit.stop_timer` | Stop an active timer and save elapsed minutes as a care log |
 
 Example `event_id` values: `DTaP_4`, `IIV_2026`, `checkup_3`, `oral_checkup_1`.
 

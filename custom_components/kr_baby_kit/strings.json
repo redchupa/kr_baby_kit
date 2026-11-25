@@ -78,6 +78,18 @@
     "get_schedule": {
       "name": "Get schedule",
       "description": "Return every vaccine, checkup, and dental checkup window with event_id and status."
+    },
+    "log_care": {
+      "name": "Log daily care",
+      "description": "Log feeding, diaper, sleep, tummy time, pumping, temperature, or note from automations or wireless buttons."
+    },
+    "start_timer": {
+      "name": "Start care timer",
+      "description": "Start a live stopwatch timer for sleep, feeding, tummy time, or pumping."
+    },
+    "stop_timer": {
+      "name": "Stop care timer",
+      "description": "Stop an active timer and save the elapsed duration as a care log."
     }
   },
   "entity": {
@@ -135,6 +147,15 @@
       },
       "active_timers": {
         "name": "Active care timers"
+      },
+      "last_feeding_at": {
+        "name": "Last feeding time"
+      },
+      "last_diaper_at": {
+        "name": "Last diaper change"
+      },
+      "last_sleep_at": {
+        "name": "Last sleep time"
       }
     },
     "binary_sensor": {

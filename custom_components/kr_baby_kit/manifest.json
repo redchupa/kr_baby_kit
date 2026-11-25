@@ -9,5 +9,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/redchupa/kr_baby_kit/issues",
   "requirements": [],
-  "version": "0.17.1"
+  "version": "0.18.0"
 }

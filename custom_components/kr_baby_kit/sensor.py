@@ -82,6 +82,9 @@ async def async_setup_entry(
             TodayDiaperCountSensor(coordinator, entry),
             LastTemperatureSensor(coordinator, entry),
             ActiveTimersSensor(coordinator, entry),
+            LastFeedingTimeSensor(coordinator, entry),
+            LastDiaperTimeSensor(coordinator, entry),
+            LastSleepTimeSensor(coordinator, entry),
         ]
     )
     async_add_entities(entities)
@@ -544,4 +547,95 @@ class ActiveTimersSensor(_BaseCareSensor):
         return {
             "running_kinds": running,
             "timers": timers,
+        }
+
+
+def _parse_local_ts(iso_str: str | None) -> datetime | None:
+    if not iso_str:
+        return None
+    parsed = dt_util.parse_datetime(str(iso_str))
+    if parsed is None:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt_util.DEFAULT_TIME_ZONE)
+    return parsed
+
+
+class LastFeedingTimeSensor(_BaseCareSensor):
+    """Timestamp of the most recent feeding log (for dashboards & TTS scripts)."""
+
+    _attr_translation_key = "last_feeding_at"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:baby-bottle"
+
+    def _info(self) -> dict:
+        return ((self.coordinator.data or {}).get("last_care") or {}).get("feeding") or {}
+
+    @property
+    def native_value(self) -> datetime | None:
+        return _parse_local_ts(self._info().get("timestamp"))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        info = self._info()
+        s = self._summary()
+        return {
+            "recorded_at": info.get("timestamp"),
+            "method": info.get("method"),
+            "amount_ml": info.get("amount_ml"),
+            "duration_min": info.get("duration_min"),
+            "today_feeding_count": int(s.get("feeding_count") or 0),
+            "today_feeding_ml": round(float(s.get("feeding_ml") or 0.0), 1),
+        }
+
+
+class LastDiaperTimeSensor(_BaseCareSensor):
+    """Timestamp of the most recent diaper change."""
+
+    _attr_translation_key = "last_diaper_at"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:human-baby-changing-table"
+
+    def _info(self) -> dict:
+        return ((self.coordinator.data or {}).get("last_care") or {}).get("diaper") or {}
+
+    @property
+    def native_value(self) -> datetime | None:
+        return _parse_local_ts(self._info().get("timestamp"))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        info = self._info()
+        s = self._summary()
+        return {
+            "recorded_at": info.get("timestamp"),
+            "diaper_type": info.get("diaper_type"),
+            "today_diaper_count": int(s.get("diaper_count") or 0),
+        }
+
+
+class LastSleepTimeSensor(_BaseCareSensor):
+    """Timestamp of the most recent sleep entry (or active sleep timer info)."""
+
+    _attr_translation_key = "last_sleep_at"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:sleep"
+
+    def _info(self) -> dict:
+        return ((self.coordinator.data or {}).get("last_care") or {}).get("sleep") or {}
+
+    @property
+    def native_value(self) -> datetime | None:
+        return _parse_local_ts(self._info().get("timestamp"))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        info = self._info()
+        timers = (self.coordinator.data or {}).get("timers") or {}
+        sleep_timer = timers.get("sleep") or {}
+        return {
+            "recorded_at": info.get("timestamp"),
+            "duration_min": info.get("duration_min"),
+            "sleep_timer_running": bool(sleep_timer.get("started_at")),
+            "sleep_timer_started_at": sleep_timer.get("started_at"),
         }
