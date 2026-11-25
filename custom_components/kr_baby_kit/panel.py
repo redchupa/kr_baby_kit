@@ -5,12 +5,12 @@ from pathlib import Path
 
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, LOGGER, is_korean
+from .const import DOMAIN, LOGGER
 
 PANEL_URL_PATH = "kr_baby_kit"
 STATIC_URL_PATH = "/kr_baby_kit_static"
 FRONTEND_DIR = Path(__file__).parent / "frontend"
-PANEL_VERSION = "0.11.0"
+PANEL_VERSION = "0.11.1"
 
 
 async def async_register_panel(hass: HomeAssistant) -> None:
@@ -43,7 +43,7 @@ async def async_register_panel(hass: HomeAssistant) -> None:
         )
         domain_data["_static_registered"] = True
 
-    title = "영유아 키트" if is_korean(hass) else "Baby Kit"
+    title = "Baby Kit"
     try:
         await panel_custom.async_register_panel(
             hass,

@@ -162,16 +162,6 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
         return {}
 
     @property
-    def available(self) -> bool:
-        if not super().available:
-            return False
-        info = self._info()
-        return (
-            info.get("statistical_percentile") is not None
-            or info.get("summary_ko") is not None
-        )
-
-    @property
     def is_on(self) -> bool:
         pct = self._info().get("statistical_percentile")
         if pct is None:
@@ -188,12 +178,17 @@ class _ConcernSensor(CoordinatorEntity[BabyKitCoordinator], BinarySensorEntity):
                 level = "low"
             elif pct > _CLINICAL_HIGH_PCT:
                 level = "high"
+        summary_ko = info.get("summary_ko")
+        summary_en = info.get("summary_en")
+        if pct is None and not summary_ko:
+            summary_ko = "측정 기록 없음 — 키·몸무게·머리둘레를 입력하면 백분위가 계산됩니다."
+            summary_en = "No measurement recorded yet — enter measurements to compute percentiles."
         ko = is_korean(self.coordinator.hass)
         return {
             "statistical_percentile": pct,
             "level": level,
-            "summary_ko": info.get("summary_ko"),
-            "summary_en": info.get("summary_en"),
+            "summary_ko": summary_ko,
+            "summary_en": summary_en,
             "value": info.get("value"),
             "measured_at": info.get("measured_at"),
             "disclaimer": disclaimer_for(korean=ko),

@@ -2,7 +2,7 @@
 
 const STRINGS = {
   ko: {
-    title: "영유아 키트",
+    title: "Baby Kit",
     addChild: "아이 추가",
     editChild: "정보 수정",
     deleteChild: "삭제",

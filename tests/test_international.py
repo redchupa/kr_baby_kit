@@ -179,3 +179,28 @@ def test_default_birthdate_and_panel_assets():
     assert serialized["birthdate"] == "2024-07-01"
     assert serialized["inputs"]["height"]["is_default_median"] is True
     assert serialized["inputs"]["height"]["value"] is not None
+
+
+def test_concern_binary_sensors_stay_available_without_measurements():
+    from types import SimpleNamespace
+    from custom_components.kr_baby_kit.binary_sensor import (
+        BMIConcernSensor,
+        HeadConcernSensor,
+        WeightForLengthConcernSensor,
+    )
+
+    coord = SimpleNamespace(
+        hass=None,
+        last_update_success=True,
+        child_id="c1",
+        profile=PROFILE_KR,
+        data={"age_months": 28.8, "percentiles": {}, "weight_for_length": None},
+    )
+    entry = SimpleNamespace(entry_id="e1", data={"child_id": "c1", "child_name": "Child A"})
+
+    for cls in (HeadConcernSensor, BMIConcernSensor, WeightForLengthConcernSensor):
+        ent = cls(coord, entry)
+        assert ent.available is True
+        assert ent.is_on is False
+        attrs = ent.extra_state_attributes
+        assert attrs["summary_ko"] and attrs["summary_en"]

@@ -4,6 +4,16 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.11.1] - 2026-11-25
+
+### Fixed
+
+- **Growth concern binary sensors no longer show `unavailable` before the first measurement**: `head_concern`, `bmi_concern`, and `weight_for_length_concern` now stay available (`off` / "No concern signal") with a clear note in `summary_ko` / `summary_en` until measurements are recorded.
+
+### Changed
+
+- **Sidebar title**: Always displays `Baby Kit` in the Home Assistant sidebar for consistency across both Korean and international users.
+
 ## [0.11.0] - 2026-11-25
 
 ### Added
