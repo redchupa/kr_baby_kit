@@ -4,6 +4,16 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.16.0] - 2026-11-25
+
+### Changed
+
+- **Balanced PC Bento + Mom-friendly Mobile Hero layout**:
+  - New **Hero Baby Card** combining the child avatar, name, `D+days` lived badge, age/birthdate, quick edit, and integrated status chips bar.
+  - Balanced 2-column full-height Bento grid on PC (`max-width: 1380px`, `align-items: stretch`) with all cards sized evenly by default — eliminating awkward wide whitespace on desktop while keeping the mobile bottom-tabbed layout sleek and warm.
+  - Defaults to the warm `Nordic Nursery` + `Bubble Card` combination on first open (still customizable across 12 themes and 4 card styles in the Gear drawer).
+  - Immunization/checkup schedule shows the next 5 items by default with a `Show all` toggle so the dashboard stays crisp and uncluttered.
+
 ## [0.15.1] - 2026-11-25
 
 ### Added

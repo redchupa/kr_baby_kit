@@ -1,21 +1,21 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.15.1";
+import { THEMES, getThemeCss } from "./themes.js?v=0.16.0";
 import {
   CARD_STYLES,
   ICONS,
   cardStyleCss,
   renderPercentileGauge,
   renderSparkline,
-} from "./cards.js?v=0.15.1";
+} from "./cards.js?v=0.16.0";
 
-const PREFS_KEY = "kr_baby_kit_panel_prefs_v3";
+const PREFS_KEY = "kr_baby_kit_panel_prefs_v4";
 
 const DEFAULT_PREFS = {
   lang: "auto", // "auto" | "ko" | "en"
-  theme: "ha-native",
+  theme: "nordic-nursery",
   cardStyle: "bubble", // "bubble" | "mushroom" | "bento-pro" | "classic"
   layout: "bento", // "single" | "bento" | "compact"
-  order: ["care", "growth", "measurements", "timeline", "tuition", "schedules"],
+  order: ["care", "growth", "measurements", "timeline", "schedules", "tuition"],
   visible: {
     chips: true,
     care: true,
@@ -27,12 +27,12 @@ const DEFAULT_PREFS = {
     footer: true,
   },
   wide: {
-    care: true,
+    care: false,
     growth: false,
     measurements: false,
-    timeline: true,
+    timeline: false,
     tuition: false,
-    schedules: true,
+    schedules: false,
   },
   defaultScheduleTab: "vaccines",
 };
@@ -138,6 +138,9 @@ const STRINGS = {
     markDone: "완료",
     unmarkDone: "취소",
     showPast: "지난 일정 보기",
+    showAllSched: (n) => `전체 일정 더 보기 (${n}개)`,
+    showLessSched: "접기",
+    daysOld: (d) => `D+${d}`,
     tuition: "어린이집 보육료",
     tuitionStd: "표준보육료",
     tuitionSub: "정부지원금",
@@ -273,6 +276,9 @@ const STRINGS = {
     markDone: "Done",
     unmarkDone: "Undo",
     showPast: "Show past windows",
+    showAllSched: (n) => `Show all (${n})`,
+    showLessSched: "Show less",
+    daysOld: (d) => `Day ${d}`,
     tuition: "Childcare tuition (KR)",
     tuitionStd: "Standard",
     tuitionSub: "Subsidy",
@@ -429,6 +435,7 @@ class KrBabyKitPanel extends HTMLElement {
     this._pendingPhoto = null;
     this._lightboxUrl = null;
     this._showPast = false;
+    this._expandSchedule = false;
     this._modal = null;
     this._settingsOpen = false;
     this._busy = false;
@@ -890,8 +897,9 @@ class KrBabyKitPanel extends HTMLElement {
       : list.filter((e) => e.status === "open" || e.status === "upcoming" || e.status === "done");
 
     if (!filtered.length) return `<p class="muted">-</p>`;
-    return filtered
-      .slice(0, 25)
+    const limit = this._expandSchedule ? 30 : 5;
+    const shown = filtered.slice(0, limit);
+    const rows = shown
       .map((e) => {
         const name = ko ? e.name_ko : e.name_en || e.name_ko;
         const dose = e.kind === "vaccine" && e.dose ? (ko ? ` ${e.dose}차` : ` #${e.dose}`) : "";
@@ -921,6 +929,11 @@ class KrBabyKitPanel extends HTMLElement {
           </div>`;
       })
       .join("");
+    const toggleBtn =
+      filtered.length > 5
+        ? `<button type="button" class="btn-outline small expand-btn" id="btn-expand-sched">${esc(this._expandSchedule ? t.showLessSched : t.showAllSched(filtered.length))}</button>`
+        : "";
+    return rows + toggleBtn;
   }
 
   _renderCareFormFields() {
@@ -1552,6 +1565,7 @@ class KrBabyKitPanel extends HTMLElement {
       const sexLabel = child.sex === "male" ? t.male : t.female;
       const profLabel = child.profile === "kr" ? "KR · KDCA" : "WHO";
       const initial = (child.name || "?").trim().slice(0, 1).toUpperCase();
+      const livedDays = daysBetween(child.birthdate, child.today);
       const mFilter = this._mobileVisibleSections();
       const sectionsHtml = this._prefs.order
         .filter((secId) => !mFilter || mFilter.has(secId))
@@ -1559,33 +1573,37 @@ class KrBabyKitPanel extends HTMLElement {
         .join("");
 
       bodyHtml = `
-        <div class="card child-header">
-          <div class="child-id-wrap">
-            <label class="avatar-btn" title="${esc(t.changePhoto)}">
-              ${
-                child.avatar_url
-                  ? `<img src="${esc(child.avatar_url)}" class="avatar-img" alt="${esc(child.name)}" />`
-                  : `<span class="avatar-fallback">${esc(initial)}</span>`
-              }
-              <span class="avatar-cam">${ICONS.camera}</span>
-              <input type="file" id="avatar-input" accept="image/*" hidden />
-            </label>
-            <div>
-              <h2>${esc(child.name)}</h2>
-              <div class="meta">
-                <span>${esc(t.ageMonths(child.age_months))}</span>
-                <span>·</span>
-                <span>${esc(child.birthdate)}</span>
-                <span>·</span>
-                <span>${esc(sexLabel)}</span>
-                <span class="badge neutral">${esc(profLabel)}</span>
+        <div class="hero-card card">
+          <div class="hero-top">
+            <div class="child-id-wrap">
+              <label class="avatar-btn" title="${esc(t.changePhoto)}">
+                ${
+                  child.avatar_url
+                    ? `<img src="${esc(child.avatar_url)}" class="avatar-img" alt="${esc(child.name)}" />`
+                    : `<span class="avatar-fallback">${esc(initial)}</span>`
+                }
+                <span class="avatar-cam">${ICONS.camera}</span>
+                <input type="file" id="avatar-input" accept="image/*" hidden />
+              </label>
+              <div>
+                <div class="hero-name-row">
+                  <h2>${esc(child.name)}</h2>
+                  ${livedDays != null && livedDays >= 0 ? `<span class="day-pill">${esc(t.daysOld(livedDays + 1))}</span>` : ""}
+                </div>
+                <div class="meta">
+                  <span>${esc(t.ageMonths(child.age_months))}</span>
+                  <span>·</span>
+                  <span>${esc(child.birthdate)}</span>
+                  <span>·</span>
+                  <span>${esc(sexLabel)}</span>
+                  <span class="badge neutral">${esc(profLabel)}</span>
+                </div>
               </div>
             </div>
+            <button class="btn-outline small" id="btn-edit-child">${esc(t.editChild)}</button>
           </div>
-          <button class="btn-outline" id="btn-edit-child">${esc(t.editChild)}</button>
+          ${this._renderStatusChips(child)}
         </div>
-
-        ${this._renderStatusChips(child)}
 
         <div class="sections-wrap ${layoutClass}">
           ${sectionsHtml}
@@ -1627,10 +1645,30 @@ class KrBabyKitPanel extends HTMLElement {
         }
         .topbar h1 { margin: 0; font-size: 20px; font-weight: 600; font-family: var(--bk-font-head); }
         .container {
-          max-width: ${this._prefs.layout === "bento" ? "1180px" : "960px"};
+          max-width: ${this._prefs.layout === "bento" ? "1380px" : "880px"};
           margin: 0 auto;
-          padding: ${this._prefs.layout === "compact" ? "10px 12px" : "18px 16px"};
+          padding: ${this._prefs.layout === "compact" ? "10px 14px" : "18px 22px"};
         }
+        .hero-card {
+          margin-bottom: 16px !important;
+          background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(107, 142, 120, 0.06));
+        }
+        .hero-top {
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 12px; flex-wrap: wrap;
+        }
+        .hero-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .hero-name-row h2 { margin: 0; }
+        .day-pill {
+          padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+          background: var(--bk-accent); color: var(--bk-accent-text);
+          font-family: var(--bk-font-num);
+        }
+        .hero-card .chips-bar {
+          margin-top: 14px; margin-bottom: 0; padding-top: 12px;
+          border-top: 1px solid rgba(128, 128, 128, 0.14);
+        }
+        .expand-btn { align-self: center; margin-top: 6px; }
         .child-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
         .pill {
           padding: 7px 14px; border-radius: var(--bk-pill-radius); border: var(--bk-card-border);
@@ -1657,10 +1695,12 @@ class KrBabyKitPanel extends HTMLElement {
           display: inline-flex; align-items: center; justify-content: center;
         }
         .sections-wrap.layout-bento {
-          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start;
+          display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 16px; align-items: stretch;
         }
+        .sections-wrap.layout-bento > .card { height: 100%; display: flex; flex-direction: column; }
         .sections-wrap.layout-bento .span-full { grid-column: 1 / -1; }
-        @media (max-width: 860px) { .sections-wrap.layout-bento { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .sections-wrap.layout-bento { grid-template-columns: 1fr; } }
         .card {
           background: var(--bk-card); backdrop-filter: var(--bk-card-backdrop);
           -webkit-backdrop-filter: var(--bk-card-backdrop);
@@ -2151,6 +2191,10 @@ class KrBabyKitPanel extends HTMLElement {
         this._scheduleTab = btn.getAttribute("data-tab");
         this._render();
       });
+    });
+    root.getElementById("btn-expand-sched")?.addEventListener("click", () => {
+      this._expandSchedule = !this._expandSchedule;
+      this._render();
     });
     root.getElementById("chk-show-past")?.addEventListener("change", (e) => {
       this._showPast = e.target.checked;
