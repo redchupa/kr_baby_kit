@@ -37,14 +37,21 @@ class _FakeStore:
 
 def _build_storage_module() -> types.ModuleType:
     """Load storage.py with stubbed HA imports."""
-    # Stub homeassistant.helpers.storage.Store
+    # Stub homeassistant.helpers.storage.Store + homeassistant.util.dt
+    from datetime import datetime, timezone
+
     fake_store_module = types.ModuleType("homeassistant.helpers.storage")
     fake_store_module.Store = lambda hass, version, key: _FakeStore()
+    fake_dt_module = types.ModuleType("homeassistant.util.dt")
+    fake_dt_module.now = lambda: datetime.now(timezone.utc)
+    fake_dt_module.parse_datetime = datetime.fromisoformat
     sys.modules["homeassistant"] = types.ModuleType("homeassistant")
     sys.modules["homeassistant.core"] = types.ModuleType("homeassistant.core")
     sys.modules["homeassistant.core"].HomeAssistant = object
     sys.modules["homeassistant.helpers"] = types.ModuleType("homeassistant.helpers")
     sys.modules["homeassistant.helpers.storage"] = fake_store_module
+    sys.modules["homeassistant.util"] = types.ModuleType("homeassistant.util")
+    sys.modules["homeassistant.util.dt"] = fake_dt_module
 
     # Stub const (storage imports a few symbols)
     const = types.ModuleType("custom_components.kr_baby_kit.const")
@@ -52,7 +59,13 @@ def _build_storage_module() -> types.ModuleType:
     const.MEASUREMENT_KINDS = ["height", "weight", "head", "bmi"]
     const.STORAGE_KEY_RECORDS = "records"
     const.STORAGE_KEY_COMPLETIONS = "completions"
+    const.STORAGE_KEY_ACTIVITIES = "activities"
+    const.STORAGE_KEY_TIMERS = "timers"
+    const.STORAGE_KEY_PROFILES = "profiles"
     const.STORAGE_VERSION = 1
+    const.MEDIA_SUBDIR = "kr_baby_kit_media"
+    const.ACTIVITY_KINDS = ("sleep", "feeding", "diaper", "tummy_time", "pumping", "temperature", "note")
+    const.TIMER_KINDS = ("sleep", "feeding", "tummy_time", "pumping")
     sys.modules["custom_components.kr_baby_kit.const"] = const
 
     spec = importlib.util.spec_from_file_location(

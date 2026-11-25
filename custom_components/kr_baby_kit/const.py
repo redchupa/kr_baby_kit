@@ -31,7 +31,14 @@ DEFAULT_BIRTHDATE = "2024-07-01"
 # Measurement record storage
 STORAGE_KEY_RECORDS = "kr_baby_kit_records"
 STORAGE_KEY_COMPLETIONS = "kr_baby_kit_completions"
+STORAGE_KEY_ACTIVITIES = "kr_baby_kit_activities"
+STORAGE_KEY_TIMERS = "kr_baby_kit_timers"
+STORAGE_KEY_PROFILES = "kr_baby_kit_profiles"
 STORAGE_VERSION = 1
+
+MEDIA_SUBDIR = "kr_baby_kit_media"
+ACTIVITY_KINDS = ("sleep", "feeding", "diaper", "tummy_time", "pumping", "temperature", "note")
+TIMER_KINDS = ("sleep", "feeding", "tummy_time", "pumping")
 
 MEASUREMENT_HEIGHT = "height"
 MEASUREMENT_WEIGHT = "weight"

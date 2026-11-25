@@ -4,6 +4,18 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.13.0] - 2026-11-25
+
+### Added
+
+- **Photo attachments & child profile avatar**: Upload a profile photo for each child and attach compressed photos to daily activity logs or milestone notes. Photos are stored locally under `<config>/www/kr_baby_kit_media/<child_id>/` and deleted automatically when an entry or child is removed. Includes tap-to-enlarge lightbox viewing.
+- **Baby Buddy–inspired daily care tracking & live timers**:
+  - Live persistent stopwatches for **Sleep**, **Feeding**, **Tummy time**, and **Pumping** (stopping a timer automatically saves a log with elapsed minutes).
+  - Quick logging for **Sleep**, **Feeding** (breast/bottle/formula/solid, ml, min), **Diaper** (wet/solid/both), **Tummy time**, **Pumping**, **Temperature (°C)**, and **Notes & Photos**.
+  - **Today's Summary** strip showing daily sleep total, feeding count/ml, diaper counts, tummy time, and latest temperature.
+  - **Filterable Timeline & Photo Diary** (`All`, `Photos`, or by category) with entry deletion.
+- Added `Daily Care & Timers` and `Timeline & Photo Diary` to the Gear customization drawer (visibility toggles & section reordering).
+
 ## [0.12.0] - 2026-11-25
 
 ### Added

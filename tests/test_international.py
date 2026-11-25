@@ -209,3 +209,35 @@ def test_concern_binary_sensors_stay_available_without_measurements():
         assert ent.is_on is False
         attrs = ent.extra_state_attributes
         assert attrs["summary_ko"] and attrs["summary_en"]
+
+
+def test_today_summary_and_photo_decoder():
+    import base64
+    from custom_components.kr_baby_kit.storage import _decode_data_url
+    from custom_components.kr_baby_kit.websocket_api import compute_today_summary
+
+    activities = [
+        {"id": "1", "kind": "sleep", "timestamp": "2026-11-25T09:00:00", "duration_min": 65.0},
+        {"id": "2", "kind": "feeding", "timestamp": "2026-11-25T10:30:00", "amount_ml": 140.0, "method": "formula"},
+        {"id": "3", "kind": "feeding", "timestamp": "2026-11-25T13:30:00", "amount_ml": 160.0, "method": "formula"},
+        {"id": "4", "kind": "diaper", "timestamp": "2026-11-25T11:00:00", "diaper_type": "both"},
+        {"id": "5", "kind": "tummy_time", "timestamp": "2026-11-25T12:00:00", "duration_min": 15.0},
+        {"id": "6", "kind": "temperature", "timestamp": "2026-11-25T14:00:00", "temperature_c": 36.8},
+        {"id": "7", "kind": "note", "timestamp": "2026-11-24T18:00:00", "photo_url": "/local/kr_baby_kit_media/c1/a.jpg"},
+    ]
+    summary = compute_today_summary(activities, "2026-11-25")
+    assert summary["sleep_min"] == 65.0
+    assert summary["feeding_count"] == 2
+    assert summary["feeding_ml"] == 300.0
+    assert summary["diaper_wet"] == 1
+    assert summary["diaper_solid"] == 1
+    assert summary["tummy_min"] == 15.0
+    assert summary["last_temp_c"] == 36.8
+    assert summary["photo_count"] == 1
+
+    b64 = base64.b64encode(b"\xff\xd8\xff\xe0test").decode("ascii")
+    raw, ext = _decode_data_url(f"data:image/jpeg;base64,{b64}")
+    assert ext == ".jpg"
+    assert raw.startswith(b"\xff\xd8")
+    with pytest.raises(ValueError):
+        _decode_data_url("data:text/plain;base64,aGVsbG8=")
