@@ -4,6 +4,13 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.16.1] - 2026-11-25
+
+### Changed
+
+- **New brand icon & logo**: Replaced the placeholder `brand/icon.png`, `brand/icon@2x.png`, and `brand/logo.png` with a new custom Baby Kit emblem.
+- **Friendly intro copy**: Simplified the GitHub repository description, `README.md`, `README.en.md`, and `info.md` introductions to be warm and jargon-free for parents.
+
 ## [0.16.0] - 2026-11-25
 
 ### Changed

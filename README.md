@@ -7,9 +7,9 @@
 [![HACS](https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/hacs-custom-badge.png)](https://github.com/hacs/integration)
 [![Release](https://img.shields.io/github/v/release/redchupa/kr_baby_kit?include_prereleases&label=release)](https://github.com/redchupa/kr_baby_kit/releases)
 
-영유아·어린이의 성장 백분위, 예방접종 일정, 건강검진·구강검진 일정, 보육료 정보를 Home Assistant 센서와 캘린더로 제공하는 HACS 통합입니다.
+우리 아이의 수유·수면·기저귀·체온 기록부터 사진 일기, 또래 키·몸무게 비교, 예방접종·검진 알림까지 Home Assistant에서 한 번에 챙길 수 있는 육아 도우미입니다.
 
-한국 기준(질병관리청 2017 성장도표, NIP 예방접종, 영유아 검진·구강검진, 교육부 보육료)과 해외 기준(WHO 영유아·청소년 성장 표준, WHO 표준 예방접종 참고 일정)을 모두 지원합니다. 모든 기준표가 통합 안에 포함되어 있어 외부 API 키 없이 오프라인으로 동작합니다.
+한국 기준과 해외 기준(WHO)을 모두 지원하며, 복잡한 외부 가입이나 API 키 없이 집 안의 Home Assistant에서 바로 사용할 수 있습니다.
 
 ## 주요 기능
 

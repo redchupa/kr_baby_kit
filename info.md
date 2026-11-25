@@ -1,6 +1,6 @@
 # Baby Kit
 
-Home Assistant integration for child growth percentiles, immunization schedules, and checkup milestones.
+All-in-one baby care, growth tracking, photo diary, and vaccine reminders for Home Assistant.
 
 - **Growth charts (LMS)**: Supports both South Korea (KDCA 2017) and International (WHO Child Growth Standards 2006 / 2007 Reference).
 - **Immunizations & checkups**: Automatic calendars, open-window deadlines, next-window start sensors, and optional completion tracking.

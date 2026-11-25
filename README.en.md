@@ -7,14 +7,9 @@
 [![HACS](https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/hacs-custom-badge.png)](https://github.com/hacs/integration)
 [![Release](https://img.shields.io/github/v/release/redchupa/kr_baby_kit?include_prereleases&label=release)](https://github.com/redchupa/kr_baby_kit/releases)
 
-A Home Assistant (HACS) integration for tracking a child's growth percentiles, immunization schedules, and pediatric/dental checkups locally.
+An all-in-one baby care companion for Home Assistant — track daily feedings, sleep, diapers, temperatures, photo memories, growth percentiles, and upcoming vaccines or checkups in one place.
 
-It supports two regional profiles:
-
-- **International (`global`)**: WHO Child Growth Standards (0-5 years, 2006) & WHO Growth Reference (5-19 years, 2007), WHO routine immunization reference schedule, and general well-child / dental checkup milestones.
-- **South Korea (`kr`)**: KDCA 2017 growth charts, KDCA National Immunization Program (NIP), NHIS 8-stage infant health checkups & 4-stage oral checkups, and Ministry of Education childcare tuition figures.
-
-All reference tables are bundled with the integration. No external API keys or cloud services are required.
+Works offline with both International (WHO) and South Korea standards — no cloud accounts or external API keys needed.
 
 ## Features
 
