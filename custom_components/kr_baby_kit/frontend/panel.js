@@ -1,21 +1,21 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.18.0";
+import { THEMES, getThemeCss } from "./themes.js?v=0.18.1";
 import {
   CARD_STYLES,
   ICONS,
   cardStyleCss,
   renderPercentileGauge,
   renderSparkline,
-} from "./cards.js?v=0.18.0";
+} from "./cards.js?v=0.18.1";
 import {
   renderGrowthCurveChart,
   renderWeeklyCareChart,
-} from "./charts.js?v=0.18.0";
+} from "./charts.js?v=0.18.1";
 import {
   AUTOMATION_RECIPES,
   LAYOUT_MODES,
   renderAutomationsSection,
-} from "./automations.js?v=0.18.0";
+} from "./automations.js?v=0.18.1";
 
 const PREFS_KEY = "kr_baby_kit_panel_prefs_v4";
 
@@ -500,6 +500,7 @@ class KrBabyKitPanel extends HTMLElement {
     this._expandSchedule = false;
     this._modal = null;
     this._settingsOpen = false;
+    this._settingsDraft = null;
     this._busy = false;
     this._notice = null;
     this._error = null;
@@ -583,6 +584,13 @@ class KrBabyKitPanel extends HTMLElement {
     mutator(next);
     this._prefs = next;
     savePrefs(next);
+    this._render();
+  }
+
+  _updateSettingsDraft(mutator) {
+    const next = structuredClone(this._settingsDraft || this._prefs);
+    mutator(next);
+    this._settingsDraft = next;
     this._render();
   }
 
@@ -1466,6 +1474,8 @@ class KrBabyKitPanel extends HTMLElement {
     if (!this._settingsOpen) return "";
     const t = this._t();
     const ko = this._isKo();
+    const p = this._settingsDraft || this._prefs;
+    const isDirty = JSON.stringify(p) !== JSON.stringify(this._prefs);
     const secLabels = {
       care: t.secCare,
       timeline: t.secTimeline,
@@ -1478,7 +1488,7 @@ class KrBabyKitPanel extends HTMLElement {
 
     const layoutCards = LAYOUT_MODES.map(
       (lm) => `
-        <button type="button" class="style-card ${this._prefs.layout === lm.id ? "active" : ""}" data-select-layout="${esc(lm.id)}">
+        <button type="button" class="style-card ${p.layout === lm.id ? "active" : ""}" data-select-layout="${esc(lm.id)}">
           <div class="theme-name">${esc(ko ? lm.nameKo : lm.nameEn)}</div>
           <div class="theme-desc">${esc(ko ? lm.descKo : lm.descEn)}</div>
         </button>`
@@ -1486,14 +1496,14 @@ class KrBabyKitPanel extends HTMLElement {
 
     const cardStyleBtns = CARD_STYLES.map(
       (cs) => `
-        <button type="button" class="style-card ${this._prefs.cardStyle === cs.id ? "active" : ""}" data-select-cardstyle="${esc(cs.id)}">
+        <button type="button" class="style-card ${p.cardStyle === cs.id ? "active" : ""}" data-select-cardstyle="${esc(cs.id)}">
           <div class="theme-name">${esc(ko ? cs.nameKo : cs.nameEn)}</div>
           <div class="theme-desc">${esc(ko ? cs.descKo : cs.descEn)}</div>
         </button>`
     ).join("");
 
     const themeCards = THEMES.map((th) => {
-      const active = this._prefs.theme === th.id;
+      const active = p.theme === th.id;
       return `
         <button type="button" class="theme-card ${active ? "active" : ""}" data-select-theme="${esc(th.id)}">
           <div class="swatch" style="background:${esc(th.swatch.bg)};border-color:${esc(th.swatch.border)};">
@@ -1507,10 +1517,11 @@ class KrBabyKitPanel extends HTMLElement {
         </button>`;
     }).join("");
 
-    const sectionRows = this._prefs.order
+    const canToggleWide = ["bento", "bento-3", "quad-dense"].includes(p.layout);
+    const sectionRows = p.order
       .map((secId, idx) => {
-        const checked = this._prefs.visible[secId] ? "checked" : "";
-        const isWide = Boolean(this._prefs.wide[secId]);
+        const checked = p.visible[secId] ? "checked" : "";
+        const isWide = Boolean(p.wide[secId]);
         return `
           <div class="order-row">
             <label class="checkbox-label">
@@ -1519,12 +1530,12 @@ class KrBabyKitPanel extends HTMLElement {
             </label>
             <div class="order-btns">
               ${
-                this._prefs.layout === "bento"
+                canToggleWide
                   ? `<button type="button" class="btn-outline small" data-toggle-wide="${esc(secId)}">${esc(isWide ? t.widthFull : t.widthHalf)}</button>`
                   : ""
               }
               <button type="button" class="btn-outline small" data-move-sec="${esc(secId)}" data-dir="-1" ${idx === 0 ? "disabled" : ""}>&#8593;</button>
-              <button type="button" class="btn-outline small" data-move-sec="${esc(secId)}" data-dir="1" ${idx === this._prefs.order.length - 1 ? "disabled" : ""}>&#8595;</button>
+              <button type="button" class="btn-outline small" data-move-sec="${esc(secId)}" data-dir="1" ${idx === p.order.length - 1 ? "disabled" : ""}>&#8595;</button>
             </div>
           </div>`;
       })
@@ -1541,9 +1552,9 @@ class KrBabyKitPanel extends HTMLElement {
             <div class="drawer-sec">
               <div class="drawer-label">${esc(t.settingsLang)}</div>
               <div class="seg-group">
-                <button type="button" class="seg ${this._prefs.lang === "auto" ? "active" : ""}" data-select-lang="auto">${esc(t.langAuto)}</button>
-                <button type="button" class="seg ${this._prefs.lang === "ko" ? "active" : ""}" data-select-lang="ko">한국어</button>
-                <button type="button" class="seg ${this._prefs.lang === "en" ? "active" : ""}" data-select-lang="en">English</button>
+                <button type="button" class="seg ${p.lang === "auto" ? "active" : ""}" data-select-lang="auto">${esc(t.langAuto)}</button>
+                <button type="button" class="seg ${p.lang === "ko" ? "active" : ""}" data-select-lang="ko">한국어</button>
+                <button type="button" class="seg ${p.lang === "en" ? "active" : ""}" data-select-lang="en">English</button>
               </div>
             </div>
 
@@ -1560,9 +1571,9 @@ class KrBabyKitPanel extends HTMLElement {
             <div class="drawer-sec">
               <div class="drawer-label">${esc(t.settingsMobileCols)}</div>
               <div class="seg-group">
-                <button type="button" class="seg ${this._prefs.mobileCols === 2 ? "active" : ""}" data-select-mcols="2">${esc(t.mcol2)}</button>
-                <button type="button" class="seg ${this._prefs.mobileCols === 3 ? "active" : ""}" data-select-mcols="3">${esc(t.mcol3)}</button>
-                <button type="button" class="seg ${this._prefs.mobileCols === 4 ? "active" : ""}" data-select-mcols="4">${esc(t.mcol4)}</button>
+                <button type="button" class="seg ${p.mobileCols === 2 ? "active" : ""}" data-select-mcols="2">${esc(t.mcol2)}</button>
+                <button type="button" class="seg ${p.mobileCols === 3 ? "active" : ""}" data-select-mcols="3">${esc(t.mcol3)}</button>
+                <button type="button" class="seg ${p.mobileCols === 4 ? "active" : ""}" data-select-mcols="4">${esc(t.mcol4)}</button>
               </div>
             </div>
 
@@ -1571,14 +1582,14 @@ class KrBabyKitPanel extends HTMLElement {
               <div class="order-list">
                 <div class="order-row">
                   <label class="checkbox-label">
-                    <input type="checkbox" data-toggle-section="chips" ${this._prefs.visible.chips ? "checked" : ""} />
+                    <input type="checkbox" data-toggle-section="chips" ${p.visible.chips ? "checked" : ""} />
                     <span>${esc(t.secChips)}</span>
                   </label>
                 </div>
                 ${sectionRows}
                 <div class="order-row">
                   <label class="checkbox-label">
-                    <input type="checkbox" data-toggle-section="footer" ${this._prefs.visible.footer ? "checked" : ""} />
+                    <input type="checkbox" data-toggle-section="footer" ${p.visible.footer ? "checked" : ""} />
                     <span>${esc(t.secFooter)}</span>
                   </label>
                 </div>
@@ -1593,14 +1604,17 @@ class KrBabyKitPanel extends HTMLElement {
             <div class="drawer-sec">
               <div class="drawer-label">${esc(t.settingsDefaultTab)}</div>
               <div class="seg-group">
-                <button type="button" class="seg ${this._prefs.defaultScheduleTab === "vaccines" ? "active" : ""}" data-default-tab="vaccines">${esc(t.tabVaccines)}</button>
-                <button type="button" class="seg ${this._prefs.defaultScheduleTab === "checkups" ? "active" : ""}" data-default-tab="checkups">${esc(t.tabCheckups)}</button>
-                <button type="button" class="seg ${this._prefs.defaultScheduleTab === "oral" ? "active" : ""}" data-default-tab="oral">${esc(t.tabOral)}</button>
+                <button type="button" class="seg ${p.defaultScheduleTab === "vaccines" ? "active" : ""}" data-default-tab="vaccines">${esc(t.tabVaccines)}</button>
+                <button type="button" class="seg ${p.defaultScheduleTab === "checkups" ? "active" : ""}" data-default-tab="checkups">${esc(t.tabCheckups)}</button>
+                <button type="button" class="seg ${p.defaultScheduleTab === "oral" ? "active" : ""}" data-default-tab="oral">${esc(t.tabOral)}</button>
               </div>
             </div>
-
-            <div class="drawer-footer">
-              <button type="button" class="btn-outline" id="btn-reset-prefs">${esc(t.resetPrefs)}</button>
+          </div>
+          <div class="drawer-footer">
+            <button type="button" class="btn-outline small" id="btn-reset-prefs">${esc(t.resetPrefs)}</button>
+            <div class="right-actions">
+              <button type="button" class="btn-outline" id="btn-cancel-settings">${esc(t.cancel)}</button>
+              <button type="button" class="btn-primary" id="btn-save-settings">${esc(t.save)}${isDirty ? " ●" : ""}</button>
             </div>
           </div>
         </div>
@@ -2376,7 +2390,13 @@ class KrBabyKitPanel extends HTMLElement {
           padding: 8px 10px; border-radius: 8px; background: var(--primary-background-color, #f5f5f5);
         }
         .order-btns { display: flex; gap: 4px; }
-        .drawer-footer { padding-top: 8px; border-top: 1px solid var(--divider-color, #e0e0e0); display: flex; justify-content: flex-end; }
+        .drawer-footer {
+          padding: 14px 20px max(14px, env(safe-area-inset-bottom));
+          border-top: 1px solid var(--divider-color, #e0e0e0);
+          background: var(--card-background-color, #ffffff);
+          display: flex; align-items: center; justify-content: space-between; gap: 10px;
+          flex-shrink: 0;
+        }
         .modal {
           background: var(--card-background-color, #fff); color: var(--primary-text-color, #212121);
           border-radius: 12px; padding: 20px; width: 100%; max-width: 420px;
@@ -2541,7 +2561,7 @@ class KrBabyKitPanel extends HTMLElement {
     root.querySelectorAll("[data-select-lang]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const lang = btn.getAttribute("data-select-lang");
-        this._updatePrefs((p) => { p.lang = lang; });
+        this._updateSettingsDraft((p) => { p.lang = lang; });
       });
     });
     root.getElementById("btn-menu")?.addEventListener("click", () => this._openSidebar());
@@ -2658,41 +2678,52 @@ class KrBabyKitPanel extends HTMLElement {
       this._render();
     });
     root.getElementById("btn-open-settings")?.addEventListener("click", () => {
+      this._settingsDraft = structuredClone(this._prefs);
       this._settingsOpen = true;
       this._render();
     });
-    root.getElementById("btn-close-settings")?.addEventListener("click", () => {
+    const closeSettings = () => {
       this._settingsOpen = false;
+      this._settingsDraft = null;
       this._render();
-    });
+    };
+    root.getElementById("btn-close-settings")?.addEventListener("click", closeSettings);
+    root.getElementById("btn-cancel-settings")?.addEventListener("click", closeSettings);
     root.getElementById("settings-backdrop")?.addEventListener("click", (e) => {
-      if (e.target.id === "settings-backdrop") {
-        this._settingsOpen = false;
-        this._render();
+      if (e.target.id === "settings-backdrop") closeSettings();
+    });
+    root.getElementById("btn-save-settings")?.addEventListener("click", () => {
+      if (this._settingsDraft) {
+        this._prefs = structuredClone(this._settingsDraft);
+        this._scheduleTab = this._prefs.defaultScheduleTab;
+        savePrefs(this._prefs);
       }
+      this._settingsOpen = false;
+      this._settingsDraft = null;
+      this._flash(this._t().saved);
     });
     root.querySelectorAll("[data-select-cardstyle]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-select-cardstyle");
-        this._updatePrefs((p) => { p.cardStyle = id; });
+        this._updateSettingsDraft((p) => { p.cardStyle = id; });
       });
     });
     root.querySelectorAll("[data-select-theme]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-select-theme");
-        this._updatePrefs((p) => { p.theme = id; });
+        this._updateSettingsDraft((p) => { p.theme = id; });
       });
     });
     root.querySelectorAll("[data-select-layout]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const mode = btn.getAttribute("data-select-layout");
-        this._updatePrefs((p) => { p.layout = mode; });
+        this._updateSettingsDraft((p) => { p.layout = mode; });
       });
     });
     root.querySelectorAll("[data-select-mcols]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const cols = Number(btn.getAttribute("data-select-mcols")) || 2;
-        this._updatePrefs((p) => { p.mobileCols = cols; });
+        this._updateSettingsDraft((p) => { p.mobileCols = cols; });
       });
     });
     root.querySelectorAll("[data-deck-tab]").forEach((btn) => {
@@ -2715,7 +2746,7 @@ class KrBabyKitPanel extends HTMLElement {
         const cid = this._currentChild()?.child_id || "your_child_id";
         if (!recipe) return;
         try {
-          await navigator.clipboard?.writeText(recipe.yaml(cid));
+          await navigator.clipboard?.writeText(recipe.yaml(cid, this._isKo()));
           this._copiedRecipeId = rid;
           this._render();
           setTimeout(() => {
@@ -2732,20 +2763,20 @@ class KrBabyKitPanel extends HTMLElement {
     root.querySelectorAll("[data-toggle-section]").forEach((chk) => {
       chk.addEventListener("change", () => {
         const sec = chk.getAttribute("data-toggle-section");
-        this._updatePrefs((p) => { p.visible[sec] = chk.checked; });
+        this._updateSettingsDraft((p) => { p.visible[sec] = chk.checked; });
       });
     });
     root.querySelectorAll("[data-toggle-wide]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const sec = btn.getAttribute("data-toggle-wide");
-        this._updatePrefs((p) => { p.wide[sec] = !p.wide[sec]; });
+        this._updateSettingsDraft((p) => { p.wide[sec] = !p.wide[sec]; });
       });
     });
     root.querySelectorAll("[data-move-sec]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const sec = btn.getAttribute("data-move-sec");
         const dir = Number(btn.getAttribute("data-dir"));
-        this._updatePrefs((p) => {
+        this._updateSettingsDraft((p) => {
           const i = p.order.indexOf(sec);
           const j = i + dir;
           if (i >= 0 && j >= 0 && j < p.order.length) {
@@ -2757,14 +2788,11 @@ class KrBabyKitPanel extends HTMLElement {
     root.querySelectorAll("[data-default-tab]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const tab = btn.getAttribute("data-default-tab");
-        this._scheduleTab = tab;
-        this._updatePrefs((p) => { p.defaultScheduleTab = tab; });
+        this._updateSettingsDraft((p) => { p.defaultScheduleTab = tab; });
       });
     });
     root.getElementById("btn-reset-prefs")?.addEventListener("click", () => {
-      this._prefs = structuredClone(DEFAULT_PREFS);
-      this._scheduleTab = DEFAULT_PREFS.defaultScheduleTab;
-      savePrefs(this._prefs);
+      this._settingsDraft = structuredClone(DEFAULT_PREFS);
       this._render();
     });
     root.getElementById("btn-edit-child")?.addEventListener("click", () => {

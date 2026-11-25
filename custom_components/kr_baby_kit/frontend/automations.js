@@ -80,7 +80,9 @@ export const AUTOMATION_RECIPES = [
       "When crib motion or crying triggers while the nursery occupancy counter is 0, automatically streams the nursery camera + audio for 5 minutes to whichever room (kitchen or bathroom) currently detects an adult.",
     devicesKo: ["카메라 모션/소음 센서", "방 재실 카운터(또는 재실 센서)", "주방·욕실 태블릿/네스트 허브"],
     devicesEn: ["Crib motion/sound sensor", "Room presence counter", "Kitchen/bathroom display or speaker"],
-    yaml: (cid) => `alias: "육아 안심 — 방에 어른 없을 때 현재 위치로 베이비캠 5분 재생"
+    yaml: (cid, ko = true) =>
+      ko
+        ? `alias: "육아 안심 — 방에 어른 없을 때 현재 위치로 베이비캠 5분 재생"
 description: "설거지(주방)·샤워(욕실) 중에도 아기 움직임/울음을 놓치지 않도록 현재 사람이 있는 곳에서 5분간 재생"
 triggers:
   - trigger: state
@@ -136,6 +138,63 @@ actions:
               media_player_entity_id: media_player.bathroom_speaker
               message: "아기방에서 움직임 또는 울음 소리가 감지되었습니다."
 mode: single
+max_exceeded: silent`
+        : `alias: "Nursery Safety — 5-Min Follow-Me Baby Cam When Room Counter Is 0"
+description: "Streams the crib camera and audio to the occupied room (kitchen or bathroom) for 5 minutes so you never miss crying over running water"
+triggers:
+  - trigger: state
+    entity_id:
+      - binary_sensor.nursery_cam_motion
+      - binary_sensor.nursery_cry_detected
+    from: "off"
+    to: "on"
+conditions:
+  # Run only when no adult is currently inside the nursery (occupancy counter == 0)
+  - condition: numeric_state
+    entity_id: number.nursery_people_count
+    below: 1
+actions:
+  - parallel:
+      # 1) If someone is in the kitchen, cast the crib camera to the kitchen display for 5 minutes
+      - if:
+          - condition: state
+            entity_id: binary_sensor.kitchen_presence
+            state: "on"
+        then:
+          - action: tts.speak
+            target:
+              entity_id: tts.home_assistant_cloud
+            data:
+              media_player_entity_id: media_player.kitchen_display
+              message: "Motion detected in the crib. Opening the nursery camera."
+          - action: camera.play_stream
+            target:
+              entity_id: camera.nursery_cam
+            data:
+              media_player: media_player.kitchen_display
+          - delay: "00:05:00"
+          - action: media_player.turn_off
+            target:
+              entity_id: media_player.kitchen_display
+
+      # 2) If someone is in the bathroom (showering), raise volume and announce on the bathroom speaker
+      - if:
+          - condition: state
+            entity_id: binary_sensor.bathroom_presence
+            state: "on"
+        then:
+          - action: media_player.volume_set
+            target:
+              entity_id: media_player.bathroom_speaker
+            data:
+              volume_level: 0.55
+          - action: tts.speak
+            target:
+              entity_id: tts.home_assistant_cloud
+            data:
+              media_player_entity_id: media_player.bathroom_speaker
+              message: "Motion or crying detected in the nursery."
+mode: single
 max_exceeded: silent`,
   },
   {
@@ -150,7 +209,9 @@ max_exceeded: silent`,
       "Raw motion sensors flicker every few seconds. A 5-minute delay_off template sensor cleanly detects when the baby has truly settled asleep and automatically starts/stops the Baby Kit sleep timer.",
     devicesKo: ["침대 카메라 모션 센서", "HA Template 가상 센서", "Baby Kit 수면 타이머"],
     devicesEn: ["Crib motion sensor", "Template binary_sensor", "Baby Kit sleep timer"],
-    yaml: (cid) => `# [1단계] configuration.yaml — 최근 5분 이내 움직임 유지 가상 센서
+    yaml: (cid, ko = true) =>
+      ko
+        ? `# [1단계] configuration.yaml — 최근 5분 이내 움직임 유지 가상 센서
 template:
   - binary_sensor:
       - name: "아기 침대 5분 내 움직임"
@@ -189,6 +250,46 @@ actions:
             data:
               child_id: "${cid}"
               kind: sleep
+              save_log: true`
+        : `# [Step 1] configuration.yaml — Virtual sensor that stays ON for 5 minutes after crib motion
+template:
+  - binary_sensor:
+      - name: "Nursery Crib Active Within 5m"
+        unique_id: nursery_crib_active_within_5m
+        device_class: moving
+        state: "{{ is_state('binary_sensor.nursery_cam_motion', 'on') }}"
+        delay_off: "00:05:00"
+
+# [Step 2] Automation — Start Baby Kit sleep timer after 5 min stillness; stop & save on wake
+alias: "Nursery Sleep — Auto Start/Stop Sleep Timer From 5-Min Motion Hold"
+triggers:
+  - trigger: state
+    entity_id: binary_sensor.nursery_crib_active_within_5m
+    to: "off"
+    id: fell_asleep
+  - trigger: state
+    entity_id: binary_sensor.nursery_crib_active_within_5m
+    to: "on"
+    for: "00:02:00"
+    id: woke_up
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: fell_asleep
+        sequence:
+          - action: kr_baby_kit.start_timer
+            data:
+              child_id: "${cid}"
+              kind: sleep
+      - conditions:
+          - condition: trigger
+            id: woke_up
+        sequence:
+          - action: kr_baby_kit.stop_timer
+            data:
+              child_id: "${cid}"
+              kind: sleep
               save_log: true`,
   },
   {
@@ -203,7 +304,9 @@ actions:
       "Single-press a Zigbee/Matter button next to the formula kettle to log a bottle hands-free. Double-press (or ask Assist 'When did the baby last eat?') to hear how many hours and minutes ago the last feeding was.",
     devicesKo: ["지그비/Matter 무선 미니 스위치", "거실·주방 스마트 스피커", "Assist 음성 비서"],
     devicesEn: ["Zigbee/Matter wireless button", "Smart speaker (TTS)", "HA Assist voice"],
-    yaml: (cid) => `alias: "육아 맘마존 — 무선 버튼 분유 기록(1클릭) · 마지막 수유 시간 방송(2클릭)"
+    yaml: (cid, ko = true) =>
+      ko
+        ? `alias: "육아 맘마존 — 무선 버튼 분유 기록(1클릭) · 마지막 수유 시간 방송(2클릭)"
 triggers:
   - trigger: state
     entity_id: event.formula_station_button
@@ -258,6 +361,60 @@ actions:
                   {% set hr12 = dt.hour if dt.hour <= 12 else dt.hour - 12 %}
                   마지막 수유는 {{ h ~ '시간 ' if h > 0 else '' }}{{ m }}분 전,
                   {{ ampm }} {{ hr12 }}시 {{ dt.minute }}분이었습니다.
+                {% endif %}`
+        : `alias: "Formula Station — Single Press to Log, Double Press for Voice Briefing"
+triggers:
+  - trigger: state
+    entity_id: event.formula_station_button
+    attribute: event_type
+    to: "single"
+    id: log_formula
+  - trigger: state
+    entity_id: event.formula_station_button
+    attribute: event_type
+    to: "double"
+    id: check_formula
+actions:
+  - choose:
+      # Single press: log 140 mL formula feeding & confirm via speaker
+      - conditions:
+          - condition: trigger
+            id: log_formula
+        sequence:
+          - action: kr_baby_kit.log_care
+            data:
+              child_id: "${cid}"
+              kind: feeding
+              method: formula
+              amount_ml: 140
+          - action: tts.speak
+            target:
+              entity_id: tts.home_assistant_cloud
+            data:
+              media_player_entity_id: media_player.living_room_speaker
+              message: "Logged 140 milliliters of formula feeding."
+
+      # Double press: announce elapsed time and exact time of last feeding
+      - conditions:
+          - condition: trigger
+            id: check_formula
+        sequence:
+          - action: tts.speak
+            target:
+              entity_id: tts.home_assistant_cloud
+            data:
+              media_player_entity_id: media_player.living_room_speaker
+              message: >-
+                {% set s = states('sensor.kr_baby_kit_child_last_feeding_at') %}
+                {% if s in ('unknown', 'unavailable', '') %}
+                  No feedings have been logged yet.
+                {% else %}
+                  {% set dt = as_local(as_datetime(s)) %}
+                  {% set diff = (now() - dt).total_seconds() | int %}
+                  {% set h = diff // 3600 %}
+                  {% set m = (diff % 3600) // 60 %}
+                  Last feeding was {{ h ~ ' hours and ' if h > 0 else '' }}{{ m }} minutes ago,
+                  at {{ dt.strftime('%I:%M %p') }}.
                 {% endif %}`,
   },
   {
@@ -272,7 +429,27 @@ actions:
       "Bright overhead lights at 2 AM wake both baby and parent. Automatically turns on a warm 2200K nursery light at 8% brightness whenever a night feeding timer starts.",
     devicesKo: ["밝기·색온도 조절 무드등", "Baby Kit 실행 중 타이머 센서"],
     devicesEn: ["Dimmable warm nursery light", "Baby Kit active timers sensor"],
-    yaml: (cid) => `alias: "육아 새벽케어 — 심야 수유 타이머 시작 시 눈부심 방지 수유등"
+    yaml: (cid, ko = true) =>
+      ko
+        ? `alias: "육아 새벽케어 — 심야 수유 타이머 시작 시 눈부심 방지 수유등"
+triggers:
+  - trigger: state
+    entity_id: sensor.kr_baby_kit_child_active_timers
+conditions:
+  - condition: time
+    after: "22:00:00"
+    before: "06:30:00"
+  - condition: template
+    value_template: >-
+      {{ 'feeding' in (state_attr('sensor.kr_baby_kit_child_active_timers', 'running_kinds') or []) }}
+actions:
+  - action: light.turn_on
+    target:
+      entity_id: light.nursery_mood_lamp
+    data:
+      brightness_pct: 8
+      color_temp_kelvin: 2200`
+        : `alias: "Night Care — Dim 8% Warm Nursing Light When Feeding Timer Starts"
 triggers:
   - trigger: state
     entity_id: sensor.kr_baby_kit_child_active_timers
@@ -303,7 +480,9 @@ actions:
       "When a temperature of 37.8°C or higher is logged in Baby Kit, notifies family phones immediately and schedules a 2-hour follow-up temperature check reminder.",
     devicesKo: ["Baby Kit 최근 체온 센서", "스마트폰 HA 앱 알림"],
     devicesEn: ["Baby Kit last temperature sensor", "HA Companion App notifications"],
-    yaml: (cid) => `alias: "육아 건강 — 37.8°C 이상 발열 기록 시 알림 및 2시간 뒤 재측정 안내"
+    yaml: (cid, ko = true) =>
+      ko
+        ? `alias: "육아 건강 — 37.8°C 이상 발열 기록 시 알림 및 2시간 뒤 재측정 안내"
 triggers:
   - trigger: numeric_state
     entity_id: sensor.kr_baby_kit_child_last_temperature
@@ -317,7 +496,22 @@ actions:
   - action: notify.notify
     data:
       title: "체온 재측정 시간"
-      message: "발열 기록 후 2시간이 지났습니다. 체온을 다시 측정해 Baby Kit에 기록해 주세요."`,
+      message: "발열 기록 후 2시간이 지났습니다. 체온을 다시 측정해 Baby Kit에 기록해 주세요."`
+        : `alias: "Baby Health — Fever Alert (37.8°C+) & 2-Hour Recheck Reminder"
+triggers:
+  - trigger: numeric_state
+    entity_id: sensor.kr_baby_kit_child_last_temperature
+    above: 37.7
+actions:
+  - action: notify.notify
+    data:
+      title: "Baby Fever Alert"
+      message: "Recorded temperature is {{ states('sensor.kr_baby_kit_child_last_temperature') }}°C. Offer fluids and monitor closely."
+  - delay: "02:00:00"
+  - action: notify.notify
+    data:
+      title: "Temperature Recheck Reminder"
+      message: "It has been 2 hours since the fever log. Please recheck and log the temperature in Baby Kit."`,
   },
   {
     id: "vaccine_d7_family_alert",
@@ -331,7 +525,9 @@ actions:
       "Sends a morning reminder 7 days before the next immunization or well-child checkup window opens so you can book a pediatric appointment on time.",
     devicesKo: ["Baby Kit 다음 예방접종·검진 센서", "스마트폰 HA 앱 알림"],
     devicesEn: ["Baby Kit next vaccine/checkup sensors", "HA Companion App"],
-    yaml: (cid) => `alias: "육아 일정 — 다음 예방접종 시작 7일 전 병원 예약 알림"
+    yaml: (cid, ko = true) =>
+      ko
+        ? `alias: "육아 일정 — 다음 예방접종 시작 7일 전 병원 예약 알림"
 triggers:
   - trigger: time
     at: "09:00:00"
@@ -345,7 +541,22 @@ actions:
       title: "예방접종 D-7 예약 알림"
       message: >-
         {{ state_attr('sensor.kr_baby_kit_child_next_vaccine', 'name_ko') }}
-        접종 기간이 7일 뒤 시작됩니다. 소아청소년과 예약을 확인해 보세요.`,
+        접종 기간이 7일 뒤 시작됩니다. 소아청소년과 예약을 확인해 보세요.`
+        : `alias: "Schedule Reminder — 7 Days Before Next Immunization Window"
+triggers:
+  - trigger: time
+    at: "09:00:00"
+conditions:
+  - condition: template
+    value_template: >-
+      {{ state_attr('sensor.kr_baby_kit_child_next_vaccine', 'days_until_start') == 7 }}
+actions:
+  - action: notify.notify
+    data:
+      title: "Upcoming Immunization (D-7)"
+      message: >-
+        {{ state_attr('sensor.kr_baby_kit_child_next_vaccine', 'name_en') }}
+        window opens in 7 days. Consider booking a pediatric appointment.`,
   },
 ];
 
@@ -371,7 +582,7 @@ export function renderAutomationsSection(child, opts = {}) {
     const tags = (ko ? r.devicesKo : r.devicesEn)
       .map((d) => `<span class="auto-dev-pill">${esc(d)}</span>`)
       .join("");
-    const yamlCode = r.yaml(cid);
+    const yamlCode = r.yaml(cid, ko);
     return `
       <div class="auto-card ${isOpen ? "open" : ""}">
         <div class="auto-top">

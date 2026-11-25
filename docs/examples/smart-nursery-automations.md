@@ -1,5 +1,7 @@
 # 스마트 육아 자동화 가이드 (Smart Nursery Automation Cookbook)
 
+[한국어](smart-nursery-automations.md) | [English](smart-nursery-automations.en.md)
+
 스마트폰 단독 육아 기록 앱과 달리 **Baby Kit (`kr_baby_kit`)** 은 Home Assistant 내부에서 재실 센서, 카메라, 지그비(Zigbee)/Matter 무선 스위치, 스마트 스피커(TTS), 음성 비서(Assist)와 직접 연동됩니다.
 
 아래 레시피들은 실제 가정에서 검증된 육아 자동화 패턴을 누구나 바로 복사해 쓸 수 있도록 정리한 예시입니다. `Baby Kit` 사이드바 화면의 **스마트 육아 자동화 가이드** 카드에서도 내 아이의 `child_id`가 자동 채워진 YAML을 원클릭으로 복사할 수 있습니다.

@@ -173,6 +173,7 @@ def test_default_birthdate_and_panel_assets():
     assert "kr_baby_kit/add_child" in js_text
     assert "kr_baby_kit/update_child" in js_text
     assert "btn-open-settings" in js_text
+    assert "btn-save-settings" in js_text
     assert "data-select-cardstyle" in js_text
     assert themes_text.count('id: "') >= 12
     assert cards_text.count('id: "') >= 4

@@ -4,6 +4,13 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.18.1] - 2026-11-26
+
+### Changed
+
+- **Full English localization for Smart Nursery Automation YAML recipes (`frontend/automations.js`, `docs/examples/smart-nursery-automations.en.md`)**: When switched to English (`EN`), all automation recipe YAML comments (`# ...`), `alias`, `description`, virtual sensor names, TTS phrases, and notification messages now render and copy in natural English, accompanied by a dedicated English cookbook doc.
+- **Explicit Save / Cancel flow in Settings drawer (`frontend/panel.js`)**: Clicking layouts, themes, card styles, mobile density, or section order inside the Gear drawer now stages changes in a draft (`_settingsDraft`) with a sticky bottom footer (`Reset`, `Cancel`, `Save`) so the dashboard layout only updates when you click **Save**.
+
 ## [0.18.0] - 2026-11-25
 
 ### Added
