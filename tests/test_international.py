@@ -113,3 +113,34 @@ def test_translation_files_have_identical_key_structure():
 
     assert strings == en
     assert _key_tree(strings) == _key_tree(ko)
+
+
+def test_number_entity_defaults_to_age_median_when_no_records():
+    from types import SimpleNamespace
+    from custom_components.kr_baby_kit.number import MeasurementNumber
+
+    for profile in (PROFILE_KR, PROFILE_GLOBAL):
+        chart = GrowthChart.from_profile(profile)
+        coord = SimpleNamespace(
+            hass=None,
+            entry=SimpleNamespace(entry_id="e1", data={"child_id": "c1", "child_name": "Child A"}),
+            child_id="c1",
+            child_sex="male",
+            profile=profile,
+            chart=chart,
+            data={"age_months": 24.0, "records": []},
+        )
+        for kind in ("height", "weight", "head"):
+            ent = MeasurementNumber(coord, coord.entry, kind)
+            val = ent.native_value
+            expected_m = chart.lookup("male", kind, 24.0).M
+            assert val is not None
+            assert abs(val - expected_m) <= 0.1
+            assert ent.extra_state_attributes["is_default_median"] is True
+
+        # Once a real measurement exists, native_value uses it instead of median.
+        coord.data["records"] = [{"date": "2026-11-25", "height": 91.5}]
+        ent_h = MeasurementNumber(coord, coord.entry, "height")
+        assert ent_h.native_value == 91.5
+        assert ent_h.extra_state_attributes["is_default_median"] is False
+        assert ent_h.extra_state_attributes["measured_at"] == "2026-11-25"

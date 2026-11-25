@@ -1,12 +1,13 @@
 """Number entities — direct height / weight / head input from dashboard.
 
-Setting the value records a measurement dated today (Asia/Seoul) and
-refreshes the coordinator. For backfilling historical values, use the
-`record_measurement` service which accepts an explicit `date`.
+Setting the value records a measurement dated today (in Home Assistant's
+configured local time zone) and refreshes the coordinator. Before any
+measurement is recorded, each entity defaults to the age- and sex-specific
+LMS median (50th percentile) from the active growth chart. For backfilling
+historical values, use the `record_measurement` service which accepts an
+explicit `date`.
 """
 from __future__ import annotations
-
-from datetime import datetime
 
 from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.config_entries import ConfigEntry
@@ -87,13 +88,44 @@ class MeasurementNumber(CoordinatorEntity[BabyKitCoordinator], NumberEntity):
     def device_info(self):
         return child_device(self.coordinator.entry)
 
+    def _default_median(self) -> float | None:
+        """Return the 50th-percentile LMS median for the child's current age."""
+        age_m = (self.coordinator.data or {}).get("age_months")
+        if age_m is None:
+            return None
+        point = self.coordinator.chart.lookup(
+            self.coordinator.child_sex, self._kind, max(0.0, float(age_m))
+        )
+        if point is None:
+            return None
+        step = float(self._attr_native_step)
+        rounded = round(round(point.M / step) * step, 2)
+        return min(
+            float(self._attr_native_max_value),
+            max(float(self._attr_native_min_value), rounded),
+        )
+
     @property
     def native_value(self) -> float | None:
         records = (self.coordinator.data or {}).get("records") or []
         last = latest(records, self._kind)
-        if not last:
-            return None
-        return float(last[self._kind])
+        if last:
+            return float(last[self._kind])
+        return self._default_median()
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        records = (self.coordinator.data or {}).get("records") or []
+        last = latest(records, self._kind)
+        if last:
+            return {
+                "is_default_median": False,
+                "measured_at": last["date"],
+            }
+        return {
+            "is_default_median": True,
+            "measured_at": None,
+        }
 
     async def async_set_native_value(self, value: float) -> None:
         today = dt_util.now().date().isoformat()

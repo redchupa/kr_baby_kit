@@ -4,6 +4,12 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.10.3] - 2026-11-25
+
+### Added
+
+- **Default age-median values on measurement number inputs**: Before any measurement is recorded, the height, weight, and head circumference `number` entities now display the age- and sex-specific 50th-percentile LMS median from the active growth chart (KDCA or WHO) instead of `unknown`, with `is_default_median: true` in their attributes. Once a real measurement is recorded, the recorded value is shown and `is_default_median` becomes `false`.
+
 ## [0.10.2] - 2026-11-25
 
 ### Changed
