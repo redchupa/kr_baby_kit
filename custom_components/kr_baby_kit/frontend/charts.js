@@ -18,6 +18,11 @@ export function renderGrowthCurveChart(curveData, currentAgeMonths, opts = {}) {
 
   const unit = opts.unit || "cm";
   const ko = Boolean(opts.ko);
+  const t = opts.t || null;
+  const monthSuffix = t?.chartMonthsSuffix ?? (ko ? "개월" : "m");
+  const lblRefBand = t?.chartRefBand ?? (ko ? "정상 범위 (3-97%)" : "Reference band (3-97%)");
+  const lblMedian = t?.chartMedian ?? (ko ? "50% 평균선" : "50% median");
+  const lblRecorded = t?.chartRecorded ?? (ko ? "우리 아이 기록" : "Recorded");
   const W = 460;
   const H = 205;
   const padL = 38;
@@ -83,7 +88,7 @@ export function renderGrowthCurveChart(curveData, currentAgeMonths, opts = {}) {
   const xGridSvg = xTicks
     .map((m) => {
       const x = sx(m).toFixed(1);
-      return `<text x="${x}" y="${H - 7}" text-anchor="middle" font-size="9.5" fill="var(--bk-muted)">${m}${ko ? "개월" : "m"}</text>`;
+      return `<text x="${x}" y="${H - 7}" text-anchor="middle" font-size="9.5" fill="var(--bk-muted)">${m}${esc(monthSuffix)}</text>`;
     })
     .join("");
 
@@ -149,9 +154,9 @@ export function renderGrowthCurveChart(curveData, currentAgeMonths, opts = {}) {
         ${xGridSvg}
       </svg>
       <div class="curve-legend">
-        <span><i class="lg-band"></i>${ko ? "정상 범위 (3-97%)" : "Reference band (3-97%)"}</span>
-        <span><i class="lg-mid"></i>${ko ? "50% 평균선" : "50% median"}</span>
-        <span><i class="lg-dot"></i>${ko ? "우리 아이 기록" : "Recorded"}</span>
+        <span><i class="lg-band"></i>${esc(lblRefBand)}</span>
+        <span><i class="lg-mid"></i>${esc(lblMedian)}</span>
+        <span><i class="lg-dot"></i>${esc(lblRecorded)}</span>
       </div>
     </div>`;
 }
@@ -165,6 +170,10 @@ export function renderWeeklyCareChart(weeklyCare, opts = {}) {
   if (!anyData) return "";
 
   const ko = Boolean(opts.ko);
+  const t = opts.t || null;
+  const lblLast7 = t?.chartLast7Days ?? (ko ? "최근 7일 돌봄 추이" : "Last 7 days");
+  const lblSleep = t?.chartSleep ?? (ko ? "수면" : "Sleep");
+  const lblFeed = t?.chartFeedMl ?? (ko ? "수유량(ml)" : "Feeding(ml)");
   const W = 440;
   const H = 118;
   const padL = 12;
@@ -191,10 +200,10 @@ export function renderWeeklyCareChart(weeklyCare, opts = {}) {
       return `
         <g>
           <rect x="${(cx - bw - 1.5).toFixed(1)}" y="${sY.toFixed(1)}" width="${bw.toFixed(1)}" height="${sH.toFixed(1)}" rx="4" fill="#6366f1" fill-opacity="0.82">
-            <title>${esc(d.date)} ${ko ? "수면" : "Sleep"}: ${sleepHours}h</title>
+            <title>${esc(d.date)} ${esc(lblSleep)}: ${sleepHours}h</title>
           </rect>
           <rect x="${(cx + 1.5).toFixed(1)}" y="${fY.toFixed(1)}" width="${bw.toFixed(1)}" height="${fH.toFixed(1)}" rx="4" fill="#0ea5e9" fill-opacity="0.82">
-            <title>${esc(d.date)} ${ko ? "수유" : "Feed"}: ${d.feeding_ml || 0}ml</title>
+            <title>${esc(d.date)} ${esc(lblFeed)}: ${d.feeding_ml || 0}ml</title>
           </rect>
           <text x="${cx.toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="var(--bk-muted)">${esc(mmdd)}</text>
         </g>`;
@@ -204,10 +213,10 @@ export function renderWeeklyCareChart(weeklyCare, opts = {}) {
   return `
     <div class="weekly-chart-box">
       <div class="weekly-head">
-        <span class="weekly-title">${ko ? "최근 7일 돌봄 추이" : "Last 7 days"}</span>
+        <span class="weekly-title">${esc(lblLast7)}</span>
         <div class="curve-legend">
-          <span><i class="lg-sleep"></i>${ko ? "수면" : "Sleep"}</span>
-          <span><i class="lg-feed"></i>${ko ? "수유량(ml)" : "Feeding(ml)"}</span>
+          <span><i class="lg-sleep"></i>${esc(lblSleep)}</span>
+          <span><i class="lg-feed"></i>${esc(lblFeed)}</span>
         </div>
       </div>
       <svg viewBox="0 0 ${W} ${H}" class="weekly-svg" role="img" aria-label="7-day care chart">

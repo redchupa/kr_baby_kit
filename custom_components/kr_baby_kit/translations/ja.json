@@ -1,0 +1,165 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "子どもを登録",
+        "description": "子どもを1人登録します。複数の子どもは統合を追加して登録できます。\n\n本情報は参考用であり、医師の診察に代わるものではありません。",
+        "data": {
+          "child_name": "名前またはニックネーム (例: 第一子)",
+          "child_birthdate": "生年月日",
+          "child_sex": "性別",
+          "profile": "地域 / 基準"
+        }
+      }
+    },
+    "error": {
+      "required": "必須項目です。",
+      "invalid_date": "日付形式が正しくありません (YYYY-MM-DD)。",
+      "future_date": "未来の日付は指定できません。"
+    },
+    "abort": {
+      "already_configured": "この子どもは既に登録されています。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "子ども情報を編集",
+        "description": "名前・生年月日・性別・地域基準を編集します。保存済みの測定記録や完了マークは保持されます。",
+        "data": {
+          "child_name": "名前またはニックネーム",
+          "child_birthdate": "生年月日",
+          "child_sex": "性別",
+          "profile": "地域 / 基準"
+        }
+      }
+    },
+    "error": {
+      "required": "必須項目です。",
+      "invalid_date": "日付形式が正しくありません (YYYY-MM-DD)。",
+      "future_date": "未来の日付は指定できません。"
+    }
+  },
+  "selector": {
+    "child_sex": {
+      "options": {
+        "male": "男の子",
+        "female": "女の子"
+      }
+    },
+    "profile": {
+      "options": {
+        "kr": "韓国 (KDCA・NIP・保育料)",
+        "global": "国際標準 (WHO 成長曲線)"
+      }
+    }
+  },
+  "services": {
+    "record_measurement": {
+      "name": "測定値を記録",
+      "description": "身長・体重・頭囲を保存してパーセンタイルを更新します。"
+    },
+    "delete_measurement": {
+      "name": "測定値を削除",
+      "description": "指定日の測定記録全体または一部項目を削除します。"
+    },
+    "get_measurements": {
+      "name": "測定履歴を取得",
+      "description": "保存された測定記録を日付順で返します。"
+    },
+    "mark_event_done": {
+      "name": "予定を完了にする",
+      "description": "予防接種や乳幼児健診・歯科健診を完了として記録します。"
+    },
+    "unmark_event_done": {
+      "name": "完了マークを解除",
+      "description": "完了マークを取り消します。"
+    },
+    "get_schedule": {
+      "name": "全スケジュールを取得",
+      "description": "予防接種・健診・歯科健診の全予定と状態を返します。"
+    },
+    "log_care": {
+      "name": "育児ログを記録",
+      "description": "自動化やワイヤレスボタンから授乳・おむつ・睡眠・体温などを記録します。"
+    },
+    "start_timer": {
+      "name": "育児タイマー開始",
+      "description": "睡眠・授乳・うつぶせ・搾乳のリアルタイムタイマーを開始します。"
+    },
+    "stop_timer": {
+      "name": "育児タイマー終了",
+      "description": "実行中のタイマーを終了し、経過時間を記録として保存します。"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "height_percentile": { "name": "身長パーセンタイル (上位%)" },
+      "weight_percentile": { "name": "体重パーセンタイル (上位%)" },
+      "age_months": { "name": "月齢" },
+      "bmi_raw": { "name": "BMI" },
+      "next_vaccine": { "name": "次回予防接種の開始日" },
+      "vaccine_open_deadline": { "name": "接種可能期間の締切日" },
+      "next_checkup": { "name": "次回健診の開始日" },
+      "checkup_open_deadline": { "name": "受診可能期間の締切日" },
+      "next_oral_checkup": { "name": "次回歯科健診の開始日" },
+      "oral_checkup_open_deadline": { "name": "歯科健診期間の締切日" },
+      "standard_tuition": { "name": "月額標準保育料" },
+      "government_subsidy": { "name": "月額公費補助" },
+      "parent_share": { "name": "月額自己負担額" },
+      "today_sleep_minutes": { "name": "今日の睡眠時間" },
+      "today_feeding_ml": { "name": "今日の授乳量" },
+      "today_diaper_count": { "name": "今日のおむつ回数" },
+      "last_temperature": { "name": "最新体温" },
+      "active_timers": { "name": "実行中のタイマー" },
+      "last_feeding_at": { "name": "最後の授乳時刻" },
+      "last_diaper_at": { "name": "最後のおむつ交換時刻" },
+      "last_sleep_at": { "name": "最後の睡眠時刻" }
+    },
+    "binary_sensor": {
+      "vaccine_due": {
+        "name": "今月の予防接種",
+        "state": { "on": "今月の予定あり", "off": "今月の予定なし" }
+      },
+      "checkup_due": {
+        "name": "今月の健康健診",
+        "state": { "on": "今月の予定あり", "off": "今月の予定なし" }
+      },
+      "oral_checkup_due": {
+        "name": "今月の歯科健診",
+        "state": { "on": "今月の予定あり", "off": "今月の予定なし" }
+      },
+      "head_concern": {
+        "name": "頭囲の要注意アラート",
+        "state": { "on": "要注意", "off": "異常なし" }
+      },
+      "bmi_concern": {
+        "name": "BMIの要注意アラート",
+        "state": { "on": "要注意", "off": "異常なし" }
+      },
+      "weight_for_length_concern": {
+        "name": "身長別体重の要注意アラート",
+        "state": { "on": "要注意", "off": "異常なし" }
+      }
+    },
+    "calendar": {
+      "immunization_calendar": {
+        "name": "予防接種カレンダー",
+        "state": { "on": "接種可能期間中", "off": "期間外の予定" }
+      },
+      "checkup_calendar": {
+        "name": "健康健診カレンダー",
+        "state": { "on": "受診可能期間中", "off": "期間外の予定" }
+      },
+      "oral_checkup_calendar": {
+        "name": "歯科健診カレンダー",
+        "state": { "on": "受診可能期間中", "off": "期間外の予定" }
+      }
+    },
+    "number": {
+      "height_input": { "name": "身長を記録 (今日)" },
+      "weight_input": { "name": "体重を記録 (今日)" },
+      "head_input": { "name": "頭囲を記録 (今日)" }
+    }
+  }
+}

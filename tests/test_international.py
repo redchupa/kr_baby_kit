@@ -109,10 +109,14 @@ def _key_tree(obj):
 def test_translation_files_have_identical_key_structure():
     strings = json.loads((_COMP_DIR / "strings.json").read_text(encoding="utf-8"))
     en = json.loads((_COMP_DIR / "translations" / "en.json").read_text(encoding="utf-8"))
-    ko = json.loads((_COMP_DIR / "translations" / "ko.json").read_text(encoding="utf-8"))
-
     assert strings == en
-    assert _key_tree(strings) == _key_tree(ko)
+
+    expected_tree = _key_tree(strings)
+    for lang in ("ko", "ja", "zh-Hans", "es", "fr", "de", "pt"):
+        path = _COMP_DIR / "translations" / f"{lang}.json"
+        assert path.is_file(), f"missing translation file: {path}"
+        data = json.loads(path.read_text(encoding="utf-8"))
+        assert _key_tree(data) == expected_tree, f"key tree mismatch in {lang}.json"
 
 
 def test_number_entity_defaults_to_age_median_when_no_records():
@@ -158,11 +162,16 @@ def test_default_birthdate_and_panel_assets():
     cards_js = FRONTEND_DIR / "cards.js"
     charts_js = FRONTEND_DIR / "charts.js"
     automations_js = FRONTEND_DIR / "automations.js"
+    i18n_js = FRONTEND_DIR / "i18n.js"
     assert panel_js.is_file()
     assert themes_js.is_file()
     assert cards_js.is_file()
     assert charts_js.is_file()
     assert automations_js.is_file()
+    assert i18n_js.is_file()
+    i18n_text = i18n_js.read_text(encoding="utf-8")
+    for code in ("ko", "en", "ja", "zh-Hans", "es", "fr", "de", "pt"):
+        assert f'code: "{code}"' in i18n_text
     auto_text = automations_js.read_text(encoding="utf-8")
     assert auto_text.count('id: "') >= 14  # 8 LAYOUT_MODES + 6 AUTOMATION_RECIPES
     js_text = panel_js.read_text(encoding="utf-8")
@@ -174,6 +183,8 @@ def test_default_birthdate_and_panel_assets():
     assert "kr_baby_kit/update_child" in js_text
     assert "btn-open-settings" in js_text
     assert "btn-save-settings" in js_text
+    assert "btn-lang-menu" in js_text
+    assert "data-quick-lang" in js_text
     assert "data-select-cardstyle" in js_text
     assert themes_text.count('id: "') >= 12
     assert cards_text.count('id: "') >= 4

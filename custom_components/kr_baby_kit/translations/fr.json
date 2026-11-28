@@ -1,0 +1,165 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Enregistrer un enfant",
+        "description": "Enregistrez un enfant. Ajoutez une autre entrée pour d'autres enfants.\n\nCes informations sont indicatives et ne remplacent pas un avis médical.",
+        "data": {
+          "child_name": "Prénom ou surnom (ex. Bébé A)",
+          "child_birthdate": "Date de naissance",
+          "child_sex": "Sexe",
+          "profile": "Région / Référence"
+        }
+      }
+    },
+    "error": {
+      "required": "Champ obligatoire.",
+      "invalid_date": "Format de date invalide (YYYY-MM-DD).",
+      "future_date": "Les dates futures ne sont pas autorisées."
+    },
+    "abort": {
+      "already_configured": "Cet enfant est déjà enregistré."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Modifier le profil",
+        "description": "Modifiez le nom, la date de naissance, le sexe ou la référence régionale. Les mesures sont conservées.",
+        "data": {
+          "child_name": "Prénom ou surnom",
+          "child_birthdate": "Date de naissance",
+          "child_sex": "Sexe",
+          "profile": "Région / Référence"
+        }
+      }
+    },
+    "error": {
+      "required": "Champ obligatoire.",
+      "invalid_date": "Format de date invalide (YYYY-MM-DD).",
+      "future_date": "Les dates futures ne sont pas autorisées."
+    }
+  },
+  "selector": {
+    "child_sex": {
+      "options": {
+        "male": "Garçon",
+        "female": "Fille"
+      }
+    },
+    "profile": {
+      "options": {
+        "kr": "Corée du Sud (KDCA, NIP, Crèche)",
+        "global": "International (Normes OMS)"
+      }
+    }
+  },
+  "services": {
+    "record_measurement": {
+      "name": "Enregistrer une mesure",
+      "description": "Enregistre taille, poids ou périmètre crânien et met à jour les percentiles."
+    },
+    "delete_measurement": {
+      "name": "Supprimer une mesure",
+      "description": "Supprime une mesure complète ou certains champs d'une date."
+    },
+    "get_measurements": {
+      "name": "Obtenir les mesures",
+      "description": "Retourne l'historique des mesures par date."
+    },
+    "mark_event_done": {
+      "name": "Marquer comme fait",
+      "description": "Marque un vaccin ou bilan comme effectué."
+    },
+    "unmark_event_done": {
+      "name": "Annuler le marquage",
+      "description": "Retire la marque effectué."
+    },
+    "get_schedule": {
+      "name": "Obtenir le calendrier complet",
+      "description": "Retourne tous les vaccins et bilans avec leur statut."
+    },
+    "log_care": {
+      "name": "Enregistrer un soin",
+      "description": "Enregistre repas, couche, sommeil, température ou note depuis une automatisation."
+    },
+    "start_timer": {
+      "name": "Démarrer un chrono",
+      "description": "Démarre un chronomètre de sommeil, repas, ventre ou tire-lait."
+    },
+    "stop_timer": {
+      "name": "Arrêter le chrono",
+      "description": "Arrête le chronomètre actif et enregistre la durée."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "height_percentile": { "name": "Rang taille (top %)" },
+      "weight_percentile": { "name": "Rang poids (top %)" },
+      "age_months": { "name": "Âge (mois)" },
+      "bmi_raw": { "name": "IMC" },
+      "next_vaccine": { "name": "Début du prochain vaccin" },
+      "vaccine_open_deadline": { "name": "Échéance vaccin ouvert" },
+      "next_checkup": { "name": "Début du prochain bilan" },
+      "checkup_open_deadline": { "name": "Échéance bilan ouvert" },
+      "next_oral_checkup": { "name": "Début prochain bilan dentaire" },
+      "oral_checkup_open_deadline": { "name": "Échéance bilan dentaire" },
+      "standard_tuition": { "name": "Tarif crèche mensuel" },
+      "government_subsidy": { "name": "Aide publique mensuelle" },
+      "parent_share": { "name": "Reste à charge mensuel" },
+      "today_sleep_minutes": { "name": "Sommeil aujourd'hui" },
+      "today_feeding_ml": { "name": "Volume repas aujourd'hui" },
+      "today_diaper_count": { "name": "Couches aujourd'hui" },
+      "last_temperature": { "name": "Dernière température" },
+      "active_timers": { "name": "Chronos actifs" },
+      "last_feeding_at": { "name": "Heure du dernier repas" },
+      "last_diaper_at": { "name": "Dernier change" },
+      "last_sleep_at": { "name": "Heure du dernier sommeil" }
+    },
+    "binary_sensor": {
+      "vaccine_due": {
+        "name": "Vaccins ce mois-ci",
+        "state": { "on": "Vaccin prévu ce mois-ci", "off": "Aucun vaccin ce mois-ci" }
+      },
+      "checkup_due": {
+        "name": "Bilans ce mois-ci",
+        "state": { "on": "Bilan prévu ce mois-ci", "off": "Aucun bilan ce mois-ci" }
+      },
+      "oral_checkup_due": {
+        "name": "Bilan dentaire ce mois-ci",
+        "state": { "on": "Bilan dentaire prévu", "off": "Aucun bilan dentaire" }
+      },
+      "head_concern": {
+        "name": "Alerte périmètre crânien",
+        "state": { "on": "Vigilance", "off": "Normal" }
+      },
+      "bmi_concern": {
+        "name": "Alerte IMC",
+        "state": { "on": "Vigilance", "off": "Normal" }
+      },
+      "weight_for_length_concern": {
+        "name": "Alerte poids / taille",
+        "state": { "on": "Vigilance", "off": "Normal" }
+      }
+    },
+    "calendar": {
+      "immunization_calendar": {
+        "name": "Calendrier vaccinal",
+        "state": { "on": "Fenêtre ouverte", "off": "Aucune fenêtre ouverte" }
+      },
+      "checkup_calendar": {
+        "name": "Calendrier bilans santé",
+        "state": { "on": "Fenêtre ouverte", "off": "Aucune fenêtre ouverte" }
+      },
+      "oral_checkup_calendar": {
+        "name": "Calendrier dentaire",
+        "state": { "on": "Fenêtre ouverte", "off": "Aucune fenêtre ouverte" }
+      }
+    },
+    "number": {
+      "height_input": { "name": "Noter la taille (aujourd'hui)" },
+      "weight_input": { "name": "Noter le poids (aujourd'hui)" },
+      "head_input": { "name": "Noter le périmètre crânien (aujourd'hui)" }
+    }
+  }
+}

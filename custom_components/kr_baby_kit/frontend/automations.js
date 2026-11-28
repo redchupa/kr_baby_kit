@@ -562,19 +562,22 @@ actions:
 
 export function renderAutomationsSection(child, opts = {}) {
   const ko = Boolean(opts.ko);
+  const t = opts.t || null;
   const openId = opts.openRecipeId || null;
   const copiedId = opts.copiedId || null;
   const wideClass = opts.wideClass || "";
   const cid = child?.child_id || "your_child_id";
 
-  const title = ko ? "스마트 육아 자동화 가이드" : "Smart Nursery Automations";
-  const sub = ko
-    ? "실전 Home Assistant 육아 레시피 — 우리 아이 ID가 자동 반영된 YAML을 복사해 바로 활용하세요."
-    : "Battle-tested Home Assistant parenting recipes — copy ready-to-use YAML with your child_id pre-filled.";
-  const viewBtn = ko ? "샘플 코드 보기" : "View YAML";
-  const hideBtn = ko ? "접기" : "Hide";
-  const copyBtn = ko ? "YAML 복사" : "Copy YAML";
-  const copiedTxt = ko ? "복사됨!" : "Copied!";
+  const title = t?.autoTitle ?? (ko ? "스마트 육아 자동화 가이드" : "Smart Nursery Automations");
+  const sub =
+    t?.autoSub ??
+    (ko
+      ? "실전 Home Assistant 육아 레시피 — 우리 아이 ID가 자동 반영된 YAML을 복사해 바로 활용하세요."
+      : "Battle-tested Home Assistant parenting recipes — copy ready-to-use YAML with your child_id pre-filled.");
+  const viewBtn = t?.autoView ?? (ko ? "샘플 코드 보기" : "View YAML");
+  const hideBtn = t?.autoHide ?? (ko ? "접기" : "Hide");
+  const copyBtn = t?.autoCopy ?? (ko ? "YAML 복사" : "Copy YAML");
+  const copiedTxt = t?.autoCopied ?? (ko ? "복사됨!" : "Copied!");
 
   const cards = AUTOMATION_RECIPES.map((r) => {
     const isOpen = openId === r.id;

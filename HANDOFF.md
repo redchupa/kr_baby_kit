@@ -1,6 +1,6 @@
 # Handover Document — Baby Kit (`kr_baby_kit`)
 
-> Last updated: 2026-11-26 (Latest released tag: `v0.18.1`)
+> Last updated: 2026-11-28 (Latest released tag: `v0.19.0`)
 
 ## 1. Project Overview
 
@@ -53,7 +53,7 @@
 | `llm_api.py` | Per-child Home Assistant Assist LLM API (omits tuition tool for `global` profile) |
 | `websocket_api.py` | WebSocket commands: `get_overview`, `add_child`, `update_child`, `delete_child`, `set_avatar`, `add_activity`, `delete_activity`, `start_timer`, `stop_timer` |
 | `panel.py` | Registers static `/kr_baby_kit_static` and sidebar panel `Baby Kit` (`kr-baby-kit-panel`) |
-| `strings.json`, `translations/en.json`, `translations/ko.json` | Full EN/KO localization for config/options, selectors, services, and all entities |
+| `strings.json`, `translations/{en,ko,ja,zh-Hans,es,fr,de,pt}.json` | Full 8-language localization for config/options, selectors, services, and all entities |
 
 ### Bundled Reference Data (`custom_components/kr_baby_kit/data/`)
 - `growth_chart_kr.json` — KDCA 2017 LMS tables (0–228m)
@@ -63,7 +63,8 @@
 - `care_tuition_kr.json` — South Korea 2026 MOE childcare tuition rates
 
 ### Frontend (`custom_components/kr_baby_kit/frontend/`)
-- `panel.js` — Main `<kr-baby-kit-panel>` Shadow DOM web component (Hero card + `D+days`, status chips, Baby Buddy daily care & live timers, modal/bottom-sheet care logger with draft preservation, one-tap logs, photo diary & lightbox, LMS growth curve chart + gauges & sparklines, schedules with collapse/expand, mobile bottom nav bar, top-bar `EN`/`한국어` toggle, Gear customization drawer)
+- `panel.js` — Main `<kr-baby-kit-panel>` Shadow DOM web component (Hero card + `D+days`, status chips, Baby Buddy daily care & live timers, modal/bottom-sheet care logger with draft preservation, one-tap logs, photo diary & lightbox, LMS growth curve chart + gauges & sparklines, schedules with collapse/expand, mobile bottom nav bar, top-bar 8-language dropdown selector, Gear customization drawer with staged `Save`/`Cancel`)
+- `i18n.js` — 8-language internationalization module (`ko`, `en`, `ja`, `zh-Hans`, `es`, `fr`, `de`, `pt`) with `resolveLang`, `getStrings`, `fmtMinutesI18n`, `fmtAgoI18n`
 - `charts.js` — Interactive LMS Growth Curve SVG chart (P3/P15/P50/P85/P97 bands + child trajectory + current-age marker) and 7-day Sleep & Feeding grouped bar chart
 - `themes.js` — 12 architectural themes (`ha-native`, `nordic-nursery`, `paper-journal`, `glass-aurora`, `midnight-studio`, `bento-pop`, `clinical-chart`, `botanical-linen`, `pastel-cloud`, `retro-terminal`, `warm-terracotta`, `tokyo-minimal`)
 - `cards.js` — 4 card style presets (`bubble`, `mushroom`, `bento-pro`, `classic`), inline SVG icon set, 0–100% LMS percentile gauge bar, and SVG growth sparkline

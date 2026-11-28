@@ -4,6 +4,16 @@ All notable changes will be documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versions follow [SemVer](https://semver.org/).
 
+## [0.19.0] - 2026-11-28
+
+### Added
+
+- **8-Language Global Localization (`frontend/i18n.js`, `translations/*.json`)**:
+  - Added full UI and Home Assistant backend translations for **8 major languages**: Korean (`ko`), English (`en`), Japanese (`ja`), Simplified Chinese (`zh-Hans`), Spanish (`es`), French (`fr`), German (`de`), and Portuguese (`pt`).
+  - Localized relative time labels (`fmtMinutesI18n`, `fmtAgoI18n`), LMS growth curve & 7-day care chart legends (`frontend/charts.js`), and Smart Nursery Automation section headers/buttons (`frontend/automations.js`).
+- **Clickable Top-Bar Language Selector Dropdown (`frontend/panel.js`)**:
+  - Replaced the binary `EN`/`한국어` toggle with a globe dropdown menu (`Auto (HA)` + 8 languages with active indicator and click-away dismissal) in the top bar, plus a 3-column language grid inside the Gear settings drawer (`Save` / `Cancel` staged draft flow).
+
 ## [0.18.1] - 2026-11-26
 
 ### Changed

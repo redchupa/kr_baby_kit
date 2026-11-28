@@ -1,26 +1,35 @@
 /* Home Assistant Sidebar Panel for Baby Kit (kr_baby_kit) */
-import { THEMES, getThemeCss } from "./themes.js?v=0.18.1";
+import { THEMES, getThemeCss } from "./themes.js?v=0.19.0";
 import {
   CARD_STYLES,
   ICONS,
   cardStyleCss,
   renderPercentileGauge,
   renderSparkline,
-} from "./cards.js?v=0.18.1";
+} from "./cards.js?v=0.19.0";
 import {
   renderGrowthCurveChart,
   renderWeeklyCareChart,
-} from "./charts.js?v=0.18.1";
+} from "./charts.js?v=0.19.0";
 import {
   AUTOMATION_RECIPES,
   LAYOUT_MODES,
   renderAutomationsSection,
-} from "./automations.js?v=0.18.1";
+} from "./automations.js?v=0.19.0";
+import {
+  LANGUAGES,
+  VALID_LANG_PREFS,
+  fmtAgoI18n,
+  fmtMinutesI18n,
+  getLangMeta,
+  getStrings,
+  resolveLang,
+} from "./i18n.js?v=0.19.0";
 
 const PREFS_KEY = "kr_baby_kit_panel_prefs_v4";
 
 const DEFAULT_PREFS = {
-  lang: "auto", // "auto" | "ko" | "en"
+  lang: "auto", // "auto" | "ko" | "en" | "ja" | "zh-Hans" | "es" | "fr" | "de" | "pt"
   theme: "nordic-nursery",
   cardStyle: "bubble", // "bubble" | "mushroom" | "bento-pro" | "classic"
   layout: "bento", // 8 layout modes in LAYOUT_MODES
@@ -49,309 +58,6 @@ const DEFAULT_PREFS = {
   defaultScheduleTab: "vaccines",
 };
 
-const STRINGS = {
-  ko: {
-    title: "Baby Kit",
-    addChild: "아이 추가",
-    editChild: "정보 수정",
-    deleteChild: "삭제",
-    deleteConfirm: "이 아이와 저장된 측정 기록·돌봄 기록·사진을 모두 삭제할까요?",
-    noChildren: "등록된 아이가 없습니다. 위 버튼으로 아이를 추가하세요.",
-    name: "이름 또는 별칭",
-    namePlaceholder: "예: 첫째, 둘째",
-    birthdate: "생년월일",
-    sex: "성별",
-    male: "남아",
-    female: "여아",
-    profile: "지역 / 기준",
-    profileKr: "대한민국 (질병관리청 · NIP · 보육료)",
-    profileGlobal: "해외 (WHO 성장 표준)",
-    save: "저장",
-    cancel: "취소",
-    close: "닫기",
-    saving: "저장 중...",
-    saved: "저장되었습니다.",
-    changePhoto: "프로필 사진 변경",
-    ageMonths: (m) => `생후 ${m}개월`,
-    chipOpenVac: "접종 가능",
-    chipNextVac: (d) => `접종 D-${d}`,
-    chipOpenChk: "검진 가능",
-    chipNextChk: (d) => `검진 D-${d}`,
-    careTitle: "오늘의 돌봄 · 타이머",
-    quickOneTap: "원탭 빠른 기록",
-    quickWet: "+ 소변",
-    quickSolid: "+ 대변",
-    quickFeed: "+ 분유 140ml",
-    quickTummy: "+ 터미타임 10분",
-    todaySleep: "수면",
-    todayFeed: "수유",
-    todayDiaper: "기저귀",
-    todayTummy: "터미타임",
-    todayTemp: "최근 체온",
-    todayPhotos: "사진 일기",
-    photoUnit: "장",
-    countUnit: "회",
-    wet: "소변",
-    solid: "대변",
-    both: "소변+대변",
-    timerStart: "시작",
-    timerStop: "저장",
-    timerCancel: "취소",
-    kindNote: "메모·사진",
-    kindFeeding: "수유",
-    kindSleep: "수면",
-    kindDiaper: "기저귀",
-    kindTummy: "터미타임",
-    kindPumping: "유축",
-    kindTemp: "체온",
-    methodLabel: "방법",
-    methodBreastL: "모유 (좌)",
-    methodBreastR: "모유 (우)",
-    methodBreastB: "모유 (양쪽)",
-    methodBottle: "젖병 (모유)",
-    methodFormula: "분유",
-    methodSolid: "이유식",
-    amountMl: "양 (ml)",
-    durationMin: "시간 (분)",
-    diaperType: "종류",
-    tempC: "체온 (°C)",
-    noteLabel: "메모",
-    notePlaceholder: "오늘 있었던 일, 특이사항, 발달 기록...",
-    attachPhoto: "사진 첨부",
-    removePhoto: "사진 제거",
-    logSave: "기록 저장",
-    logDetailTitle: "돌봄 · 사진 기록하기",
-    logDetailSub: "항목을 눌러 메모나 사진을 함께 남겨보세요",
-    curveHeight: "키 성장곡선",
-    curveWeight: "몸무게 성장곡선",
-    timelineTitle: "타임라인 · 사진 일기",
-    filterAll: "전체",
-    filterPhotos: "사진만",
-    noActivities: "아직 기록이 없습니다. 위에서 원탭 기록이나 사진 일기를 남겨보세요.",
-    measurements: "성장 측정 입력",
-    height: "키 (cm)",
-    weight: "몸무게 (kg)",
-    head: "머리둘레 (cm)",
-    measureDate: "측정일",
-    saveMeasurement: "측정값 저장",
-    defaultMedian: "평균 기본값",
-    recordedAt: (d) => `최근 기록: ${d}`,
-    growthSummary: "성장 백분위 · 추이",
-    noMeasureYet: "아직 측정 기록이 없습니다. 키·몸무게·머리둘레를 저장하면 백분위 게이지가 표시됩니다.",
-    bmi: "BMI",
-    concernOk: "정상 범위",
-    concernWarn: "주의 필요",
-    concernHead: "머리둘레",
-    concernBmi: "BMI",
-    concernWfl: "신장별 몸무게",
-    under24Note: "만 24개월 미만은 신장별 몸무게를 참고합니다.",
-    schedules: "예방접종 · 검진 일정",
-    tabVaccines: "예방접종",
-    tabCheckups: "건강검진",
-    tabOral: "구강검진",
-    statusOpen: "지금 가능",
-    statusUpcoming: "예정",
-    statusDone: "완료",
-    statusPast: "기간 지남",
-    markDone: "완료",
-    unmarkDone: "취소",
-    showPast: "지난 일정 보기",
-    showAllSched: (n) => `전체 일정 더 보기 (${n}개)`,
-    showLessSched: "접기",
-    daysOld: (d) => `D+${d}`,
-    tuition: "어린이집 보육료",
-    tuitionStd: "표준보육료",
-    tuitionSub: "정부지원금",
-    tuitionShare: "본인부담금",
-    won: "원",
-    modalAddTitle: "아이 추가",
-    modalEditTitle: "아이 정보 수정",
-    settingsTitle: "카드 · 테마 · 레이아웃 설정",
-    settingsLang: "표시 언어",
-    langAuto: "자동 (HA)",
-    settingsCardStyle: "카드 스타일",
-    settingsTheme: "테마 선택 (12종)",
-    settingsLayout: "레이아웃 구성 (8종)",
-    settingsMobileCols: "모바일 타일 열 수 (촘촘함)",
-    mcol2: "2열 여유",
-    mcol3: "3열 촘촘",
-    mcol4: "4열 초밀집",
-    layoutSingle: "1열 표준",
-    layoutBento: "2열 벤토",
-    layoutCompact: "컴팩트",
-    settingsSections: "카드 표시 · 순서 · 너비",
-    secChips: "상단 상태 칩 바",
-    secCare: "오늘의 돌봄 · 타이머",
-    secTimeline: "타임라인 · 사진 일기",
-    secMeasurements: "성장 측정 입력",
-    secGrowth: "성장 백분위 · 추이",
-    secTuition: "어린이집 보육료 (KR)",
-    secSchedules: "예방접종 · 검진 일정",
-    secAutomations: "스마트 육아 자동화 가이드",
-    secFooter: "하단 면책·출처 표시",
-    widthFull: "전체",
-    widthHalf: "1/2",
-    settingsDefaultTab: "기본 일정 탭",
-    resetPrefs: "기본값으로 초기화",
-    navAll: "전체",
-    navCare: "돌봄",
-    navGrowth: "성장",
-    navDiary: "일기",
-    navSchedule: "일정",
-    navAuto: "자동화",
-  },
-  en: {
-    title: "Baby Kit",
-    addChild: "Add child",
-    editChild: "Edit info",
-    deleteChild: "Delete",
-    deleteConfirm: "Delete this child along with all measurements, care logs, and photos?",
-    noChildren: "No children registered yet. Use the button above to add a child.",
-    name: "Name or alias",
-    namePlaceholder: "e.g. Baby A",
-    birthdate: "Birthdate",
-    sex: "Sex",
-    male: "Male",
-    female: "Female",
-    profile: "Region / Standard",
-    profileKr: "South Korea (KDCA, NIP, Childcare Tuition)",
-    profileGlobal: "International (WHO Growth Standards)",
-    save: "Save",
-    cancel: "Cancel",
-    close: "Close",
-    saving: "Saving...",
-    saved: "Saved.",
-    changePhoto: "Change profile photo",
-    ageMonths: (m) => `${m} mo`,
-    chipOpenVac: "Vaccine open",
-    chipNextVac: (d) => `Vaccine D-${d}`,
-    chipOpenChk: "Checkup open",
-    chipNextChk: (d) => `Checkup D-${d}`,
-    careTitle: "Daily Care & Timers",
-    quickOneTap: "One-tap log",
-    quickWet: "+ Wet",
-    quickSolid: "+ Solid",
-    quickFeed: "+ Formula 140ml",
-    quickTummy: "+ Tummy 10m",
-    todaySleep: "Sleep",
-    todayFeed: "Feeding",
-    todayDiaper: "Diapers",
-    todayTummy: "Tummy time",
-    todayTemp: "Last temp",
-    todayPhotos: "Photos",
-    photoUnit: "",
-    countUnit: "x",
-    wet: "Wet",
-    solid: "Solid",
-    both: "Wet + Solid",
-    timerStart: "Start",
-    timerStop: "Save",
-    timerCancel: "Cancel",
-    kindNote: "Note & Photo",
-    kindFeeding: "Feeding",
-    kindSleep: "Sleep",
-    kindDiaper: "Diaper",
-    kindTummy: "Tummy time",
-    kindPumping: "Pumping",
-    kindTemp: "Temp",
-    methodLabel: "Method",
-    methodBreastL: "Breast (L)",
-    methodBreastR: "Breast (R)",
-    methodBreastB: "Breast (Both)",
-    methodBottle: "Bottle (milk)",
-    methodFormula: "Formula",
-    methodSolid: "Solid food",
-    amountMl: "Amount (ml)",
-    durationMin: "Duration (min)",
-    diaperType: "Type",
-    tempC: "Temp (°C)",
-    noteLabel: "Note",
-    notePlaceholder: "Milestones, symptoms, daily memories...",
-    attachPhoto: "Attach photo",
-    removePhoto: "Remove photo",
-    logSave: "Save entry",
-    logDetailTitle: "Log care or photo",
-    logDetailSub: "Tap a category to add details or attach a photo",
-    curveHeight: "Height curve",
-    curveWeight: "Weight curve",
-    timelineTitle: "Timeline & Photo Diary",
-    filterAll: "All",
-    filterPhotos: "Photos",
-    noActivities: "No care logs yet. Use one-tap actions or add a photo note above.",
-    measurements: "Growth measurements",
-    height: "Height (cm)",
-    weight: "Weight (kg)",
-    head: "Head circumference (cm)",
-    measureDate: "Date",
-    saveMeasurement: "Save measurement",
-    defaultMedian: "Age median",
-    recordedAt: (d) => `Last recorded: ${d}`,
-    growthSummary: "Growth percentiles & trends",
-    noMeasureYet: "No measurements recorded yet. Save measurements to view percentile gauges.",
-    bmi: "BMI",
-    concernOk: "Normal",
-    concernWarn: "Attention",
-    concernHead: "Head circumference",
-    concernBmi: "BMI",
-    concernWfl: "Weight-for-length",
-    under24Note: "Under 24 months: check weight-for-length instead of BMI percentile.",
-    schedules: "Immunizations & Checkups",
-    tabVaccines: "Immunizations",
-    tabCheckups: "Health checkups",
-    tabOral: "Dental checkups",
-    statusOpen: "Open now",
-    statusUpcoming: "Upcoming",
-    statusDone: "Done",
-    statusPast: "Passed",
-    markDone: "Done",
-    unmarkDone: "Undo",
-    showPast: "Show past windows",
-    showAllSched: (n) => `Show all (${n})`,
-    showLessSched: "Show less",
-    daysOld: (d) => `Day ${d}`,
-    tuition: "Childcare tuition (KR)",
-    tuitionStd: "Standard",
-    tuitionSub: "Subsidy",
-    tuitionShare: "Parent share",
-    won: "KRW",
-    modalAddTitle: "Add child",
-    modalEditTitle: "Edit child",
-    settingsTitle: "Cards, Theme & Layout",
-    settingsLang: "Display language",
-    langAuto: "Auto (HA)",
-    settingsCardStyle: "Card style",
-    settingsTheme: "Theme (12 styles)",
-    settingsLayout: "Layout mode (8 presets)",
-    settingsMobileCols: "Mobile tile columns (density)",
-    mcol2: "2-Col",
-    mcol3: "3-Col Dense",
-    mcol4: "4-Col Ultra",
-    layoutSingle: "Single column",
-    layoutBento: "2-col Bento",
-    layoutCompact: "Compact",
-    settingsSections: "Cards, order & width",
-    secChips: "Top status chips bar",
-    secCare: "Daily Care & Timers",
-    secTimeline: "Timeline & Photo Diary",
-    secMeasurements: "Growth measurements",
-    secGrowth: "Growth percentiles & trends",
-    secTuition: "Childcare tuition (KR)",
-    secSchedules: "Immunizations & Checkups",
-    secAutomations: "Smart Nursery Automations",
-    secFooter: "Footer disclaimer & attribution",
-    widthFull: "Full",
-    widthHalf: "1/2",
-    settingsDefaultTab: "Default schedule tab",
-    resetPrefs: "Reset to defaults",
-    navAll: "All",
-    navCare: "Care",
-    navGrowth: "Growth",
-    navDiary: "Diary",
-    navSchedule: "Schedule",
-    navAuto: "Auto",
-  },
-};
-
 function esc(val) {
   return String(val ?? "")
     .replace(/&/g, "&amp;")
@@ -370,33 +76,9 @@ function fmtElapsed(startedIso) {
   return `${h}:${m}:${s}`;
 }
 
-function fmtMinutes(min, ko) {
-  const total = Math.round(Number(min || 0));
-  const h = Math.floor(total / 60);
-  const m = total % 60;
-  if (h > 0) return ko ? `${h}시간 ${m}분` : `${h}h ${m}m`;
-  return ko ? `${m}분` : `${m}m`;
-}
-
 function fmtTimestamp(iso) {
   if (!iso) return "";
   return String(iso).replace("T", " ").slice(0, 16);
-}
-
-function fmtAgo(iso, ko) {
-  if (!iso) return "";
-  const ts = Date.parse(iso);
-  if (Number.isNaN(ts)) return "";
-  const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000));
-  if (mins < 1) return ko ? "방금 전" : "Just now";
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  if (h >= 24) {
-    const d = Math.floor(h / 24);
-    return ko ? `${d}일 전` : `${d}d ago`;
-  }
-  if (h > 0) return ko ? `${h}시간 ${m}분 전` : `${h}h ${m}m ago`;
-  return ko ? `${m}분 전` : `${m}m ago`;
 }
 
 function daysBetween(fromIso, toIso) {
@@ -443,7 +125,7 @@ function loadPrefs() {
       if (!validOrder.includes(k)) validOrder.push(k);
     }
     return {
-      lang: ["auto", "ko", "en"].includes(parsed.lang) ? parsed.lang : DEFAULT_PREFS.lang,
+      lang: VALID_LANG_PREFS.includes(parsed.lang) ? parsed.lang : DEFAULT_PREFS.lang,
       theme: THEMES.some((t) => t.id === parsed.theme) ? parsed.theme : DEFAULT_PREFS.theme,
       cardStyle: CARD_STYLES.some((c) => c.id === parsed.cardStyle)
         ? parsed.cardStyle
@@ -501,6 +183,7 @@ class KrBabyKitPanel extends HTMLElement {
     this._modal = null;
     this._settingsOpen = false;
     this._settingsDraft = null;
+    this._langMenuOpen = false;
     this._busy = false;
     this._notice = null;
     this._error = null;
@@ -556,15 +239,16 @@ class KrBabyKitPanel extends HTMLElement {
     };
   }
 
+  _lang() {
+    return resolveLang(this._prefs?.lang, this._hass?.language || this._data?.language);
+  }
+
   _isKo() {
-    if (this._prefs?.lang === "ko") return true;
-    if (this._prefs?.lang === "en") return false;
-    const lang = (this._hass?.language || this._data?.language || "ko").toLowerCase();
-    return lang.startsWith("ko");
+    return this._lang() === "ko";
   }
 
   _t() {
-    return this._isKo() ? STRINGS.ko : STRINGS.en;
+    return getStrings(this._lang());
   }
 
   _tickTimers() {
@@ -944,7 +628,7 @@ class KrBabyKitPanel extends HTMLElement {
   _renderStatusChips(child) {
     if (!this._prefs.visible.chips) return "";
     const t = this._t();
-    const ko = this._isKo();
+    const lang = this._lang();
     const sum = child.today_summary || {};
     const vacs = child.vaccines || [];
     const chks = child.checkups || [];
@@ -973,7 +657,7 @@ class KrBabyKitPanel extends HTMLElement {
       const d = daysBetween(child.today, nextChk.window_start);
       if (d != null) chips.push(`<span class="chip tone-teal">${ICONS.checkup}<span>${esc(t.chipNextChk(d))}</span></span>`);
     }
-    chips.push(`<span class="chip tone-indigo">${ICONS.sleep}<span>${esc(fmtMinutes(sum.sleep_min, ko))}</span></span>`);
+    chips.push(`<span class="chip tone-indigo">${ICONS.sleep}<span>${esc(fmtMinutesI18n(sum.sleep_min, lang))}</span></span>`);
     chips.push(`<span class="chip tone-sky">${ICONS.feeding}<span>${sum.feeding_count || 0}${esc(t.countUnit)}${sum.feeding_ml ? ` · ${sum.feeding_ml}ml` : ""}</span></span>`);
     chips.push(`<span class="chip ${anyWarn ? "tone-rose" : "tone-green"}">${ICONS.shield}<span>${esc(anyWarn ? t.concernWarn : t.concernOk)}</span></span>`);
 
@@ -1103,7 +787,8 @@ class KrBabyKitPanel extends HTMLElement {
 
   _renderSection(secId, child) {
     const t = this._t();
-    const ko = this._isKo();
+    const lang = this._lang();
+    const ko = lang === "ko";
     if (!this._prefs.visible[secId]) return "";
     const wideClass = this._prefs.wide[secId] ? "span-full" : "";
 
@@ -1159,20 +844,20 @@ class KrBabyKitPanel extends HTMLElement {
               <div class="icon-well tone-indigo">${ICONS.sleep}</div>
               <div class="kpi-body">
                 <div class="kpi-label">${esc(t.todaySleep)}</div>
-                <div class="kpi-val">${esc(fmtMinutes(sum.sleep_min, ko))}</div>
+                <div class="kpi-val">${esc(fmtMinutesI18n(sum.sleep_min, lang))}</div>
               </div>
             </div>
             <div class="kpi-card">
               <div class="icon-well tone-sky">${ICONS.feeding}</div>
               <div class="kpi-body">
-                <div class="kpi-label">${esc(t.todayFeed)}${child.last_care?.feeding?.timestamp ? ` · <span class="kpi-ago">${esc(fmtAgo(child.last_care.feeding.timestamp, ko))}</span>` : ""}</div>
+                <div class="kpi-label">${esc(t.todayFeed)}${child.last_care?.feeding?.timestamp ? ` · <span class="kpi-ago">${esc(fmtAgoI18n(child.last_care.feeding.timestamp, lang))}</span>` : ""}</div>
                 <div class="kpi-val">${sum.feeding_count || 0}${esc(t.countUnit)}${sum.feeding_ml ? ` · ${sum.feeding_ml}ml` : ""}</div>
               </div>
             </div>
             <div class="kpi-card">
               <div class="icon-well tone-amber">${ICONS.diaper}</div>
               <div class="kpi-body">
-                <div class="kpi-label">${esc(t.todayDiaper)}${child.last_care?.diaper?.timestamp ? ` · <span class="kpi-ago">${esc(fmtAgo(child.last_care.diaper.timestamp, ko))}</span>` : ""}</div>
+                <div class="kpi-label">${esc(t.todayDiaper)}${child.last_care?.diaper?.timestamp ? ` · <span class="kpi-ago">${esc(fmtAgoI18n(child.last_care.diaper.timestamp, lang))}</span>` : ""}</div>
                 <div class="kpi-val">${esc(t.wet)} ${sum.diaper_wet || 0} · ${esc(t.solid)} ${sum.diaper_solid || 0}</div>
               </div>
             </div>
@@ -1180,7 +865,7 @@ class KrBabyKitPanel extends HTMLElement {
               <div class="icon-well tone-green">${ICONS.tummy_time}</div>
               <div class="kpi-body">
                 <div class="kpi-label">${esc(t.todayTummy)}</div>
-                <div class="kpi-val">${esc(fmtMinutes(sum.tummy_min, ko))}</div>
+                <div class="kpi-val">${esc(fmtMinutesI18n(sum.tummy_min, lang))}</div>
               </div>
             </div>
             <div class="kpi-card">
@@ -1228,7 +913,7 @@ class KrBabyKitPanel extends HTMLElement {
             </div>
           </div>
 
-          ${renderWeeklyCareChart(child.weekly_care, { ko })}
+          ${renderWeeklyCareChart(child.weekly_care, { ko, t })}
         </div>`;
     }
 
@@ -1259,7 +944,7 @@ class KrBabyKitPanel extends HTMLElement {
               const details = [];
               if (a.method) details.push(this._methodLabel(a.method));
               if (a.amount_ml != null) details.push(`${a.amount_ml} ml`);
-              if (a.duration_min != null) details.push(fmtMinutes(a.duration_min, ko));
+              if (a.duration_min != null) details.push(fmtMinutesI18n(a.duration_min, lang));
               if (a.diaper_type) details.push(this._diaperLabel(a.diaper_type));
               if (a.temperature_c != null) details.push(`${a.temperature_c}°C`);
               const toneMap = {
@@ -1348,7 +1033,7 @@ class KrBabyKitPanel extends HTMLElement {
       const curveSvg = renderGrowthCurveChart(
         child.growth_curves?.[cKind],
         child.age_months,
-        { unit: cKind === "weight" ? "kg" : "cm", ko }
+        { unit: cKind === "weight" ? "kg" : "cm", ko, t }
       );
 
       const gaugeItem = (icon, tone, title, valText, pct, summary, warnBand = false) => `
@@ -1462,12 +1147,44 @@ class KrBabyKitPanel extends HTMLElement {
     if (secId === "automations") {
       return renderAutomationsSection(child, {
         ko,
+        t,
         openRecipeId: this._openRecipeId,
         copiedId: this._copiedRecipeId,
         wideClass,
       });
     }
     return "";
+  }
+
+  _renderLangDropdown(t, activeLang) {
+    if (!this._langMenuOpen) return "";
+    const prefLang = this._prefs?.lang || "auto";
+    const autoActive = prefLang === "auto";
+    const items = LANGUAGES.map((l) => {
+      const selected = prefLang === l.code;
+      const effective = autoActive && activeLang === l.code;
+      return `
+        <button type="button" class="lang-option ${selected ? "active" : ""}" role="menuitemradio" aria-checked="${selected ? "true" : "false"}" data-quick-lang="${esc(l.code)}">
+          <span class="lang-opt-label">${esc(l.label)}</span>
+          <span class="lang-opt-right">
+            <span class="lang-opt-code">${esc(l.short)}</span>
+            <span class="lang-opt-check">${selected ? "&#10003;" : effective ? "&#8226;" : ""}</span>
+          </span>
+        </button>`;
+    }).join("");
+    return `
+      <div class="lang-backdrop" id="lang-backdrop"></div>
+      <div class="lang-dropdown" role="menu" aria-label="${esc(t.settingsLang)}">
+        <button type="button" class="lang-option ${autoActive ? "active" : ""}" role="menuitemradio" aria-checked="${autoActive ? "true" : "false"}" data-quick-lang="auto">
+          <span class="lang-opt-label">${esc(t.langAuto)}</span>
+          <span class="lang-opt-right">
+            <span class="lang-opt-code">${esc(getLangMeta(activeLang).short)}</span>
+            <span class="lang-opt-check">${autoActive ? "&#10003;" : ""}</span>
+          </span>
+        </button>
+        <div class="lang-divider"></div>
+        ${items}
+      </div>`;
   }
 
   _renderSettingsDrawer() {
@@ -1551,10 +1268,12 @@ class KrBabyKitPanel extends HTMLElement {
           <div class="drawer-body">
             <div class="drawer-sec">
               <div class="drawer-label">${esc(t.settingsLang)}</div>
-              <div class="seg-group">
+              <div class="lang-grid">
                 <button type="button" class="seg ${p.lang === "auto" ? "active" : ""}" data-select-lang="auto">${esc(t.langAuto)}</button>
-                <button type="button" class="seg ${p.lang === "ko" ? "active" : ""}" data-select-lang="ko">한국어</button>
-                <button type="button" class="seg ${p.lang === "en" ? "active" : ""}" data-select-lang="en">English</button>
+                ${LANGUAGES.map(
+                  (l) =>
+                    `<button type="button" class="seg ${p.lang === l.code ? "active" : ""}" data-select-lang="${esc(l.code)}">${esc(l.label)}</button>`
+                ).join("")}
               </div>
             </div>
 
@@ -1976,6 +1695,51 @@ class KrBabyKitPanel extends HTMLElement {
           border: 1px solid rgba(128, 128, 128, 0.25); cursor: pointer;
         }
         .topbar h1 { margin: 0; font-size: 19px; font-weight: 700; letter-spacing: -0.025em; font-family: var(--bk-font-head); }
+        .lang-menu-wrap { position: relative; display: inline-flex; align-items: center; }
+        .lang-btn {
+          display: inline-flex; align-items: center; gap: 5px;
+          font-weight: 600; white-space: nowrap;
+        }
+        .lang-caret { font-size: 10px; opacity: 0.78; margin-left: 1px; }
+        .lang-backdrop {
+          position: fixed; inset: 0; z-index: 19; background: transparent;
+        }
+        .lang-dropdown {
+          position: absolute; top: calc(100% + 8px); right: 0; z-index: 20;
+          min-width: 196px; padding: 6px;
+          border-radius: 14px;
+          background: var(--bk-card); color: var(--bk-text);
+          border: var(--bk-card-border);
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+          backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+          display: flex; flex-direction: column; gap: 2px;
+        }
+        .lang-option {
+          display: flex; align-items: center; justify-content: space-between; gap: 10px;
+          width: 100%; padding: 8px 10px; border-radius: 9px; border: none;
+          background: transparent; color: var(--bk-text); cursor: pointer;
+          font-size: 13.5px; font-weight: 500; font-family: inherit; text-align: left;
+          transition: background-color 0.12s ease;
+        }
+        .lang-option:hover { background: var(--bk-surface); }
+        .lang-option.active {
+          background: rgba(56, 189, 248, 0.14); color: var(--bk-accent); font-weight: 700;
+        }
+        .lang-opt-right { display: inline-flex; align-items: center; gap: 6px; }
+        .lang-opt-code {
+          font-size: 10.5px; font-weight: 700; padding: 2px 6px; border-radius: 6px;
+          background: var(--bk-surface); color: var(--bk-muted);
+          font-family: var(--bk-font-num);
+        }
+        .lang-option.active .lang-opt-code {
+          background: var(--bk-accent); color: var(--bk-accent-text);
+        }
+        .lang-opt-check { width: 14px; text-align: center; font-size: 13px; color: var(--bk-accent); }
+        .lang-divider { height: 1px; background: rgba(128, 128, 128, 0.16); margin: 4px 6px; }
+        .lang-grid {
+          display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px;
+        }
+        .lang-grid .seg { padding: 7px 6px; font-size: 12.5px; }
         .container {
           max-width: ${
             this._prefs.layout === "bento-3"
@@ -2511,7 +2275,12 @@ class KrBabyKitPanel extends HTMLElement {
           <h1>${esc(t.title)}</h1>
         </div>
         <div class="topbar-right">
-          <button class="btn-top lang-btn" id="btn-toggle-lang" title="Switch language">${this._isKo() ? "EN" : "한국어"}</button>
+          <div class="lang-menu-wrap">
+            <button type="button" class="btn-top lang-btn" id="btn-lang-menu" aria-haspopup="menu" aria-expanded="${this._langMenuOpen ? "true" : "false"}" title="${esc(t.settingsLang)}">
+              ${ICONS.globe}<span>${esc(getLangMeta(this._lang()).short)}</span><span class="lang-caret">&#9662;</span>
+            </button>
+            ${this._renderLangDropdown(t, this._lang())}
+          </div>
           <button class="btn-top" id="btn-add-child">+ ${esc(t.addChild)}</button>
           <button class="icon-btn" id="btn-open-settings" title="${esc(t.settingsTitle)}" aria-label="${esc(t.settingsTitle)}">${ICONS.gear}</button>
         </div>
@@ -2554,9 +2323,20 @@ class KrBabyKitPanel extends HTMLElement {
         window.scrollTo?.({ top: 0, behavior: "smooth" });
       });
     });
-    root.getElementById("btn-toggle-lang")?.addEventListener("click", () => {
-      const nextLang = this._isKo() ? "en" : "ko";
-      this._updatePrefs((p) => { p.lang = nextLang; });
+    root.getElementById("btn-lang-menu")?.addEventListener("click", () => {
+      this._langMenuOpen = !this._langMenuOpen;
+      this._render();
+    });
+    root.getElementById("lang-backdrop")?.addEventListener("click", () => {
+      this._langMenuOpen = false;
+      this._render();
+    });
+    root.querySelectorAll("[data-quick-lang]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const nextLang = btn.getAttribute("data-quick-lang");
+        this._langMenuOpen = false;
+        this._updatePrefs((p) => { p.lang = nextLang; });
+      });
     });
     root.querySelectorAll("[data-select-lang]").forEach((btn) => {
       btn.addEventListener("click", () => {

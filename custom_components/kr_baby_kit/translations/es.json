@@ -1,0 +1,165 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Registrar un bebé",
+        "description": "Registra un niño. Añade otra entrada para hermanos.\n\nEsta información es solo de referencia y no sustituye el consejo médico.",
+        "data": {
+          "child_name": "Nombre o apodo (ej. Bebé A)",
+          "child_birthdate": "Fecha de nacimiento",
+          "child_sex": "Sexo",
+          "profile": "Región / Estándar"
+        }
+      }
+    },
+    "error": {
+      "required": "Campo obligatorio.",
+      "invalid_date": "Formato de fecha inválido (YYYY-MM-DD).",
+      "future_date": "No se permiten fechas futuras."
+    },
+    "abort": {
+      "already_configured": "Este niño ya está registrado."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Editar perfil",
+        "description": "Edita nombre, fecha de nacimiento, sexo o estándar regional. Se conservan las mediciones y marcas.",
+        "data": {
+          "child_name": "Nombre o apodo",
+          "child_birthdate": "Fecha de nacimiento",
+          "child_sex": "Sexo",
+          "profile": "Región / Estándar"
+        }
+      }
+    },
+    "error": {
+      "required": "Campo obligatorio.",
+      "invalid_date": "Formato de fecha inválido (YYYY-MM-DD).",
+      "future_date": "No se permiten fechas futuras."
+    }
+  },
+  "selector": {
+    "child_sex": {
+      "options": {
+        "male": "Niño",
+        "female": "Niña"
+      }
+    },
+    "profile": {
+      "options": {
+        "kr": "Corea del Sur (KDCA, NIP, Guardería)",
+        "global": "Internacional (Estándares OMS)"
+      }
+    }
+  },
+  "services": {
+    "record_measurement": {
+      "name": "Registrar medición",
+      "description": "Guarda talla, peso o perímetro cefálico y actualiza percentiles."
+    },
+    "delete_measurement": {
+      "name": "Eliminar medición",
+      "description": "Elimina una medición completa o campos seleccionados de una fecha."
+    },
+    "get_measurements": {
+      "name": "Obtener mediciones",
+      "description": "Devuelve el historial de mediciones ordenado por fecha."
+    },
+    "mark_event_done": {
+      "name": "Marcar evento completado",
+      "description": "Marca vacunas o revisiones como completadas."
+    },
+    "unmark_event_done": {
+      "name": "Desmarcar evento",
+      "description": "Deshace una marca de completado."
+    },
+    "get_schedule": {
+      "name": "Obtener calendario completo",
+      "description": "Devuelve todas las ventanas de vacunas y revisiones con su estado."
+    },
+    "log_care": {
+      "name": "Registrar cuidado diario",
+      "description": "Registra tomas, pañales, sueño, temperatura o notas desde automatizaciones."
+    },
+    "start_timer": {
+      "name": "Iniciar temporizador",
+      "description": "Inicia un cronómetro en vivo para sueño, toma, tiempo boca abajo o extracción."
+    },
+    "stop_timer": {
+      "name": "Detener temporizador",
+      "description": "Detiene el cronómetro activo y guarda la duración en el historial."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "height_percentile": { "name": "Rango de talla (top %)" },
+      "weight_percentile": { "name": "Rango de peso (top %)" },
+      "age_months": { "name": "Edad (meses)" },
+      "bmi_raw": { "name": "IMC" },
+      "next_vaccine": { "name": "Inicio de próxima vacuna" },
+      "vaccine_open_deadline": { "name": "Fecha límite vacuna abierta" },
+      "next_checkup": { "name": "Inicio de próxima revisión" },
+      "checkup_open_deadline": { "name": "Fecha límite revisión abierta" },
+      "next_oral_checkup": { "name": "Inicio próxima revisión dental" },
+      "oral_checkup_open_deadline": { "name": "Fecha límite revisión dental" },
+      "standard_tuition": { "name": "Cuota estándar mensual" },
+      "government_subsidy": { "name": "Subvención mensual" },
+      "parent_share": { "name": "Aporte familiar mensual" },
+      "today_sleep_minutes": { "name": "Sueño de hoy" },
+      "today_feeding_ml": { "name": "Volumen de tomas hoy" },
+      "today_diaper_count": { "name": "Pañales hoy" },
+      "last_temperature": { "name": "Última temperatura" },
+      "active_timers": { "name": "Temporizadores activos" },
+      "last_feeding_at": { "name": "Hora de última toma" },
+      "last_diaper_at": { "name": "Último cambio de pañal" },
+      "last_sleep_at": { "name": "Hora de último sueño" }
+    },
+    "binary_sensor": {
+      "vaccine_due": {
+        "name": "Vacunas este mes",
+        "state": { "on": "Vacuna pendiente este mes", "off": "Sin vacunas este mes" }
+      },
+      "checkup_due": {
+        "name": "Revisiones este mes",
+        "state": { "on": "Revisión pendiente este mes", "off": "Sin revisiones este mes" }
+      },
+      "oral_checkup_due": {
+        "name": "Revisión dental este mes",
+        "state": { "on": "Revisión dental este mes", "off": "Sin revisión dental" }
+      },
+      "head_concern": {
+        "name": "Alerta perímetro cefálico",
+        "state": { "on": "Requiere atención", "off": "Rango normal" }
+      },
+      "bmi_concern": {
+        "name": "Alerta de IMC",
+        "state": { "on": "Requiere atención", "off": "Rango normal" }
+      },
+      "weight_for_length_concern": {
+        "name": "Alerta peso para la talla",
+        "state": { "on": "Requiere atención", "off": "Rango normal" }
+      }
+    },
+    "calendar": {
+      "immunization_calendar": {
+        "name": "Calendario de vacunas",
+        "state": { "on": "Ventana abierta", "off": "Sin ventana abierta" }
+      },
+      "checkup_calendar": {
+        "name": "Calendario de revisiones",
+        "state": { "on": "Ventana abierta", "off": "Sin ventana abierta" }
+      },
+      "oral_checkup_calendar": {
+        "name": "Calendario dental",
+        "state": { "on": "Ventana abierta", "off": "Sin ventana abierta" }
+      }
+    },
+    "number": {
+      "height_input": { "name": "Registrar talla (hoy)" },
+      "weight_input": { "name": "Registrar peso (hoy)" },
+      "head_input": { "name": "Registrar perímetro cefálico (hoy)" }
+    }
+  }
+}

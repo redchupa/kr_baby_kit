@@ -1,0 +1,165 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "登记宝宝",
+        "description": "登记一位宝宝。多个宝宝可重复添加集成。\n\n本信息仅供参考，不能替代专业医疗诊断。",
+        "data": {
+          "child_name": "姓名或昵称 (如: 大宝)",
+          "child_birthdate": "出生日期",
+          "child_sex": "性别",
+          "profile": "地区 / 标准"
+        }
+      }
+    },
+    "error": {
+      "required": "此项为必填。",
+      "invalid_date": "日期格式不正确 (YYYY-MM-DD)。",
+      "future_date": "不能输入未来日期。"
+    },
+    "abort": {
+      "already_configured": "该宝宝已登记。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "编辑宝宝信息",
+        "description": "修改姓名、出生日期、性别或地区标准。已保存的测量记录和完成标记将会保留。",
+        "data": {
+          "child_name": "姓名或昵称",
+          "child_birthdate": "出生日期",
+          "child_sex": "性别",
+          "profile": "地区 / 标准"
+        }
+      }
+    },
+    "error": {
+      "required": "此项为必填。",
+      "invalid_date": "日期格式不正确 (YYYY-MM-DD)。",
+      "future_date": "不能输入未来日期。"
+    }
+  },
+  "selector": {
+    "child_sex": {
+      "options": {
+        "male": "男宝",
+        "female": "女宝"
+      }
+    },
+    "profile": {
+      "options": {
+        "kr": "韩国 (KDCA / NIP / 托育费)",
+        "global": "国际标准 (WHO 生长曲线)"
+      }
+    }
+  },
+  "services": {
+    "record_measurement": {
+      "name": "记录测量值",
+      "description": "保存身高、体重或头围并刷新百分位。"
+    },
+    "delete_measurement": {
+      "name": "删除测量值",
+      "description": "删除指定日期的全部或部分测量项目。"
+    },
+    "get_measurements": {
+      "name": "获取测量记录",
+      "description": "按日期顺序返回已保存的测量记录。"
+    },
+    "mark_event_done": {
+      "name": "标记已完成",
+      "description": "将疫苗接种、体检或口腔检查标记为已完成。"
+    },
+    "unmark_event_done": {
+      "name": "取消完成标记",
+      "description": "撤销已完成标记。"
+    },
+    "get_schedule": {
+      "name": "获取全部日程",
+      "description": "返回所有疫苗、体检和口腔检查窗口及状态。"
+    },
+    "log_care": {
+      "name": "记录日常照护",
+      "description": "通过自动化或无线按钮记录喂养、尿布、睡眠、体温或备注。"
+    },
+    "start_timer": {
+      "name": "启动照护计时器",
+      "description": "启动睡眠、喂养、趴趴时间或吸奶的实时计时器。"
+    },
+    "stop_timer": {
+      "name": "停止并保存计时器",
+      "description": "停止运行中的计时器并将时长保存为照护记录。"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "height_percentile": { "name": "身高同龄排名 (前%)" },
+      "weight_percentile": { "name": "体重同龄排名 (前%)" },
+      "age_months": { "name": "月龄" },
+      "bmi_raw": { "name": "BMI" },
+      "next_vaccine": { "name": "下次疫苗开始日期" },
+      "vaccine_open_deadline": { "name": "当前可接种截止日期" },
+      "next_checkup": { "name": "下次体检开始日期" },
+      "checkup_open_deadline": { "name": "当前可体检截止日期" },
+      "next_oral_checkup": { "name": "下次口腔检查开始日期" },
+      "oral_checkup_open_deadline": { "name": "当前口腔检查截止日期" },
+      "standard_tuition": { "name": "月标准托育费" },
+      "government_subsidy": { "name": "月政府补贴" },
+      "parent_share": { "name": "月自付托育费" },
+      "today_sleep_minutes": { "name": "今日睡眠时长" },
+      "today_feeding_ml": { "name": "今日喂养奶量" },
+      "today_diaper_count": { "name": "今日换尿布次数" },
+      "last_temperature": { "name": "最近体温" },
+      "active_timers": { "name": "运行中计时器" },
+      "last_feeding_at": { "name": "上次喂养时间" },
+      "last_diaper_at": { "name": "上次换尿布时间" },
+      "last_sleep_at": { "name": "上次睡眠时间" }
+    },
+    "binary_sensor": {
+      "vaccine_due": {
+        "name": "本月疫苗提醒",
+        "state": { "on": "本月有疫苗计划", "off": "本月无疫苗计划" }
+      },
+      "checkup_due": {
+        "name": "本月体检提醒",
+        "state": { "on": "本月有体检计划", "off": "本月无体检计划" }
+      },
+      "oral_checkup_due": {
+        "name": "本月口腔检查提醒",
+        "state": { "on": "本月有口腔检查", "off": "本月无口腔检查" }
+      },
+      "head_concern": {
+        "name": "头围异常提示",
+        "state": { "on": "需要关注", "off": "正常范围" }
+      },
+      "bmi_concern": {
+        "name": "BMI 异常提示",
+        "state": { "on": "需要关注", "off": "正常范围" }
+      },
+      "weight_for_length_concern": {
+        "name": "身长别体重提示",
+        "state": { "on": "需要关注", "off": "正常范围" }
+      }
+    },
+    "calendar": {
+      "immunization_calendar": {
+        "name": "疫苗接种日历",
+        "state": { "on": "当前可接种", "off": "当前无开放窗口" }
+      },
+      "checkup_calendar": {
+        "name": "儿童体检日历",
+        "state": { "on": "当前可体检", "off": "当前无开放窗口" }
+      },
+      "oral_checkup_calendar": {
+        "name": "口腔检查日历",
+        "state": { "on": "当前可检查", "off": "当前无开放窗口" }
+      }
+    },
+    "number": {
+      "height_input": { "name": "记录今日身高" },
+      "weight_input": { "name": "记录今日体重" },
+      "head_input": { "name": "记录今日头围" }
+    }
+  }
+}

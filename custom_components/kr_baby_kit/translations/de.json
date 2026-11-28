@@ -1,0 +1,165 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kind registrieren",
+        "description": "Registriere ein Kind. Für weitere Kinder einfach erneut hinzufügen.\n\nDiese Angaben dienen nur zur Orientierung und ersetzen keine ärztliche Beratung.",
+        "data": {
+          "child_name": "Name oder Spitzname (z. B. Baby A)",
+          "child_birthdate": "Geburtsdatum",
+          "child_sex": "Geschlecht",
+          "profile": "Region / Standard"
+        }
+      }
+    },
+    "error": {
+      "required": "Pflichtfeld.",
+      "invalid_date": "Ungültiges Datumsformat (YYYY-MM-DD).",
+      "future_date": "Zukünftige Daten sind nicht zulässig."
+    },
+    "abort": {
+      "already_configured": "Dieses Kind ist bereits registriert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kind bearbeiten",
+        "description": "Name, Geburtsdatum, Geschlecht oder Standard ändern. Gespeicherte Messungen bleiben erhalten.",
+        "data": {
+          "child_name": "Name oder Spitzname",
+          "child_birthdate": "Geburtsdatum",
+          "child_sex": "Geschlecht",
+          "profile": "Region / Standard"
+        }
+      }
+    },
+    "error": {
+      "required": "Pflichtfeld.",
+      "invalid_date": "Ungültiges Datumsformat (YYYY-MM-DD).",
+      "future_date": "Zukünftige Daten sind nicht zulässig."
+    }
+  },
+  "selector": {
+    "child_sex": {
+      "options": {
+        "male": "Junge",
+        "female": "Mädchen"
+      }
+    },
+    "profile": {
+      "options": {
+        "kr": "Südkorea (KDCA, NIP, Kita-Beitrag)",
+        "global": "International (WHO-Wachstumsstandards)"
+      }
+    }
+  },
+  "services": {
+    "record_measurement": {
+      "name": "Messung speichern",
+      "description": "Speichert Größe, Gewicht oder Kopfumfang und aktualisiert Perzentilen."
+    },
+    "delete_measurement": {
+      "name": "Messung löschen",
+      "description": "Löscht einen gesamten Tageseintrag oder ausgewählte Werte."
+    },
+    "get_measurements": {
+      "name": "Messungen abrufen",
+      "description": "Gibt gespeicherte Messungen chronologisch zurück."
+    },
+    "mark_event_done": {
+      "name": "Termin abhaken",
+      "description": "Markiert Impfungen oder Vorsorgeuntersuchungen als erledigt."
+    },
+    "unmark_event_done": {
+      "name": "Markierung entfernen",
+      "description": "Macht eine Erledigt-Markierung rückgängig."
+    },
+    "get_schedule": {
+      "name": "Zeitplan abrufen",
+      "description": "Gibt alle Impf- und Vorsorgezeiträume mit Status zurück."
+    },
+    "log_care": {
+      "name": "Tagespflege protokollieren",
+      "description": "Erfasst Füttern, Windel, Schlaf, Temperatur oder Notizen per Automation."
+    },
+    "start_timer": {
+      "name": "Pflege-Timer starten",
+      "description": "Startet eine Live-Stoppuhr für Schlaf, Füttern, Bauchlage oder Abpumpen."
+    },
+    "stop_timer": {
+      "name": "Pflege-Timer stoppen",
+      "description": "Stoppt den aktiven Timer und speichert die Dauer als Eintrag."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "height_percentile": { "name": "Größenrang (Top %)" },
+      "weight_percentile": { "name": "Gewichtsrang (Top %)" },
+      "age_months": { "name": "Alter (Monate)" },
+      "bmi_raw": { "name": "BMI" },
+      "next_vaccine": { "name": "Nächster Impfbeginn" },
+      "vaccine_open_deadline": { "name": "Frist offene Impfung" },
+      "next_checkup": { "name": "Nächste Vorsorge Start" },
+      "checkup_open_deadline": { "name": "Frist offene Vorsorge" },
+      "next_oral_checkup": { "name": "Nächster Zahnarzt Start" },
+      "oral_checkup_open_deadline": { "name": "Frist Zahnarzttermin" },
+      "standard_tuition": { "name": "Monatl. Standard-Kitabeitrag" },
+      "government_subsidy": { "name": "Monatl. Zuschuss" },
+      "parent_share": { "name": "Monatl. Eigenanteil" },
+      "today_sleep_minutes": { "name": "Schlaf heute" },
+      "today_feeding_ml": { "name": "Trinkmenge heute" },
+      "today_diaper_count": { "name": "Windeln heute" },
+      "last_temperature": { "name": "Letzte Temperatur" },
+      "active_timers": { "name": "Aktive Timer" },
+      "last_feeding_at": { "name": "Letzte Fütterung" },
+      "last_diaper_at": { "name": "Letzter Windelwechsel" },
+      "last_sleep_at": { "name": "Letzter Schlaf" }
+    },
+    "binary_sensor": {
+      "vaccine_due": {
+        "name": "Impfungen diesen Monat",
+        "state": { "on": "Impfung diesen Monat", "off": "Keine Impfung diesen Monat" }
+      },
+      "checkup_due": {
+        "name": "Vorsorge diesen Monat",
+        "state": { "on": "Vorsorge diesen Monat", "off": "Keine Vorsorge diesen Monat" }
+      },
+      "oral_checkup_due": {
+        "name": "Zahnarzt diesen Monat",
+        "state": { "on": "Zahnarzt diesen Monat", "off": "Kein Zahnarzt diesen Monat" }
+      },
+      "head_concern": {
+        "name": "Kopfumfang-Hinweis",
+        "state": { "on": "Prüfen", "off": "Unauffällig" }
+      },
+      "bmi_concern": {
+        "name": "BMI-Hinweis",
+        "state": { "on": "Prüfen", "off": "Unauffällig" }
+      },
+      "weight_for_length_concern": {
+        "name": "Gewicht-für-Länge-Hinweis",
+        "state": { "on": "Prüfen", "off": "Unauffällig" }
+      }
+    },
+    "calendar": {
+      "immunization_calendar": {
+        "name": "Impfkalender",
+        "state": { "on": "Zeitfenster offen", "off": "Kein offenes Fenster" }
+      },
+      "checkup_calendar": {
+        "name": "Vorsorgekalender",
+        "state": { "on": "Zeitfenster offen", "off": "Kein offenes Fenster" }
+      },
+      "oral_checkup_calendar": {
+        "name": "Zahnarztkalender",
+        "state": { "on": "Zeitfenster offen", "off": "Kein offenes Fenster" }
+      }
+    },
+    "number": {
+      "height_input": { "name": "Größe erfassen (heute)" },
+      "weight_input": { "name": "Gewicht erfassen (heute)" },
+      "head_input": { "name": "Kopfumfang erfassen (heute)" }
+    }
+  }
+}
