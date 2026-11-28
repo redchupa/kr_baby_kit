@@ -4,7 +4,7 @@
 
 [![Validate](https://github.com/redchupa/kr_baby_kit/actions/workflows/hassfest.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/hassfest.yml)
 [![Tests](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml)
-[![HACS](https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/hacs-custom-badge.png)](https://github.com/hacs/integration)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 [![Release](https://img.shields.io/github/v/release/redchupa/kr_baby_kit?include_prereleases&label=release)](https://github.com/redchupa/kr_baby_kit/releases)
 
 우리 아이의 수유·수면·기저귀·체온 기록부터 사진 일기, 또래 키·몸무게 비교, 예방접종·검진 알림까지 Home Assistant에서 한 번에 챙길 수 있는 육아 도우미입니다.
@@ -36,17 +36,13 @@
 
 Home Assistant 2024.11 이상과 HACS가 필요합니다. (Home Assistant를 처음 사용한다면 [입문 가이드](https://redchupa.com/entry/%ed%99%88%ec%96%b4%ec%8b%9c%ec%8a%a4%ed%84%b4%ed%8a%b8ha-%ec%9e%85%eb%ac%b8-%ea%b0%80%ec%9d%b4%eb%93%9c/)를 참고하세요.)
 
-### 1. HACS에 저장소 추가
+### 1. HACS에서 설치
 
-아래 버튼을 누르면 내 Home Assistant의 HACS에서 이 저장소가 바로 열립니다. URL을 복사해 붙여넣을 필요가 없어요.
+Baby Kit은 HACS 기본 목록에 등록되어 있어 저장소를 따로 추가하지 않아도 됩니다. 아래 버튼을 누르면 내 Home Assistant의 HACS에서 Baby Kit 화면이 바로 열립니다.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=redchupa&repository=kr_baby_kit&category=integration)
 
-버튼이 동작하지 않으면 아래 방법으로 직접 등록하세요.
-
-1. Home Assistant에서 **HACS** → **Integrations** → 우측 상단 메뉴(⋮) → **사용자 지정 저장소**로 이동합니다.
-2. 저장소 URL에 `https://github.com/redchupa/kr_baby_kit` 을 입력하고 카테고리는 **Integration**을 선택해 추가합니다.
-3. HACS에서 **Baby Kit**을 검색해 다운로드한 뒤 Home Assistant를 재시작합니다.
+버튼이 동작하지 않으면 **HACS**에서 **Baby Kit**을 검색해 다운로드한 뒤 Home Assistant를 재시작하세요.
 
 ### 2. 자녀 등록
 

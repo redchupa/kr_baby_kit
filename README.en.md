@@ -4,7 +4,7 @@
 
 [![Validate](https://github.com/redchupa/kr_baby_kit/actions/workflows/hassfest.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/hassfest.yml)
 [![Tests](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml/badge.svg)](https://github.com/redchupa/kr_baby_kit/actions/workflows/test.yml)
-[![HACS](https://raw.githubusercontent.com/redchupa/kr_baby_kit/main/images/hacs-custom-badge.png)](https://github.com/hacs/integration)
+[![HACS Default](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 [![Release](https://img.shields.io/github/v/release/redchupa/kr_baby_kit?include_prereleases&label=release)](https://github.com/redchupa/kr_baby_kit/releases)
 
 An all-in-one baby care companion for Home Assistant — track daily feedings, sleep, diapers, temperatures, photo memories, growth percentiles, and upcoming vaccines or checkups in one place.
@@ -36,17 +36,13 @@ Taken with a made-up demo child.
 
 Requires Home Assistant 2024.11 or later and HACS.
 
-### 1. Add custom repository in HACS
+### 1. Install from HACS
 
-Click the button to open this repository in HACS on your own Home Assistant — no URL copy-paste needed.
+Baby Kit is in the default HACS list, so there is no need to add a custom repository. Click the button to open Baby Kit in HACS on your own Home Assistant.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=redchupa&repository=kr_baby_kit&category=integration)
 
-If the button doesn't work, add it manually:
-
-1. Open **HACS** → **Integrations** → top-right menu (⋮) → **Custom repositories**.
-2. Add `https://github.com/redchupa/kr_baby_kit` with category **Integration**.
-3. Search for **Baby Kit**, download it, and restart Home Assistant.
+If the button doesn't work, search for **Baby Kit** in **HACS**, download it, and restart Home Assistant.
 
 ### 2. Register a child
 
